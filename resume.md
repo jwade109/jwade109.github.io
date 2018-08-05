@@ -15,7 +15,7 @@ jwade109@vt.edu / 1 (434) 466-9151
 ##### August 2015 to May 2020
 * Concentration in Dynamics, Estimation, and Control; minoring in Computer Science and Math
 * 3.6 GPA; Dean’s List - F15, F16, S17
-* Yearlong hiatus for Cooperative Education and Internship Program (see Inertial Labs)
+* Year-long hiatus for VT Cooperative Education and Internship Program (see [Inertial Labs](resume#inertial-labs-inc---quality-assurance-engineer))
 
 ### Math, Engineering, and Science Academy at Albemarle High School
 ##### August 2011 to May 2015
