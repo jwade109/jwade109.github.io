@@ -53,7 +53,7 @@ jwade109@vt.edu / 1 (434) 466-9151
 * Built a small solid-fuel rocket and collaborated with peers to build an Arduino in-flight sensor suite
 * Unique use of aerodynamic spin-up stability gave our team the highest apogee of all teams
 
-### **FTC Robotics Team** – Team Cofounder, Member of
+### **FTC Robotics Team** – Team Cofounder
 ##### September 2013 to May 2015
 * Cofounded FIRST Tech Challenge Team 7953 Vertigo as a school-sponsored robotics design team at Albemarle High School
 * Designed, prototyped, tested, and implemented robotic vehicles for two years with specific competition requirements
