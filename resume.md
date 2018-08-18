@@ -1,7 +1,7 @@
 # Joseph Wade Foster
 jwade109@vt.edu / 1 (434) 466-9151
 
-805 Vanderbilt Terrace SE, Leesburg, VA 20175
+3500 Richmond Lane Apt C, Blacksburg, VA 24060
 
 [github.com/jwade109](https://github.com/jwade109)
 
@@ -42,6 +42,7 @@ jwade109@vt.edu / 1 (434) 466-9151
 
 ### **Virginia Tech “ΔVT” Rocketry Team** – Electrical Subteam Senior Member
 ##### September 2015 to May 2017
+##### Virginia Polytechnic Institute and State University
 * Mentoring the avionics subteam of the High-Powered Rocketry design team in NASA’s Midwest HPR Competition
 * Designing electrical systems and software custom-built for a specialized rocket vehicle
 * Authored a vehicle guidance program suite which considered airspeed, altitude, and drag coefficient to actuate vehicle airbrakes to make in-flight course corrections
@@ -50,11 +51,13 @@ jwade109@vt.edu / 1 (434) 466-9151
 
 ### **VT Curie Rocket Design Team** – Programmer and Electronics Technician
 ##### January 2015 to April 2016
+##### Virginia Polytechnic Institute and State University
 * Built a small solid-fuel rocket and collaborated with peers to build an Arduino in-flight sensor suite
 * Unique use of aerodynamic spin-up stability gave our team the highest apogee of all teams
 
 ### **FTC Robotics Team** – Team Cofounder
 ##### September 2013 to May 2015
+##### Albemarle High School
 * Cofounded FIRST Tech Challenge Team 7953 Vertigo as a school-sponsored robotics design team at Albemarle High School
 * Designed, prototyped, tested, and implemented robotic vehicles for two years with specific competition requirements
 * Won the Rockwell Collins Innovate Award for innovative design and complete documentation of the engineering process
