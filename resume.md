@@ -2,7 +2,7 @@
 
 jwade109@vt.edu - 1 (434) 466-9151
 
-**University** - 3500 Richmond Lane Apt C, Blacksburg, VA 24060</br>
+**University** - 3500 Richmond Lane Apt C, Blacksburg, VA 24060<br>
 **Permanent** - 1088 Old Fox Trail Lane, Crozet, VA 22932
 
 ## EDUCATION
