@@ -1,3 +1,5 @@
+<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+
 # welcome to the internet
 
 I'm a VT aerospace engineering and CS student working hard to be king of NASA someday
