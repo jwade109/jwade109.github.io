@@ -52,6 +52,14 @@ ul
     list-style-type: disc;
 }
 
+button
+{
+    border: 1px solid;
+    background-color: #f1f1f1;
+    font-family: monospace;
+    font-size: 16px;
+}
+
 .center
 {
     width: 750px;
