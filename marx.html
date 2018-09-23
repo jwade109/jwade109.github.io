@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <link rel="stylesheet" href="styles.css">
 <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+
 <title>Marxism</title>
+
+<script src="vote.js"></script>
+
 </head>
 
 <body>
@@ -18,24 +23,35 @@
 </div>
 </div>
 
-<h1 class="center" style="text-align: center; margin-top: 200px">
+<p class="center" style="text-align: center; margin-top:150px">
 Overturn Citizens United!<br><br>
 Install IRV in federal and state elections!<br><br>
-Abolish capitalism!
-</h1>
+Abolish capitalism!</p>
 
-<div style="text-align:center; margin-top:60px">
-<button type="button" onclick="onClick()" style="padding: 20px 20px 20px 20px">
-Press me for a good time
+<div style="text-align:center; margin-top:30px">
+
+<form style="margin-top:30px" id="input">
+<input type="text" name="input">
+</form>
+
+<button style="margin-top:30px" type="button" onclick="printText();">
+Click me for a good time
 </button>
+
+<p id="printout"></p>
+
 </div>
 
 <script>
-function onClick()
+function printText()
 {
-    alert('THIS IS JAVASCRIPT, THOMAS GUSTAV OSHMITZ');
-    console.log('button clicked');
+    var x = document.getElementById('input');
+    var text = "";
+        text += x.elements[0].value;
+    if (text != "");
+        document.getElementById('printout').innerHTML = text + "<br>";
 }
+
 </script>
 
 </body>

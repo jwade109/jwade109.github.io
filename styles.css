@@ -21,6 +21,21 @@ a:hover
     text-decoration: underline;
 }
 
+form
+{
+    font-size: 20px;
+}
+
+input
+{
+    padding: 5px 5px 5px 5px;
+}
+
+button
+{
+    padding: 15px 15px 15px 15px;
+}
+
 h1
 {
     font-size: 40px;
