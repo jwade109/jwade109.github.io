@@ -19,11 +19,16 @@
 <p><a href="resume.html">< things I've done</a></p>
 </div>
 <div style="margin-left: auto; float: right">
-<p><a href="index.html">revenu al interreto ></a></p>
+<p><a href="index.html">return to the internet ></a></p>
 </div>
 </div>
 
-<p class="center" style="text-align: center; margin-top:150px">
+<div style="text-align:center; margin-top: 140px">
+
+<h1 style="margin-bottom:0px">javascript playground</h1>
+<h5 style="margin: 5px auto 40px auto">(and future online voting booth)</h5>
+
+<p style="margin-top: 20px">
 Overturn Citizens United!<br><br>
 Install IRV in federal and state elections!<br><br>
 Abolish capitalism!</p>
@@ -41,6 +46,8 @@ Click me for a good time
 <p id="printout"></p>
 
 </div>
+</div>
+</div>
 
 <script>
 function printText()
@@ -48,8 +55,9 @@ function printText()
     var x = document.getElementById('input');
     var text = "";
         text += x.elements[0].value;
-    if (text != "");
-        document.getElementById('printout').innerHTML = text + "<br>";
+    if (text == "")
+        text = "(put something in the box, dummy)";
+    document.getElementById('printout').innerHTML = text + "<br>";
 }
 
 </script>
