@@ -40,10 +40,18 @@ Abolish capitalism!</p>
 type="text" name="input" placeholder="Barack Obama, Big Bird, Chuck Norris">
 </form>
 
-<button style="margin: 30px 0px 20px 0px" type="button" onclick="makeBallot();">
+<button style="margin: 30px 5px 20px 5px" type="button" onclick="addBallot();">
 Click me for a good time
 </button>
+<button style="margin: 30px 5px 20px 5px" type="button" onclick="getWinner();">
+Get winner
+</button>
+<button style="margin: 30px 5px 20px 5px" type="button" onclick="console.log('clear'); clc();">
+Clear ballots
+</button>
 
+<p id="winner">
+</p>
 <p id="printout">
 </p>
 
@@ -52,7 +60,7 @@ Click me for a good time
 </div>
 
 <script>
-function makeBallot()
+function addBallot()
 {
     var x = document.getElementById('input');
     var text = "";
@@ -66,6 +74,20 @@ function makeBallot()
         document.getElementById('printout'). innerHTML +=
             '[' + text + '] ';
     }
+}
+
+function getWinner()
+{
+    document.getElementById('winner').innerHTML = 
+        "<h3>" + getRunoffWinner(ballot_box) + "</h3>";
+}
+
+function clc()
+{
+    console.log("clear");
+    ballot_box = [];
+    document.getElementById('printout').innerHTML = "";
+    document.getElementById('winner').innerHTML = "";
 }
 
 </script>
