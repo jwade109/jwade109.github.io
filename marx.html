@@ -23,7 +23,7 @@
 </div>
 </div>
 
-<div style="text-align:center; margin-top: 140px">
+<div style="text-align:center; margin-top: 40px">
 
 <h1 style="margin-bottom:0px">javascript playground</h1>
 <h5 style="margin: 5px auto 40px auto">(and future online voting booth)</h5>
@@ -36,28 +36,36 @@ Abolish capitalism!</p>
 <div style="text-align:center; margin-top:30px">
 
 <form style="margin-top:30px" id="input">
-<input type="text" name="input">
+<input style="width:300px"
+type="text" name="input" placeholder="Barack Obama, Big Bird, Chuck Norris">
 </form>
 
-<button style="margin-top:30px" type="button" onclick="printText();">
+<button style="margin: 30px 0px 20px 0px" type="button" onclick="makeBallot();">
 Click me for a good time
 </button>
 
-<p id="printout"></p>
+<p id="printout">
+</p>
 
 </div>
 </div>
 </div>
 
 <script>
-function printText()
+function makeBallot()
 {
     var x = document.getElementById('input');
     var text = "";
         text += x.elements[0].value;
-    if (text == "")
-        text = "(put something in the box, dummy)";
-    document.getElementById('printout').innerHTML = text + "<br>";
+
+    if (text != "")
+    {
+        var b = Ballot.fromString(text);
+        ballot_box.push(b);
+        text = b.toString();
+        document.getElementById('printout'). innerHTML +=
+            '[' + text + '] ';
+    }
 }
 
 </script>

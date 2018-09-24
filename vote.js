@@ -1,4 +1,3 @@
-
 class Ballot
 {
     constructor(...candidates)
@@ -23,6 +22,21 @@ class Ballot
         var b = new Ballot(...this.candidates);
         b.weight = this.weight;
         return b;
+    }
+
+    toString()
+    {
+        var text = "";
+        for (var i = 0; i < this.candidates.length; ++i)
+        {
+            text += (i+1) + ": '" + this.candidates[i] + "' ";
+        }
+        return text + "(" + this.weight + ")";
+    }
+
+    static fromString(string)
+    {
+        return new Ballot(...string.split(", "));
     }
 }
 
@@ -178,20 +192,24 @@ function print(ballots)
 
 var ballot_box = [];
 
-for (i = 0; i < 15; i++)
-{
-    ballot_box.push(new Ballot("asparagus", "beans", "corn", "dill"));
-}
-for (i = 0; i < 12; i++)
-{
-    ballot_box.push(new Ballot("beans", "asparagus", "corn", "dill"));
-}
-for (i = 0; i < 11; i++)
-{
-    ballot_box.push(new Ballot("dill", "beans", "asparagus"));
-}
-for (i = 0; i < 8; i++)
-{
-    ballot_box.push(new Ballot("beans"));
-}
+sitecode = document.URL.split("#")[1];
 
+if (sitecode == "load")
+{
+    for (i = 0; i < 15; i++)
+    {
+        ballot_box.push(new Ballot("asparagus", "beans", "corn", "dill"));
+    }
+    for (i = 0; i < 12; i++)
+    {
+        ballot_box.push(new Ballot("beans", "asparagus", "corn", "dill"));
+    }
+    for (i = 0; i < 11; i++)
+    {
+        ballot_box.push(new Ballot("dill", "beans", "asparagus"));
+    }
+    for (i = 0; i < 8; i++)
+    {
+        ballot_box.push(new Ballot("beans"));
+    }
+}
