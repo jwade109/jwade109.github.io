@@ -12,7 +12,7 @@
 
 <body>
 
-<div class="center" style="margin-bottom: 50px">
+<div class="center">
 <div style="overflow: hidden">
 <div style="margin-right: auto; float: left">
 <p><a href="resume">< things I've done</a></p>
@@ -22,15 +22,18 @@
 </div>
 </div>
 
-<div style="text-align:center; margin-top: 40px">
+<div style="text-align:center;
+margin-top: 40px;
+padding: 20px 20px 20px 20px;
+background-color:rgba(255, 255, 255, 0.65);">
 
 <h1 style="margin-bottom:0px">javascript playground</h1>
-<h5 style="margin: 5px auto 40px auto">(and future online voting booth)</h5>
+<h4 style="margin: 5px auto 40px auto">(and future online voting booth)</h4>
 
-<p style="margin-top: 20px">
-Overturn Citizens United!<br><br>
-Install IRV in federal and state elections!<br><br>
-Abolish capitalism!</p>
+<!-- <p style="margin-top: 20px"> -->
+<!-- Overturn Citizens United!<br><br> -->
+<!-- Install IRV in federal and state elections!<br><br> -->
+<!-- Abolish capitalism!</p> -->
 
 <div style="text-align:center; margin-top:30px">
 
@@ -51,47 +54,52 @@ Clear ballots
 
 <p id="winner">
 </p>
-<p id="printout">
-</p>
 
-<canvas id="canvas" style="border:1px solid lightgray"
-width="700px" height="400px"></canvas>
+</div>
+
+</div>
+</div>
+
+<canvas id="canvas" style="position:absolute;
+border:0px solid lightgray; top:0px; z-index:-1"
+width="1000px" height="800px"></canvas>
+
 <script src="vote.js"></script>
 <script src="ball.js"></script>
 
-</div>
-</div>
-</div>
-
 <script>
-
 function addBallot()
 {
     var x = document.getElementById('input');
-    var text = "";
-        text += x.elements[0].value;
+    var text = x.elements[0].value;
 
     if (text != "")
     {
-        var b = Ballot.fromString(text);
-        ballot_box.push(b);
-        text = b.toString();
-        document.getElementById('printout'). innerHTML +=
-            '[' + text + '] ';
+        var ballot = Ballot.fromString(text);
+        ballot_box.push(ballot);
+        var ball = ballot2ball(ballot);
+        ball.x = Math.random()*document.body.clientWidth;
+        ball.y = Math.random()*document.body.scrollHeight
+        ball.r = ball.r * 30;
+        ball.g = 0;
+        ball.vx = Math.random()*1000-500;
+        ball.vy = Math.random()*1000-500;
+        ball.damp = 1;
+        balls.push(ball);
     }
 }
 
 function getWinner()
 {
     document.getElementById('winner').innerHTML = 
-        "<h3>" + getRunoffWinner(ballot_box) + "</h3>";
+        "<h3>The winner is " + getRunoffWinner(ballot_box) + "!</h3>";
 }
 
 function clc()
 {
     console.log("clear");
     ballot_box = [];
-    document.getElementById('printout').innerHTML = "";
+    balls = [];
     document.getElementById('winner').innerHTML = "";
 }
 

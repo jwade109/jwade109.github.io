@@ -88,7 +88,7 @@ function getRunoffWinner(ballots, seats, quota)
     });
 
     console.log(candidates.length + " " + seats);
-    if (candidates.length <= seats || sumWeights(ballots) < quota)
+    if (candidates.length <= seats)
         return candidates;
     var tally = tallyTopLevel(ballots);
     var max = -1, min = quota, best, worst;

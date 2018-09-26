@@ -1,7 +1,10 @@
-body
+html, body
 {
+    box-sizing: border-box;
     font-family: Garamond, Cambria, SERIF;
-    background: white;
+    width: 100%;
+    margin: 0;
+    height: 100%;
 }
 
 p
@@ -86,7 +89,7 @@ button
 
 .center
 {
-    width: 750px;
+    width: 60%;
     margin: auto;
-    padding: 0px 0px 0px 0px;
+    padding: 0px 25px 0px 25px;
 }
