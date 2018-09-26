@@ -190,6 +190,37 @@ function print(ballots)
     console.log("votes remaining: " + sumWeights(ballots));
 }
 
+function getColors(ballots)
+{
+    var colors = {};
+    ballots.forEach(function(b)
+    {
+        for (var c in b.candidates)
+        {
+            if (typeof colors[b.candidates[c]] === 'undefined')
+            {
+                colors[b.candidates[c]] =
+                    str2color(b.candidates[c]);
+            }
+        }
+    });
+}
+
+function str2color(str) {
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }    
+    var hex = ((hash>>24)&0xFF).toString(16) +
+            ((hash>>16)&0xFF).toString(16) +
+            ((hash>>8)&0xFF).toString(16) +
+            (hash&0xFF).toString(16);
+    hex += '000000';
+    console.log("%c%s",
+        "background: #" + hex.substring(0, 6) + ";", str);
+    return "#" + hex.substring(0, 6);
+}
+
 var ballot_box = [];
 
 sitecode = document.URL.split("#")[1];
@@ -213,3 +244,5 @@ if (sitecode == "load")
         ballot_box.push(new Ballot("beans"));
     }
 }
+
+var colors = getColors(ballot_box);

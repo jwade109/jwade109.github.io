@@ -7,7 +7,6 @@
 
 <title>Marxism</title>
 
-<script src="vote.js"></script>
 
 </head>
 
@@ -41,7 +40,7 @@ type="text" name="input" placeholder="Barack Obama, Big Bird, Chuck Norris">
 </form>
 
 <button style="margin: 30px 5px 20px 5px" type="button" onclick="addBallot();">
-Click me for a good time
+Add ballot
 </button>
 <button style="margin: 30px 5px 20px 5px" type="button" onclick="getWinner();">
 Get winner
@@ -55,11 +54,17 @@ Clear ballots
 <p id="printout">
 </p>
 
+<canvas id="canvas" style="border:1px solid lightgray"
+width="700px" height="400px"></canvas>
+<script src="vote.js"></script>
+<script src="ball.js"></script>
+
 </div>
 </div>
 </div>
 
 <script>
+
 function addBallot()
 {
     var x = document.getElementById('input');
