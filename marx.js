@@ -33,7 +33,7 @@ function getColors(ballots)
     {
         for (var c in b.candidates)
         {
-            if (typeof colors[b.candidates[c]] === 'undefined')
+            if (typeof colors[b.candidates[c].toLowerCase()] === 'undefined')
             {
                 colors[b.candidates[c]] = color_palette[count];
                 count = (count + 1) % color_palette.length;
