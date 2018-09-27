@@ -31,7 +31,10 @@ form
 
 input
 {
-    padding: 5px 5px 5px 5px;
+    font-size: 18px;
+    padding: 10px;
+    border: 2px solid lightgray;
+    font-family: monospace;
 }
 
 button
@@ -81,15 +84,16 @@ ul
 
 button
 {
-    border: 1px solid;
-    background-color: #f1f1f1;
-    font-family: monospace;
+    border: 2px solid lightgray;
+    background-color: #FFFFFF;
     font-size: 16px;
+    font-family: monospace;
 }
 
 .center
 {
-    width: 60%;
+    width: 80%;
+    max-width: 700px;
     margin: auto;
     padding: 0px 25px 0px 25px;
 }

@@ -7,7 +7,6 @@
 
 <title>Marxism</title>
 
-
 </head>
 
 <body>
@@ -25,38 +24,63 @@
 <div style="text-align:center;
 margin-top: 40px;
 padding: 20px 20px 20px 20px;
-background-color:rgba(255, 255, 255, 0.65);">
+font-family: 'Consolas'">
 
-<h1 style="margin-bottom:0px">javascript playground</h1>
-<h4 style="margin: 5px auto 40px auto">(and future online voting booth)</h4>
-
-<!-- <p style="margin-top: 20px"> -->
-<!-- Overturn Citizens United!<br><br> -->
-<!-- Install IRV in federal and state elections!<br><br> -->
-<!-- Abolish capitalism!</p> -->
+<div style="background:white; display: inline-block;
+border: 2px solid lightgray; padding: 0 30px">
+<h1 style="margin-bottom:0px">electoral ball pit</h1>
+<h5 style="margin: 5px auto 25px auto">
+<a target="_blank"
+href="https://en.wikipedia.org/wiki/Instant-runoff_voting">
+click for help
+</a></h5>
+</div>
 
 <div style="text-align:center; margin-top:30px">
 
 <form style="margin-top:30px" id="input">
-<input style="width:300px"
+<input style="width: 70%"
 type="text" name="input" placeholder="Barack Obama, Big Bird, Chuck Norris">
+<input style="width: 35px"
+type="text" name="count" placeholder="#">
 </form>
 
-<button style="margin: 30px 5px 20px 5px" type="button" onclick="addBallot();">
+<div style="margin: 20px 0">
+<button style="margin: 5px" type="button" onclick="clickAddBallot();">
 Add ballot
 </button>
-<button style="margin: 30px 5px 20px 5px" type="button" onclick="getWinner();">
+<button style="margin: 5px" type="button" onclick="clickGetWinner();">
 Get winner
 </button>
-<button style="margin: 30px 5px 20px 5px" type="button" onclick="console.log('clear'); clc();">
+<button style="margin: 5px" type="button" onclick="clickClear();">
 Clear ballots
 </button>
+</div>
 
-<p id="winner">
-</p>
+<div style="margin: 0 auto 0 auto">
+
+<div style="background:white; border: 2px solid lightgray;
+display: none; padding: 10px 0; margin: 5px">
+<div id="winner" style="margin: 0px 10px 0px 10px">
+</div>
+</div>
+
+</div>
+<div style="margin: 0 auto 0 auto">
+
+<div style="background:white; border: 2px solid lightgray;
+display: none; padding: 10px 0; margin: 5px">
+<div id="candidates"
+style="
+    margin: 0px 10px 0px 10px;
+    text-align: left;
+    padding: 0px 10px 0px 10px">
+</div>
+</div>
 
 </div>
 
+</div>
 </div>
 </div>
 
@@ -66,44 +90,7 @@ width="1000px" height="800px"></canvas>
 
 <script src="vote.js"></script>
 <script src="ball.js"></script>
-
-<script>
-function addBallot()
-{
-    var x = document.getElementById('input');
-    var text = x.elements[0].value;
-
-    if (text != "")
-    {
-        var ballot = Ballot.fromString(text);
-        ballot_box.push(ballot);
-        var ball = ballot2ball(ballot);
-        ball.x = Math.random()*document.body.clientWidth;
-        ball.y = Math.random()*document.body.scrollHeight
-        ball.r = ball.r * 30;
-        ball.g = 0;
-        ball.vx = Math.random()*1000-500;
-        ball.vy = Math.random()*1000-500;
-        ball.damp = 1;
-        balls.push(ball);
-    }
-}
-
-function getWinner()
-{
-    document.getElementById('winner').innerHTML = 
-        "<h3>The winner is " + getRunoffWinner(ballot_box) + "!</h3>";
-}
-
-function clc()
-{
-    console.log("clear");
-    ballot_box = [];
-    balls = [];
-    document.getElementById('winner').innerHTML = "";
-}
-
-</script>
+<script src="marx.js"></script>
 
 </body>
 
