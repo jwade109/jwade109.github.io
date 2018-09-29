@@ -1,97 +1,124 @@
 <!DOCTYPE html>
 <html>
-<head>
 
-<link rel="stylesheet" href="styles.css">
-<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+  <head>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+    <title>Marxism</title>
+  </head>
 
-<title>Marxism</title>
+  <body>
 
-</head>
+    <div class="banner-wrapper">
+      <div class="banner">
+        <div class="center">
+          <div class="left">
+            <p><a href="resume">< things I've done</a></p>
+          </div>
+          <div class="right">
+            <p><a href="/">return to the internet ></a></p>
+          </div>
+        </div>
+      </div>
+    </div>
 
-<body>
+    <div style="
+      text-align: center;
+      margin-top: 40px;
+      padding: 20px 20px 20px 20px;
+      font-family: Consolas, monospace">
+      <div style="
+        background:white;
+        display: inline-block;
+        border: 2px solid lightgray;
+        padding: 0 30px">
+        <h1 style="margin-bottom:0px">electoral ball pit</h1>
+        <p style="margin: 5px auto 25px auto">
+          <a
+            target="_blank"
+            href="https://en.wikipedia.org/wiki/Instant-runoff_voting">
+          <i>click for help</i>
+          </a>
+        </p>
+      </div>
 
-<div class="center">
-<div style="overflow: hidden">
-<div style="margin-right: auto; float: left">
-<p><a href="resume">< things I've done</a></p>
-</div>
-<div style="margin-left: auto; float: right">
-<p><a href="/">return to the internet ></a></p>
-</div>
-</div>
+      <div
+        style="
+          text-align:center;
+          margin-top:30px">
+        <form style="margin-top: 30px" id="input">
+          <input style="width: 70%"
+          type="text" name="input" placeholder="Barack Obama, Big Bird, Chuck Norris">
+          <input style="width: 35px"
+          type="text" name="count" placeholder="#">
+        </form>
 
-<div style="text-align:center;
-margin-top: 40px;
-padding: 20px 20px 20px 20px;
-font-family: Consolas, monospace">
+        <div
+          style="margin: 20px 0">
+          <button
+            style="margin: 5px"
+            type="button"
+            onclick="clickAddBallot();">
+            Add ballot
+          </button>
+          <button
+            style="margin: 5px"
+            type="button"
+            onclick="clickGetWinner();">
+            Get winner
+          </button>
+          <button
+            style="margin: 5px"
+            type="button"
+            onclick="clickClear();">
+            Clear ballots
+          </button>
+        </div>
 
-<div style="background:white; display: inline-block;
-border: 2px solid lightgray; padding: 0 30px">
-<h1 style="margin-bottom:0px">electoral ball pit</h1>
-<h5 style="margin: 5px auto 25px auto">
-<a target="_blank"
-href="https://en.wikipedia.org/wiki/Instant-runoff_voting">
-click for help
-</a></h5>
-</div>
+        <div style="margin: 0 auto 0 auto">
+          <div style="
+            background:white;
+            border: 2px solid lightgray;
+            display: none;
+            padding: 10px 0;
+            margin: 5px">
+            <div
+              id="winner"
+              style="margin: 0px 10px 0px 10px">
+            </div>
+          </div>
+        </div>
+        <div style="margin: 0 auto 0 auto">
+          <div style="
+            background:white;
+            border: 2px solid lightgray;
+            display: none;
+            padding: 10px 0;
+            margin: 5px">
+            <div id="candidates" style="
+              margin: 0px 10px 0px 10px;
+              text-align: left;
+              padding: 0px 10px 0px 10px">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-<div style="text-align:center; margin-top:30px">
+    <canvas
+      id="canvas"
+      style="
+        position: absolute;
+        border: 0;
+        top: 0;
+        z-index: -1"
+      width="1000px"
+      height="800px">
+    </canvas>
 
-<form style="margin-top:30px" id="input">
-<input style="width: 70%"
-type="text" name="input" placeholder="Barack Obama, Big Bird, Chuck Norris">
-<input style="width: 35px"
-type="text" name="count" placeholder="#">
-</form>
+    <script src="vote.js"></script>
+    <script src="ball.js"></script>
+    <script src="marx.js"></script>
 
-<div style="margin: 20px 0">
-<button style="margin: 5px" type="button" onclick="clickAddBallot();">
-Add ballot
-</button>
-<button style="margin: 5px" type="button" onclick="clickGetWinner();">
-Get winner
-</button>
-<button style="margin: 5px" type="button" onclick="clickClear();">
-Clear ballots
-</button>
-</div>
-
-<div style="margin: 0 auto 0 auto">
-
-<div style="background:white; border: 2px solid lightgray;
-display: none; padding: 10px 0; margin: 5px">
-<div id="winner" style="margin: 0px 10px 0px 10px">
-</div>
-</div>
-
-</div>
-<div style="margin: 0 auto 0 auto">
-
-<div style="background:white; border: 2px solid lightgray;
-display: none; padding: 10px 0; margin: 5px">
-<div id="candidates"
-style="
-    margin: 0px 10px 0px 10px;
-    text-align: left;
-    padding: 0px 10px 0px 10px">
-</div>
-</div>
-
-</div>
-
-</div>
-</div>
-</div>
-
-<canvas id="canvas" style="position:absolute;
-border:0px solid lightgray; top:0px; z-index:-1"
-width="1000px" height="800px"></canvas>
-
-<script src="vote.js"></script>
-<script src="ball.js"></script>
-<script src="marx.js"></script>
-
-</body>
-
+  </body>
 </html>
