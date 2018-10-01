@@ -1,0 +1,136 @@
+uul;STATEMENT;FLG
+kli;QUERY;FLG
+ram;COMMAND;FLG
+wis;WISH;FLG
+noc;NEGATE;FLG
+ed;end-of-clause;EOC
+fi;if;FLG
+te;then;FLG
+amp;and;CAT
+ot;or;CAT
+nadar;to swim;VRB
+sli;to run;VRB
+be;to be;VRB
+dar;to do;VRB
+kod;to go;VRB
+kon;to know;VRB
+pinta;to paint;VRB
+jinal;to jump;VRB
+gina;to give;VRB
+lora;to look;VRB
+smac;to want;VRB
+bend;to be able;VRB
+sinqam;to sing;VRB
+lauuv;to love;VRB
+alak;to ask;VRB
+pauuv;love;NON
+huu;who;INT
+wab;what;INT
+hwin;when;INT
+rendo;where;INT
+hir;why;INT
+hans;how;INT
+sinda;hot;MOD
+subli;cold;MOD
+finpo;fast;MOD
+slif;slow;MOD
+afisan;office;NON
+vo;the;ART
+vi;a;ART
+al;all/every;ART
+il;DECL NON;ART
+bindat;blanket;NON
+binda;to cover over, to blanket;VRB
+ver;very (as in �very cold�);SMD
+vera;very (as in �very words�);MOD
+mool;most;SMD
+mar;more;SMD
+lar;less;SMD
+bes;best;MOD
+wos;worst;MOD
+pel;good;MOD
+poel;well, healthy;MOD
+vinas;vitality;NON
+vina;vital;MOD
+mal;bad;MOD
+moral;poor, as in money;MOD
+tiim;time;NON
+dokip;document;NON
+dokiple;to write or record;VRB
+namf;name;NON
+enamef;to name;VRB
+marno;morning;NON
+bauut;beautiful;MOD
+fal;false, wrong;MOD
+sive;sick;MOD
+silve;something that is sick;NON
+mano;man;NON
+wona;woman;NON
+puul;pool;NON
+nara;now;MOD
+klio;clean;MOD
+kliad;to clean;VRB
+graal;to nap;VRB
+feol;fat, obese;MOD
+feen;fat, as in food or medicine;NON
+mir;me;NON
+vod;nothing;NON
+awar;away;MOD
+loniv;lamp;NON
+mio;my;MOD
+miri;mine;NON
+olo;our;MOD
+kerit;to care for/about, to value;VRB
+keri;a care;NON
+onlee;only;MOD
+towol;towards;MOD
+slina;to sprint;VRB
+smot;smelly;MOD
+feoline;skunk;NON
+posmodin;postmodernism;NON
+egenale;in general;MOD
+forl;from;MOD
+decid;to decide;VRB
+agat;against;MOD
+darka;to thank;VRB
+darb;thank;NON
+bokstol;bookstore;NON
+stol;store, as in commerce;NON
+bok;book, like a novel;NON
+lati;later;MOD
+tel;to;MOD
+del;from;MOD
+rin;in;MOD
+transe;chance, opportunity;NON
+envirali;environmental;MOD
+envir;environ, environment;NON
+agenso;agency (as in organization);NON
+agot;power, agency;NON
+ragol;powerful;MOD
+laguur;weak, impotent;MOD
+protel;protective;MOD
+brodsi;brown;MOD
+sapfil;lazy;MOD
+dogo;dog;NON
+fiksar;fox;NON
+ovul;over;MOD
+ulav;under;MOD
+alfiteb;alphabet;NON
+wip;with;MOD
+re;i;NON
+ro;you;NON
+si;he/she;NON
+et;it;NON
+ser;they;NON
+rav;we;NON
+le;past perfect;TNS
+lo;present perfect;TNS
+li;future perfect;TNS
+ke;past imperfect;TNS
+ko;present imperfect;TNS
+ki;future imperfect;TNS
+atonobil;automobile;NON
+drov;to drive;VRB
+riik;ruined;MOD
+riof;to ruin;VRB
+triaf;to work;VRB
