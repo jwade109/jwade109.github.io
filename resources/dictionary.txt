@@ -3,7 +3,7 @@ kli;QUERY;FLG
 ram;COMMAND;FLG
 wis;WISH;FLG
 noc;NEGATE;FLG
-ed;end-of-clause;EOC
+ed;END CLAUSE;EOC
 fi;if;FLG
 te;then;FLG
 amp;and;CAT
@@ -41,8 +41,8 @@ al;all/every;ART
 il;DECL NON;ART
 bindat;blanket;NON
 binda;to cover over, to blanket;VRB
-ver;very (as in �very cold�);SMD
-vera;very (as in �very words�);MOD
+ver;very (as in "very cold");SMD
+vera;very (as in "very words");MOD
 mool;most;SMD
 mar;more;SMD
 lar;less;SMD
