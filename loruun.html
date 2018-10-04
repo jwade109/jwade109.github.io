@@ -29,7 +29,7 @@
         name="input"
         placeholder="uul be si lo sinda ed">
       </input>
-      <div style="height: 100px">
+      <div style="height: 200px">
         <p id="output" style="font-size: 32px"></p>
       </div>
 
@@ -38,8 +38,8 @@
       userinput.addEventListener("keyup", function(event)
       {
           var tr = translate(userinput.value);
-          tr = tr.replace("[", "<i>");
-          tr = tr.replace("]", "</i>");
+          tr = tr.split("[").join("<i>");
+          tr = tr.split("]").join("</i>");
           event.preventDefault();
           if (tr == "[] ")
               document.getElementById("output").innerHTML = "";

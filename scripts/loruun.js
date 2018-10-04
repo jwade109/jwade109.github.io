@@ -2,10 +2,11 @@
 
 class Entry
 {
-    constructor(loruun, english, role, id)
+    constructor(loruun, english, definition, role, id)
     {
         this.loruun = loruun;
         this.english = english;
+        this.definition = definition;
         this.role = role;
         this.id = id;
     }
@@ -80,3 +81,4 @@ function canonical(str)
 
 var dict = loadDictionary(
   'https://jwade109.github.io/resources/dictionary.txt');
+  // 'file:///resources/dictionary.txt');
