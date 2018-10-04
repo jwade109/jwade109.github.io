@@ -1,4 +1,4 @@
-*:focus
+input:focus
 {
     outline: none;
 }
@@ -143,12 +143,30 @@ img.inline
 
 .left
 {
-    margin-right: auto;
+    text-align: left;
+    margin: 0;
     float: left;
+    width: 35%;
+}
+
+.version-container
+{
+    text-align: center;
+    margin: 0;
+    float: left;
+    width: 30%;
+}
+
+#version
+{
+    /* font-size: 16px; */
+    color: lightgray;
 }
 
 .right
 {
-    margin-left: auto;
-    float: right
+    text-align: right;
+    margin: 0;
+    float: right;
+    width: 35%;
 }
