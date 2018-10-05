@@ -40,6 +40,26 @@ function query(key)
     }
 }
 
+// takes an english or loruun word/phrase and returns
+// possible entry matches from the dictionary
+function find(key, lang)
+{
+    var entries = [];
+    if (key == "" || key == " ") return entries;
+    for (var e in dict)
+    {
+        var en = dict[e];
+        if (en.loruun.includes(key) && lang == "l")
+            entries.push(en);
+        else if ((en.english.includes(key) ||
+                  en.definition.includes(key)) &&
+                 lang == "e")
+            entries.push(en);
+    }
+    return entries;
+}
+
+// translates loruun symbol to best english shorthand
 function translate(key)
 {
     var english = "";
@@ -53,6 +73,39 @@ function translate(key)
             english += "[" + tokens[i] + "] ";
     }
     return english;
+}
+
+// converts string to grammatical structures
+// of constituent loruun symbols
+function structure(key)
+{
+    var struct = "";
+    var tokens = key.split(" ");
+    for (var i in tokens)
+    {
+        var entry = query(tokens[i]);
+        if (typeof entry !== 'undefined')
+            struct += entry.role + " ";
+        else if (tokens[i] != "")
+            struct += "[" + tokens[i] + "] ";
+    }
+    return struct;
+}
+
+// converts string to hex id of constituent loruun symbols
+function numerical(key)
+{
+    var numbers = "";
+    var tokens = key.split(" ");
+    for (var i in tokens)
+    {
+        var entry = query(tokens[i]);
+        if (typeof entry !== 'undefined')
+            numbers += entry.id.toString(16) + " ";
+        else if (tokens[i] != "")
+            numbers += "[" + tokens[i] + "] ";
+    }
+    return numbers;
 }
 
 // converts string to canonical loruun notation

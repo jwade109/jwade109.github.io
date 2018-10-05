@@ -5,7 +5,7 @@ wis;:wish:;WISH;FLG
 noc;:not:;NEGATE;FLG
 ed;:end:;END CLAUSE;EOC
 fi;if;if;FLG
-te;if;then;FLG
+te;then;then;FLG
 amp;and;and;CAT
 ot;or;or;CAT
 nadar;swim;to swim;VRB
