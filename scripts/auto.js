@@ -6,21 +6,24 @@ class Car
         this.y = y;
         this.theta = theta;
 
-        this.w = Math.random()*20 + 15;
-        this.l = Math.random()*20 + 30;
-        this.v = Math.random()*400;
+        this.w = Math.random()*8 + 8;
+        this.l = Math.random()*16 + 13;
+        this.v = 200;
         this.omega = 0;
         this.turn = 0;
         this.a = 0;
 
-        this.seekx = NaN;
-        this.seeky = NaN;
+        this.tvx = 0;
+        this.tvy = 0;
+        this.vx = 0;
+        this.vy = 0;
     }
 
     draw(canvas)
     {
         var ctx = canvas.getContext("2d");
         ctx.strokeStyle = "black";
+        ctx.globalAlpha = 1;
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(-this.theta)
@@ -35,36 +38,77 @@ class Car
         ctx.lineTo(0, this.w/2);
         ctx.stroke();
         ctx.restore();
-        ctx.moveTo(this.x, this.y);
-        ctx.lineTo(this.seekx, this.seeky);
-        ctx.strokeStyle = "lightgray";
-        ctx.stroke();
+        // ctx.beginPath();
+        // ctx.globalAlpha = 0.1;
+        // ctx.strokeStyle = "red";
+        // ctx.moveTo(this.x, this.y);
+        // ctx.lineTo(this.x + this.tvx, this.y + this.tvy);
+        // ctx.stroke();
+        // ctx.strokeStyle = "blue";
+        // ctx.beginPath();
+        // ctx.moveTo(this.x, this.y);
+        // ctx.lineTo(this.x + this.vx, this.y + this.vy);
+        // ctx.stroke();
+    }
+
+    applyForce(vx, vy)
+    {
+        this.tvx += vx;
+        this.tvy += vy;
+    }
+
+    avoid(cars)
+    {
+        var sx = 0;
+        var sy = 0;
+        var x = this.x;
+        var y = this.y;
+        var count = 0;
+        cars.forEach(function(other)
+        {
+            var dx = x - other.x;
+            var dy = y - other.y;
+            var ds = Math.sqrt(dx*dx + dy*dy);
+            if (ds < 700 && ds > 0)
+            {
+                sx += 40*dx/(ds*ds);
+                sy += 40*dy/(ds*ds);
+                ++count;
+            }
+        });
+        this.applyForce(30*sx, 30*sy);
     }
 
     steer(vx, vy)
     {
-        // if (isNaN(this.seekx) || isNaN(this.seeky)) return;
-        // var dx = this.seekx - this.x;
-        // var dy = this.seeky - this.y;
         var da = Math.atan2(vx, vy) - this.theta;
+        if (vx == 0 && vy == 0) da = 0;
         while (da < -Math.PI)
             da += 2*Math.PI;
         while (da > Math.PI)
             da -= 2*Math.PI;
 
-        this.a = Math.sqrt(vx*vx + vy*vy) - this.v;
+        this.a = 20*(Math.sqrt(vx*vx + vy*vy) - this.v);
+        // this.a = Math.max(-this.maxaccel, Math.min(this.a, this.maxaccel));
         this.turn = Math.max(-Math.PI/5, Math.min(da, Math.PI/5));
     }
 
     step(dt)
     {
+        this.steer(this.tvx, this.tvy);
+        this.tvx = 0;
+        this.tvy = 0;
+
         var s = this.v * dt;
         this.x += s*Math.sin(this.theta);
         this.y += s*Math.cos(this.theta);
         this.v += this.a * dt;
-        this.v = Math.max(-20, Math.min(this.v, 200));
+        this.v = Math.max(-20, Math.min(this.v, 300));
         this.omega = Math.sin(this.turn) * Math.abs(this.v) / 20;
         this.theta += this.omega * dt;
+
+        this.vx = this.v*Math.sin(this.theta);
+        this.vy = this.v*Math.cos(this.theta);
     }
 }
 
@@ -75,7 +119,7 @@ var width = document.body.clientWidth;
 var fps = 50;
 var canvas = document.getElementById("canvas");
 var mx = width/2, my = height/2;
-var inv = 1;
+var follow = false;
 
 function draw()
 {
@@ -91,21 +135,25 @@ function draw()
 
         cars.forEach(function(c)
         {
-            c.step(1/fps);
             c.draw(canvas);
+            c.step(1/fps);
+
             var dx = c.x - mx;
             var dy = c.y - my;
-            var dr = Math.sqrt(dx*dx + dy*dy) - c.r;
-
-            var angle = Math.atan2(dy, dx);
-            var desired_x = c.r*Math.cos(angle) + mx;
-            var desired_y = c.r*Math.sin(angle) + my;
-
-            c.steer(inv*dy + (desired_x - c.x), -inv*dx + (desired_y - c.y));
-            // ctx.beginPath();
-            // ctx.arc(width/2, height/2, r, 0, 2*Math.PI);
-            // ctx.stroke();
+            var des_x = c.r*Math.cos(Math.atan2(dy, dx)) + mx;
+            var des_y = c.r*Math.sin(Math.atan2(dy, dx)) + my;
+            c.applyForce(dy, -dx);
+            c.applyForce(3*(des_x - c.x), 3*(des_y - c.y));
+            c.avoid(cars);
         });
+
+        if (Math.random()*100 < 30)
+        {
+            var ind = Math.floor(Math.random()*cars.length);
+            cars[ind].r += Math.random()*200 - 100;
+            cars[ind].r = Math.max(100, Math.min(cars[ind].r, width/2));
+        }
+
         ctx.fillStyle = "red";
         ctx.fillRect(mx - 2, my - 2, 4, 4);
 
@@ -114,22 +162,27 @@ function draw()
 
 canvas.onmousemove = function(e)
 {
-    var rect = canvas.getBoundingClientRect();
-    mx = e.clientX - rect.left;
-    my = e.clientY - rect.top;
+    if (follow)
+    {
+        var rect = canvas.getBoundingClientRect();
+        mx = e.clientX - rect.left;
+        my = e.clientY - rect.top;
+    }
 }
 
 canvas.addEventListener("click", function(e)
 {
-    inv *= -1;
+    follow = !follow;
 }, false);
 
 var num = Math.random()*30;
-for (var i = 0; i < 300; ++i)
+for (var i = 0; i < 700; ++i)
 {
-    cars.push(new Car(Math.random()*width, Math.random()*height, Math.random()*2*Math.PI));
+    cars.push(new Car(Math.random()*width,
+                      Math.random()*height,
+                      Math.random()*2*Math.PI));
     var dx = cars[i].x - width/2;
     var dy = cars[i].y - height/2;
-    cars[i].r = Math.sqrt(dx*dx + dy*dy);
+    cars[i].r = Math.random()*width/2 + 100;
 }
 draw();
