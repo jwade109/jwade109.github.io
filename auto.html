@@ -24,28 +24,47 @@
       </div>
     </div>
 
-        <script>
-
-        function change(str)
-        {
-            var vel = document.getElementById(str);
-            console.log(str + ": " + vel.checked);
-        }
-
-        </script>
-
-    <div style="position: absolute; z-index: 10; left: 20px; font-size: 20px">
-      <input type="checkbox" id="showVelocity" onchange="change('showVelocity')">Velocity<br>
-      <input type="checkbox" id="showDesired" value="showDesired" onchange="change('showDesired')">Desired<br>
-      <input type="checkbox" id="showPath" value="showPath"  onchange="change('showPath')">Future Path<br>
+    <div style="position: absolute; z-index: 10; left: 20px;
+                font-family: Consolas, monospace;">
+      <input type="checkbox" id="showVelocity"
+        onchange="toggleVelocity()">Velocity<br>
+      <input type="checkbox" id="showDesired"
+        onchange="toggleDesired()">Desired Velocity<br>
+      <input type="checkbox" id="showAccel"
+        onchange="toggleCommand()">Command Vector<br>
+      <input type="checkbox" id="showPath"
+        onchange="togglePath()">Future Path<br>
+      <input type="checkbox" id="showRadius"
+        onchange="toggleRadius()">Radius of Curvature<br>
     </div>
 
     <canvas id="canvas" style="position: absolute; border: 0; top: 0">
     </canvas>
 
-
-    <script src="scripts/auto.js"></script>
     <script src="scripts/global.js"></script>
+    <script src="scripts/auto.js"></script>
+    <script>
+    function toggleVelocity()
+    {
+        showVelocity = !showVelocity;
+    }
+    function toggleDesired()
+    {
+        showDesired = !showDesired;
+    }
+    function togglePath()
+    {
+        showPath = !showPath;
+    }
+    function toggleRadius()
+    {
+        showRadius = !showRadius;
+    }
+    function toggleCommand()
+    {
+        showCommand = !showCommand;
+    }
+    </script>
 
   </body>
 </html>

@@ -1,4 +1,8 @@
-
+showVelocity = false;
+showDesired = false;
+showPath = false;
+showRadius = false;
+showCommand = false;
 
 class Car
 {
@@ -8,8 +12,8 @@ class Car
         this.y = y;
         this.theta = theta;
 
-        this.w = Math.random()*8 + 8;
-        this.l = Math.random()*16 + 13;
+        this.w = Math.random()*8 + 13;
+        this.l = Math.random()*16 + 17;
         this.v = Math.random()*300;
         this.omega = 0;
         this.turn = 0;
@@ -26,51 +30,90 @@ class Car
     draw(canvas)
     {
         var ctx = canvas.getContext("2d");
-        ctx.strokeStyle = "black";
-        ctx.globalAlpha = 1;
-        ctx.save();
+
+        if (showDesired)
+        {
+            ctx.globalAlpha = 0.3;
+            ctx.strokeStyle = "red";
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(this.x + this.tvx, this.y + this.tvy);
+            ctx.stroke();
+        }
+        if (showCommand)
+        {
+            ctx.globalAlpha = 0.3;
+            ctx.strokeStyle = "green";
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(this.x + this.tvx - this.vx,
+                       this.y + this.tvy - this.vy);
+            ctx.stroke();
+        }
+
+        ctx.save(); // save global reference frame
         ctx.translate(this.x, this.y);
         ctx.rotate(-this.theta)
+        // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE FRAME
+
+        ctx.strokeStyle = "black";
+        ctx.globalAlpha = 1;
         ctx.strokeRect(-this.w/2, -this.l/2, this.w, this.l)
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.lineTo(0, this.l/2);
         ctx.stroke();
-        ctx.globalAlpha = 0.2;
 
-        ctx.beginPath();
+        if (showPath)
+        {
+            ctx.strokeStyle = "black";
+            ctx.globalAlpha = 0.3;
+            ctx.beginPath();
+            var ds = this.v;
+            var rads = ds / Math.abs(this.rc);
 
-        var rads = this.v / Math.abs(this.rc);
-
-        if (this.turn > 0)
-            ctx.arc(this.rc, 0, this.rc, Math.PI - rads, Math.PI);
-        if (this.turn < 0)
-            ctx.arc(this.rc, 0, -this.rc, 0, rads);
-        ctx.stroke();
-
-        // ctx.beginPath();
-        // ctx.moveTo(0, 0);
-        // ctx.lineTo(this.rc, 0);
-        // ctx.stroke();
-
-        ctx.beginPath();
+            if (Math.abs(this.turn) < 0.001)
+            {
+                ctx.moveTo(0, 0);
+                ctx.lineTo(0, ds);
+            }
+            else if (this.turn > 0)
+                ctx.arc(this.rc, 0, this.rc, Math.PI - rads, Math.PI);
+            else if (this.turn < 0)
+                ctx.arc(this.rc, 0, -this.rc, 0, rads);
+            ctx.stroke();
+        }
+        if (showRadius)
+        {
+            ctx.globalAlpha = 0.1;
+            ctx.strokeStyle = "black";
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(this.rc, 0);
+            ctx.stroke();
+        }
+        if (showVelocity)
+        {
+            ctx.globalAlpha = 0.3;
+            ctx.strokeStyle = "blue";
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, this.v);
+            ctx.stroke();
+        }
         ctx.rotate(-this.turn);
+        // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE
+        // FRAME, ROTATED BY THE TURNING ANGLE
+
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = "black";
+        ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.lineTo(0, this.w/2);
         ctx.stroke();
-
         ctx.restore();
-        // ctx.globalAlpha = 0.1;
-        // ctx.strokeStyle = "red";
-        // ctx.beginPath();
-        // ctx.moveTo(this.x, this.y);
-        // ctx.lineTo(this.x + this.tvx, this.y + this.tvy);
-        // ctx.stroke();
-        // ctx.strokeStyle = "blue";
-        // ctx.beginPath();
-        // ctx.moveTo(this.x, this.y);
-        // ctx.lineTo(this.x + this.vx, this.y + this.vy);
-        // ctx.stroke();
+
     }
 
     applyForce(vx, vy)
@@ -204,10 +247,13 @@ canvas.onmousemove = function(e)
 canvas.addEventListener("click", function(e)
 {
     follow = !follow;
+    var rect = canvas.getBoundingClientRect();
+    mx = e.clientX - rect.left;
+    my = e.clientY - rect.top;
 }, false);
 
 var num = Math.random()*30;
-for (var i = 0; i < 30; ++i)
+for (var i = 0; i < 50; ++i)
 {
     cars.push(new Car(Math.random()*width,
                       Math.random()*height,

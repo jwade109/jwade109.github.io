@@ -38,9 +38,12 @@ input
 {
     font-size: 18px;
     padding: 10px;
+    margin-right: 15px;
     border: 2px solid lightgray;
     font-family: monospace;
 }
+
+input
 
 input.loruun
 {
