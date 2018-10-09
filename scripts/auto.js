@@ -1,3 +1,5 @@
+
+
 class Car
 {
     constructor(x, y, theta)
@@ -8,7 +10,7 @@ class Car
 
         this.w = Math.random()*8 + 8;
         this.l = Math.random()*16 + 13;
-        this.v = 200;
+        this.v = Math.random()*300;
         this.omega = 0;
         this.turn = 0;
         this.a = 0;
@@ -17,6 +19,8 @@ class Car
         this.tvy = 0;
         this.vx = 0;
         this.vy = 0;
+
+        this.rc = 0;
     }
 
     draw(canvas)
@@ -32,15 +36,33 @@ class Car
         ctx.moveTo(0, 0);
         ctx.lineTo(0, this.l/2);
         ctx.stroke();
+        ctx.globalAlpha = 0.2;
+
+        ctx.beginPath();
+
+        var rads = this.v / Math.abs(this.rc);
+
+        if (this.turn > 0)
+            ctx.arc(this.rc, 0, this.rc, Math.PI - rads, Math.PI);
+        if (this.turn < 0)
+            ctx.arc(this.rc, 0, -this.rc, 0, rads);
+        ctx.stroke();
+
+        // ctx.beginPath();
+        // ctx.moveTo(0, 0);
+        // ctx.lineTo(this.rc, 0);
+        // ctx.stroke();
+
         ctx.beginPath();
         ctx.rotate(-this.turn);
         ctx.moveTo(0, 0);
         ctx.lineTo(0, this.w/2);
         ctx.stroke();
+
         ctx.restore();
-        // ctx.beginPath();
         // ctx.globalAlpha = 0.1;
         // ctx.strokeStyle = "red";
+        // ctx.beginPath();
         // ctx.moveTo(this.x, this.y);
         // ctx.lineTo(this.x + this.tvx, this.y + this.tvy);
         // ctx.stroke();
@@ -104,11 +126,13 @@ class Car
         this.y += s*Math.cos(this.theta);
         this.v += this.a * dt;
         this.v = Math.max(-20, Math.min(this.v, 300));
-        this.omega = Math.sin(this.turn) * Math.abs(this.v) / 20;
+        this.omega = Math.sin(this.turn) * Math.abs(this.v) / this.l;
         this.theta += this.omega * dt;
 
         this.vx = this.v*Math.sin(this.theta);
         this.vy = this.v*Math.cos(this.theta);
+
+        this.rc = this.l/Math.tan(this.turn);
     }
 }
 
@@ -120,6 +144,7 @@ var fps = 50;
 var canvas = document.getElementById("canvas");
 var mx = width/2, my = height/2;
 var follow = false;
+var r = 200;
 
 function draw()
 {
@@ -140,20 +165,26 @@ function draw()
 
             var dx = c.x - mx;
             var dy = c.y - my;
-            var des_x = c.r*Math.cos(Math.atan2(dy, dx)) + mx;
-            var des_y = c.r*Math.sin(Math.atan2(dy, dx)) + my;
-            c.applyForce(dy, -dx);
+            var des_x = c.r*Math.cos(Math.atan2(dy, dx))*30 + mx;
+            var des_y = c.r*Math.sin(Math.atan2(dy, dx))*30 + my;
+            c.applyForce(-dy, dx);
             c.applyForce(3*(des_x - c.x), 3*(des_y - c.y));
+            // c.applyForce(mx - c.x, my - c.y);
             c.avoid(cars);
+            // ctx.globalAlpha = 0.1;
+            // ctx.beginPath();
+            // ctx.arc(mx, my, c.r, 0, 2*Math.PI);
+            // ctx.stroke();
         });
 
-        if (Math.random()*100 < 30)
-        {
-            var ind = Math.floor(Math.random()*cars.length);
-            cars[ind].r += Math.random()*200 - 100;
-            cars[ind].r = Math.max(100, Math.min(cars[ind].r, width/2));
-        }
+        // if (Math.random()*100 < 30)
+        // {
+        //     var ind = Math.floor(Math.random()*cars.length);
+        //     cars[ind].r += Math.sign(Math.random()*2-1);
+        //     cars[ind].r = Math.max(2, Math.min(cars[ind].r, 20));
+        // }
 
+        ctx.globalAlpha = 1;
         ctx.fillStyle = "red";
         ctx.fillRect(mx - 2, my - 2, 4, 4);
 
@@ -176,13 +207,13 @@ canvas.addEventListener("click", function(e)
 }, false);
 
 var num = Math.random()*30;
-for (var i = 0; i < 700; ++i)
+for (var i = 0; i < 30; ++i)
 {
     cars.push(new Car(Math.random()*width,
                       Math.random()*height,
                       Math.random()*2*Math.PI));
     var dx = cars[i].x - width/2;
     var dy = cars[i].y - height/2;
-    cars[i].r = Math.random()*width/2 + 100;
+    cars[i].r = Math.floor(Math.random()*18) + 2;
 }
 draw();
