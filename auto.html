@@ -33,9 +33,19 @@
       <input type="checkbox" id="showAccel"
         onchange="toggleCommand()">Command Vector<br>
       <input type="checkbox" id="showPath"
-        onchange="togglePath()">Future Path<br>
+        onchange="togglePath()" checked>Future Path<br>
       <input type="checkbox" id="showRadius"
         onchange="toggleRadius()">Radius of Curvature<br>
+      <input type="radio" id="behavior" name="behavior"
+        onchange="toggleBehavior()" checked>Orbit Cursor<br>
+      <input type="radio" id="behavior" name="behavior"
+        onchange="toggleBehavior()">Seek Cursor<br>
+      <input type="radio" id="behavior" name="behavior"
+        onchange="toggleBehavior()">Follow the Leader<br>
+      <input type="checkbox" id="avoidCollisions"
+        onchange="toggleAvoid()" checked>Avoid Collisions<br>
+      <input type="checkbox" id="allStop"
+        onchange="toggleStop()">All Stop<br>
     </div>
 
     <canvas id="canvas" style="position: absolute; border: 0; top: 0">
@@ -63,6 +73,21 @@
     function toggleCommand()
     {
         showCommand = !showCommand;
+    }
+    function toggleBehavior()
+    {
+        var radios = document.getElementsByName("behavior");
+        orbitCursor = radios[0].checked;
+        seekCursor = radios[1].checked;
+        followLeader = radios[2].checked
+    }
+    function toggleAvoid()
+    {
+        avoidCars = !avoidCars;
+    }
+    function toggleStop()
+    {
+        allStop = !allStop;
     }
     </script>
 
