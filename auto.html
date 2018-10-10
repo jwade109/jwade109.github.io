@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" type="image/x-icon" href="resources/favicon.ico">
+    <title>Autos</title>
+  </head>
+
+  <body>
+    <div class="banner-wrapper">
+      <div class="banner">
+        <div class="center">
+          <div class="left">
+            <p><a href="loruun">< better language</a></p>
+          </div>
+          <div class="version-container">
+            <p id="version"></p>
+          </div>
+          <div class="right">
+            <p><a href="marx">better elections ></a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="position: absolute; z-index: 10; left: 20px;
+                font-family: Consolas, monospace;">
+      <input type="checkbox" id="showVelocity"
+        onchange="toggleVelocity()">Velocity<br>
+      <input type="checkbox" id="showDesired"
+        onchange="toggleDesired()">Desired Velocity<br>
+      <input type="checkbox" id="showAccel"
+        onchange="toggleCommand()">Command Vector<br>
+      <input type="checkbox" id="showPath"
+        onchange="togglePath()" checked>Future Path<br>
+      <input type="checkbox" id="showRadius"
+        onchange="toggleRadius()">Radius of Curvature<br>
+      <input type="radio" id="behavior" name="behavior"
+        onchange="toggleBehavior()" checked>Orbit Cursor<br>
+      <input type="radio" id="behavior" name="behavior"
+        onchange="toggleBehavior()">Seek Cursor<br>
+      <input type="radio" id="behavior" name="behavior"
+        onchange="toggleBehavior()">Follow the Leader<br>
+      <input type="checkbox" id="avoidCollisions"
+        onchange="toggleAvoid()" checked>Avoid Collisions<br>
+      <input type="checkbox" id="allStop"
+        onchange="toggleStop()">All Stop<br>
+    </div>
+
+    <canvas id="canvas" style="position: absolute; border: 0; top: 0">
+    </canvas>
+
+    <script src="scripts/global.js"></script>
+    <script src="scripts/auto.js"></script>
+    <script>
+    function toggleVelocity()
+    {
+        showVelocity = !showVelocity;
+    }
+    function toggleDesired()
+    {
+        showDesired = !showDesired;
+    }
+    function togglePath()
+    {
+        showPath = !showPath;
+    }
+    function toggleRadius()
+    {
+        showRadius = !showRadius;
+    }
+    function toggleCommand()
+    {
+        showCommand = !showCommand;
+    }
+    function toggleBehavior()
+    {
+        var radios = document.getElementsByName("behavior");
+        orbitCursor = radios[0].checked;
+        seekCursor = radios[1].checked;
+        followLeader = radios[2].checked
+    }
+    function toggleAvoid()
+    {
+        avoidCars = !avoidCars;
+    }
+    function toggleStop()
+    {
+        allStop = !allStop;
+    }
+    </script>
+
+  </body>
+</html>
