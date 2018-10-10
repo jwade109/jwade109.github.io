@@ -3,6 +3,7 @@ showDesired = false;
 showPath = true;
 showRadius = false;
 showCommand = false;
+showBounding = true;
 orbitCursor = true;
 seekCursor = false;
 followLeader = false;
@@ -92,6 +93,49 @@ class Car
             else if (this.turn < 0)
                 ctx.arc(this.rc, 0, -this.rc, 0, rads);
             ctx.stroke();
+        }
+        if (showBounding)
+        {
+            var cush = 5;
+            ctx.strokeStyle = "black";
+            ctx.globalAlpha = 0.2;
+            var ds = this.stop_distance;
+            var cs = 0.5 * this.l + cush;
+            var ds_r = ds / Math.abs(this.rc);
+            var cs_r = cs / Math.abs(this.rc);
+
+            if (Math.abs(this.turn) < 0.001)
+            {
+                ctx.beginPath();
+                ctx.moveTo(this.w/2 + cush, -this.l/2 - cush);
+                ctx.lineTo(this.w/2 + cush, this.l/2 + cush + ds);
+                ctx.lineTo(-this.w/2 - cush, this.l/2 + cush + ds);
+                ctx.lineTo(-this.w/2 - cush, -this.l/2 - cush);
+                ctx.lineTo(this.w/2 + cush, -this.l/2 - cush);
+                ctx.stroke();
+            }
+            else if (this.turn > 0)
+            {
+                ctx.beginPath();
+                ctx.arc(this.rc, 0, Math.max(0, this.rc - this.w/2 - cush),
+                  Math.PI, Math.PI - ds_r - cs_r, true);
+                ctx.arc(this.rc, 0, this.rc + this.w/2 + cush,
+                  Math.PI - ds_r - cs_r, Math.PI + cs_r, false);
+                ctx.arc(this.rc, 0, Math.max(0, this.rc - this.w/2 - cush),
+                  Math.PI + cs_r, Math.PI, true);
+                ctx.stroke();
+            }
+            else if (this.turn < 0)
+            {
+                ctx.beginPath();
+                ctx.arc(this.rc, 0, Math.max(0, -this.rc - this.w/2 - cush),
+                  0, ds_r + cs_r, false);
+                ctx.arc(this.rc, 0, -this.rc + this.w/2 + cush,
+                  ds_r + cs_r, -cs_r, true);
+                ctx.arc(this.rc, 0, Math.max(0, -this.rc - this.w/2 - cush),
+                  -cs_r, 0, false);
+                ctx.stroke();
+            }
         }
         if (showRadius)
         {
@@ -295,13 +339,13 @@ canvas.addEventListener("click", function(e)
 }, false);
 
 var num = Math.random()*30;
-for (var i = 0; i < 100; ++i)
+for (var i = 0; i < 30; ++i)
 {
     cars.push(new Car(Math.random()*width,
                       Math.random()*height,
                       Math.random()*2*Math.PI));
     var dx = cars[i].x - width/2;
     var dy = cars[i].y - height/2;
-    cars[i].r = Math.floor(Math.random()*18) + 2;
+    cars[i].r = Math.floor(Math.random()*14) + 2;
 }
 draw();
