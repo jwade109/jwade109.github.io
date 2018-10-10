@@ -250,8 +250,11 @@ function draw()
             if (avoidCars) cars[c].avoid(cars);
             if (followLeader)
             {
-                if (c == 0)
+                if (c == 0 && follow)
                     cars[c].applyForce(mx - cars[c].x, my - cars[c].y);
+                else if (c == 0)
+                    cars[c].applyForce(cars[cars.length - 1].x - cars[c].x,
+                                       cars[cars.length - 1].y - cars[c].y);
                 else
                     cars[c].applyForce(cars[c-1].x - cars[c].x,
                                        cars[c-1].y - cars[c].y);
