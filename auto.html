@@ -32,8 +32,6 @@
       onchange="toggleAccel()">Acceleration<br>
       <input type="checkbox" id="showDesired"
         onchange="toggleDesired()">Desired Velocity<br>
-      <input type="checkbox" id="showAccel"
-        onchange="toggleCommand()">Command Vector<br>
       <input type="checkbox" id="showPath"
         onchange="togglePath()">Future Path<br>
       <input type="checkbox" id="showBounding"
@@ -81,10 +79,6 @@
     function toggleRadius()
     {
         showRadius = !showRadius;
-    }
-    function toggleCommand()
-    {
-        showCommand = !showCommand;
     }
     function toggleBehavior()
     {
