@@ -29,7 +29,7 @@
       <input type="checkbox" id="showVelocity"
         onchange="toggleVelocity()">Velocity<br>
       <input type="checkbox" id="showAccel"
-      onchange="toggleAccel()">Acceleration<br>
+      onchange="toggleAccel()" checked>Acceleration<br>
       <input type="checkbox" id="showDesired"
         onchange="toggleDesired()">Desired Velocity<br>
       <input type="checkbox" id="showPath"
@@ -54,7 +54,8 @@
     </canvas>
 
     <script src="scripts/global.js"></script>
-    <script src="scripts/auto.js"></script>
+    <script src="scripts/auto/auto.js"></script>
+    <script src="scripts/auto/vector.js"></script>
     <script>
     function toggleVelocity()
     {

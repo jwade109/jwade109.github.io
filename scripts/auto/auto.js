@@ -10,7 +10,7 @@ followLeader = false;
 avoidCars = true;
 allStop = false;
 
-meters = 6; // pixels per meter
+meters = 9; // pixels per meter
 feet = meters/3.28084; // pixels per foot
 mph = meters/2.23694; // pixels/s per mph
 
@@ -22,7 +22,6 @@ var fps = 50;
 var canvas = document.getElementById("canvas");
 var mx = width/2, my = height/2;
 var follow = false;
-var r = 200;
 
 var old_sx = 0, old_sy = 0;
 var shiftx = 0, shifty = 0;
@@ -134,16 +133,17 @@ class Car
         this.turn_rate = 0.3;
         this.target_turn = 0;
         this.a = 0;
-        this.maxdecel = -50*mph;
+        this.maxdecel = 50*mph;
         this.maxaccel = 5*meters;
         this.maxvel = Infinity; // 80*mph;
 
-        this.vx = 0;
-        this.vy = 0;
+        this.velocity = [0, 0];
 
         this.rc = 0;
+        this.collision_radius = 5*meters;
 
         this.forces = [];
+        this.heading = [Math.sin(this.theta), Math.cos(this.theta)];
     }
 
     draw(canvas)
@@ -173,7 +173,6 @@ class Car
             ctx.moveTo(this.x, this.y);
             ctx.lineTo(this.x + sx, this.y + sy);
             ctx.stroke();
-
         }
 
         ctx.translate(this.x, this.y);
@@ -281,6 +280,17 @@ class Car
             ctx.lineTo(Math.pow(this.v, 2)/this.rc, 0);
             ctx.stroke();
         }
+        // if (true)
+        // {
+        //     ctx.globalAlpha = 0.3;
+        //     ctx.strokeStyle = "gray";
+        //     ctx.beginPath();
+        //     ctx.arc(0, 0, this.collision_radius, 0, Math.PI*2);
+        //     ctx.stroke();
+        //     ctx.beginPath();
+        //     ctx.arc(0, 0, this.stop_distance, 0, Math.PI*2);
+        //     ctx.stroke();
+        // }
 
         ctx.rotate(-this.turn);
         // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE
@@ -322,37 +332,67 @@ class Car
 
     avoid(cars)
     {
-        var sx = 0;
-        var sy = 0;
-        var x = this.x;
-        var y = this.y;
-        var count = 0;
+        // var sx = 0;
+        // var sy = 0;
+        // var x = this.x;
+        // var y = this.y;
+        // var count = 0;
+        // for (var c in cars)
+        // {
+        //     var dx = x - cars[c].x;
+        //     var dy = y - cars[c].y;
+        //     var ds = Math.sqrt(dx*dx + dy*dy);
+        //     if (ds < 100 && ds > 0)
+        //     {
+        //         sx += 40*dx/(ds*ds);
+        //         sy += 40*dy/(ds*ds);
+        //         ++count;
+        //     }
+        // }
+        // this.seekVel(30*sx, 30*sy);
+
+        var desired = [0, 0];
+        for (var f in this.forces)
+        {
+            desired[0] += this.forces[f][0];
+            desired[1] += this.forces[f][1];
+        }
+
+        var sigmoid = function(x, r)
+        {
+            return -(1/Math.PI) * Math.atan(1*(x - r)) + 0.5;
+        }
+
         for (var c in cars)
         {
-            var dx = x - cars[c].x;
-            var dy = y - cars[c].y;
-            var ds = Math.sqrt(dx*dx + dy*dy);
-            if (ds < 100 && ds > 0)
-            {
-                sx += 40*dx/(ds*ds);
-                sy += 40*dy/(ds*ds);
-                ++count;
-            }
+            var separation = [cars[c].x - this.x, cars[c].y - this.y];
+            if (norm2d(separation) <= 0) continue;
+            var other = cars[c].velocity;
+            var scaleDist = sigmoid(norm2d(separation), cars[c].collision_radius);
+            var scaleCollide = Math.max(0, scaleDist*(cars[c].collision_radius - norm2d(separation)));
+            var scaleDesire = Math.max(0, scaleDist*dot2d(desired, unit2d(separation)));
+            var scaleVel = Math.max(0, sigmoid(norm2d(separation),
+                Math.max(1.5*this.stop_distance, cars[c].collision_radius))*dot2d(this.velocity, unit2d(separation)));
+
+            var collisionAvoid = mult2d(unit2d(separation), -scaleCollide);
+            this.forces.push(collisionAvoid);
+            var desireAvoid = mult2d(unit2d(separation), -scaleDesire);
+            this.forces.push(desireAvoid);
+            var velocityAvoid = mult2d(unit2d(separation), -scaleVel);
+            this.forces.push(velocityAvoid);
         }
-        this.seekVel(30*sx, 30*sy);
     }
 
-    steer(vx, vy)
+    steer(command)
     {
-        var da = Math.atan2(vx, vy) - this.theta;
-        if (vx == 0 && vy == 0) da = this.target_turn;
-        while (da < -Math.PI)
-            da += 2*Math.PI;
-        while (da > Math.PI)
-            da -= 2*Math.PI;
-
-        this.a = 100*(Math.sqrt(vx*vx + vy*vy) - this.v);
-        this.a = Math.max(this.maxdecel, Math.min(this.a, this.maxaccel));
+        this.a = 3*sproj2d(this.heading, command);
+        if (isNaN(this.a)) this.a = 0;
+        if (Math.sign(this.v) > 0)
+            this.a = Math.max(-this.maxdecel, Math.min(this.a, this.maxaccel));
+        else
+            this.a = Math.max(-this.maxaccel, Math.min(this.a, this.maxdecel));
+        var da = -srej2d(this.heading, command)/100;
+        if (isNaN(da)) da = this.target_turn;
         this.target_turn = Math.max(-Math.PI/5, Math.min(da, Math.PI/5));
     }
 
@@ -364,7 +404,8 @@ class Car
             tvx += this.forces[f][0];
             tvy += this.forces[f][1];
         }
-        this.steer(tvx, tvy);
+        var command = [tvx - this.velocity[0], tvy - this.velocity[1]];
+        this.steer(command);
         this.turn += (this.target_turn - this.turn)*this.turn_rate;
 
         var s = this.v * dt;
@@ -374,11 +415,11 @@ class Car
         this.omega = Math.sin(this.turn) * Math.abs(this.v) / this.l;
         this.theta += this.omega * dt;
 
-        this.vx = this.v*Math.sin(this.theta);
-        this.vy = this.v*Math.cos(this.theta);
+        this.velocity = [this.v*Math.sin(this.theta), this.v*Math.cos(this.theta)];
 
         this.rc = this.l/Math.tan(this.turn);
-        this.stop_distance = Math.pow(this.v, 2)/(2*-this.maxdecel);
+        this.stop_distance = Math.pow(this.v, 2)/(2*this.maxdecel);
+        this.heading = [Math.sin(this.theta), Math.cos(this.theta)];
 
         this.forces = [];
     }
@@ -416,17 +457,16 @@ function draw()
             if (followLeader)
             {
                 if (c == 0 && follow)
+                {
                     cars[c].arrive(mx, my);
-                    // cars[c].seekVel(mx - cars[c].x, my - cars[c].y);
+                }
                 else if (c == 0)
-                    cars[c].arrive(cars[cars.length-1].x,
-                                   cars[cars.length-1].y);
-                    // cars[c].seekVel(cars[cars.length - 1].x - cars[c].x,
-                    //                 cars[cars.length - 1].y - cars[c].y);
+                {
+                    cars[c].arrive(cars[cars.length - 1].x,
+                                   cars[cars.length - 1].y);
+                }
                 else
                     cars[c].arrive(cars[c-1].x, cars[c-1].y);
-                    // cars[c].seekVel(cars[c-1].x - cars[c].x,
-                    //                 cars[c-1].y - cars[c].y);
             }
             if (allStop) cars[c].stop();
         }
@@ -508,13 +548,13 @@ canvas.addEventListener("mousescroll", function(e)
     my = e.clientY - rect.top;
 }, false);
 
-for (var i = 0; i < 100; ++i)
+for (var i = 0; i < 50; ++i)
 {
     cars.push(new Car(Math.random()*width,
                       Math.random()*height,
                       Math.random()*2*Math.PI));
     var dx = cars[i].x - width/2;
     var dy = cars[i].y - height/2;
-    cars[i].r = Math.floor(Math.random()*14) + 2;
+    cars[i].r = 7; // Math.floor(Math.random()*14) + 2;
 }
 draw();
