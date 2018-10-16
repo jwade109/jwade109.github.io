@@ -3,7 +3,7 @@ var height = document.body.scrollHeight;
 var potential = [];
 var particles = [];
 var scale = 5;
-var mx, my;
+var mx = width/2, my = height/2;
 
 class Particle
 {
@@ -70,6 +70,60 @@ function velocityAt(x, y)
     return { x: vx, y: vy };
 }
 
+function vortex(x0, y0, gamma)
+{
+    return function(x, y)
+    {
+        var theta = Math.atan2(y - y0, x - x0);
+        return gamma*theta/(Math.PI*2)
+    }
+}
+
+function source(x0, y0, lambda)
+{
+    return function(x, y)
+    {
+        var r = Math.sqrt(Math.pow(x - x0, 2) + Math.pow(y - y0, 2));
+        return lambda*Math.log(r)/(Math.PI*2);
+    }
+}
+
+function uniform(theta, v)
+{
+    return function(x, y)
+    {
+        return v*x*Math.cos(-theta) + v*y*Math.sin(-theta);
+    }
+}
+
+function doublet(x0, y0, kappa)
+{
+    return function(x, y)
+    {
+        if (typeof x0 == "function" && typeof y0 == "function")
+        {
+            var r = Math.sqrt(Math.pow(x - x0(), 2) + Math.pow(y - y0(), 2));
+            var theta = Math.atan2(y - y0(), x - x0());
+        }
+        else if (typeof x0 == "function")
+        {
+            var r = Math.sqrt(Math.pow(x - x0(), 2) + Math.pow(y - y0, 2));
+            var theta = Math.atan2(y - y0, x - x0());
+        }
+        else if (typeof y0 == "function")
+        {
+            var r = Math.sqrt(Math.pow(x - x0, 2) + Math.pow(y - y0(), 2));
+            var theta = Math.atan2(y - y0(), x - x0);
+        }
+        else
+        {
+            var r = Math.sqrt(Math.pow(x - x0, 2) + Math.pow(y - y0, 2));
+            var theta = Math.atan2(y - y0, x - x0);
+        }
+        return kappa*Math.cos(theta)/r;
+    }
+}
+
 canvas.onmousemove = function(e)
 {
     var rect = canvas.getBoundingClientRect();
@@ -77,9 +131,20 @@ canvas.onmousemove = function(e)
     my = e.clientY - rect.top;
 }
 
+function mouseX()
+{
+    return mx;
+}
+
+function mouseY()
+{
+    return my;
+}
+
 function draw()
 {
-    var fps = 100;
+    var fps = 50;
+    var steps_per_frame = 5;
     setTimeout(function()
     {
         var canvas = document.getElementById("canvas");
@@ -114,7 +179,7 @@ function draw()
                 ctx.beginPath();
                 ctx.strokeStyle = "black";
                 ctx.globalAlpha = 0.1;
-                ctx.arc(cx, cy, 2, 0, Math.PI*2);
+                ctx.arc(cx, cy, 1, 0, Math.PI*2);
                 ctx.stroke();
             }
         }
@@ -122,32 +187,24 @@ function draw()
         for (var p in particles)
         {
             particles[p].draw(ctx);
-            particles[p].step(1/fps);
+            for (var f = 0; f < steps_per_frame; ++f)
+                particles[p].step(1/(fps*steps_per_frame));
         }
-
 
     }, 1000/fps);
 }
 
-potential.push(function(x, y)
-{
-    return 7*x;
-});
-potential.push(function(x, y)
-{
-    var r1 = Math.sqrt(Math.pow(x - mx, 2) + Math.pow(y - my, 2));
-    var r2 = Math.sqrt(Math.pow(x - mx - 1, 2) + Math.pow(y - my, 2));
-    return 2000000*Math.log(r1)/(Math.PI*2) - 2000000*Math.log(r2)/(Math.PI*2);
-});
-// potential.push(function(x, y)
-// {
-//     var theta1 = Math.atan2(y - height/4, x - width/2);
-//     return 3000*(theta1)/(Math.PI*2)
-// })
+potential.push(uniform(0, 5))
+potential.push(vortex(width/2, height/4, 5000));
+potential.push(vortex(width/2, 3*height/4, -5000));
+// potential.push(source(width/4, height/2, 1000));
+// potential.push(source(3*width/4, height/2, -1000));
+
+potential.push(doublet(mouseX, mouseY, 50000));
 
 draw();
 
-for (var i = 0; i < 1500; ++i)
+for (var i = 0; i < 1000; ++i)
 {
     particles.push(new Particle(Math.random()*width, Math.random()*height));
 }
