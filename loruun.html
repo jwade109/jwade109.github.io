@@ -30,24 +30,19 @@
         class="loruun"
         type="text"
         name="input"
-        placeholder="uul be si lo sinda ed">
+        placeholder="kli si nadar li ed? si sive nadar ko fal uul.">
       </input>
       <div style="height: 200px">
-        <p id="output" style="font-size: 32px"></p>
+        <p id="output" style="font-size: 32px; font-family: monospace"></p>
       </div>
 
       <script>
       var userinput = document.getElementById("userinput");
       userinput.addEventListener("keyup", function(event)
       {
-          var tr = translate(userinput.value);
-          tr = tr.split("[").join("<i>");
-          tr = tr.split("]").join("</i>");
+          var tr = structStr(parse(tokenize(userinput.value)));
           event.preventDefault();
-          if (tr == "[] ")
-              document.getElementById("output").innerHTML = "";
-          else
-              document.getElementById("output").innerHTML = tr;
+          document.getElementById("output").innerHTML = tr;
       });
       </script>
 
@@ -108,6 +103,7 @@
     </div>
   </body>
 
-  <script src="scripts/loruun.js"></script>
   <script src="scripts/global.js"></script>
+  <script src="scripts/language/loruun.js"></script>
+  <script src="scripts/language/compiler.js"></script>
 </html>

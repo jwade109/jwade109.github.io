@@ -7,7 +7,7 @@ class Entry
         this.loruun = loruun;
         this.english = english;
         this.definition = definition;
-        this.role = role;
+        this.type = role;
         this.id = id;
     }
 }
@@ -85,7 +85,7 @@ function structure(key)
     {
         var entry = query(tokens[i]);
         if (typeof entry !== 'undefined')
-            struct += entry.role + " ";
+            struct += entry.type + " ";
         else if (tokens[i] != "")
             struct += "[" + tokens[i] + "] ";
     }
