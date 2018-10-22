@@ -9,6 +9,10 @@ function tokenize(string, dict)
         {
             tokens.push(entry);
         }
+        else
+        {
+            tokens.push(new Entry(word, word, "", "", -1));
+        }
     }
     return tokens;
 }
@@ -34,9 +38,10 @@ class VerbNode
 
 class NounNode
 {
-    constructor(word, modifiers)
+    constructor(word, article, modifiers)
     {
         this.word = word;
+        this.article = article;
         this.modifiers = modifiers;
     }
 }
@@ -49,7 +54,7 @@ function parse(tokens)
         {
             return tokens.shift();
         }
-        console.log("Error: expected " + type
+        console.log("Error: expected '" + type
             + "', got '" + tokens[0].type + "'");
         tokens.shift();
     }
@@ -69,6 +74,25 @@ function parse(tokens)
     {
         let body = [];
         let modifiers = [];
+        let i = 0;
+        // once over to remove flags
+        while (i < tokens.length)
+        {
+            if (tokens[i].type == "FLG")
+            {
+                modifiers.push(tokens[i]);
+                tokens.splice(i, 1);
+            }
+            else if (tokens[i].type == "EOC")
+            {
+                break;
+            }
+            else
+            {
+                ++i;
+            }
+        }
+        // again to parse nodes
         while (tokens.length)
         {
             let next = peek();
@@ -76,14 +100,18 @@ function parse(tokens)
             {
                 body.push(parseNoun());
             }
+            else if (next.type == "ART")
+            {
+                body.push(parseNoun());
+            }
             else if (next.type == "VRB")
             {
                 body.push(parseVerb())
             }
-            else if (next.type == "FLG")
-            {
-                modifiers.push(pop("FLG"));
-            }
+            // else if (next.type == "FLG")
+            // {
+            //     modifiers.push(pop("FLG"));
+            // }
             else if (next.type == "EOC")
             {
                 pop();
@@ -96,14 +124,28 @@ function parse(tokens)
                 pop();
             }
         }
-        return new ClauseNode(body, modifiers)
+        return new ClauseNode(body, modifiers);
     }
 
     function parseNoun()
     {
-        let tense;
         let modifiers = [];
-        let noun = pop("NON");
+        let article = "";
+        let noun = "";
+        let declareNoun = false;
+        if (peek().type == "ART")
+        {
+            article = pop("ART");
+            declareNoun = article.loruun == "il";
+        }
+        if (!declareNoun)
+        {
+            noun = pop("NON");
+        }
+        else
+        {
+            noun = pop();
+        }
         while (tokens.length)
         {
             let next = peek();
@@ -113,59 +155,57 @@ function parse(tokens)
             }
             else
             {
-                return new NounNode(noun, modifiers);
+                return new NounNode(noun, article, modifiers);
             }
         }
-        return new NounNode(noun, modifiers);
+        return new NounNode(noun, article, modifiers);
     }
 
     function parseVerb()
     {
-          let tense = ""
-          let modifiers = [];
-          let verb = pop("VRB");
-          while (tokens.length)
-          {
-              let next = peek();
-              if (next.type == "MOD")
-              {
-                  modifiers.push(pop("MOD"));
-              }
-              else if (next.type == "TNS")
-              {
-                  tense = pop("TNS");
-              }
-              else
-              {
-                  return new VerbNode(verb, tense, modifiers);
-              }
-          }
-          return new VerbNode(verb, tense, modifiers);
+        let tense = "";
+        let modifiers = [];
+        let verb = pop("VRB");
+        while (tokens.length)
+        {
+            let next = peek();
+            if (next.type == "MOD")
+            {
+                modifiers.push(pop("MOD"));
+            }
+            else if (next.type == "TNS")
+            {
+                tense = pop("TNS");
+            }
+            else
+            {
+                return new VerbNode(verb, tense, modifiers);
+            }
+        }
+        return new VerbNode(verb, tense, modifiers);
     }
 
     let clauses = [];
-
     while (tokens.length > 0)
     {
         clauses.push(parseClause());
     }
-
     return clauses;
 }
 
 function structStr(clauses)
 {
     if (clauses.length == 0) return "";
-    let str = "[SENTENCE ";
+    let str = "<SENTENCE ";
     for (let clause of clauses)
     {
         str += printClause(clause);
     }
-    return (str + "]").replace(/\]\[/g, "] [");
+    return str + ">";
 
     function printClause(clause)
     {
-        let str = "[CLAUSE\n  " + printFlags(clause.flags);
+        let str = "\n  <CLAUSE " + printFlags(clause.flags);
         for (let element of clause.body)
         {
             if (element instanceof VerbNode)
@@ -177,42 +217,55 @@ function structStr(clauses)
                 str += printNoun(element);
             }
         }
-        return str + "]";
+        return str + ">";
     }
 
     function printFlags(flags)
     {
-        let str = "[FLAGS";
-        for (let flag of flags)
+        let str = "\n    <FLAGS";
+        for (let i in flags)
         {
-            str += " " + flag.loruun;
+            str += " " + printEntry(flags[i]);
+            if (i < flags.length - 1)
+                str += ",";
         }
-        return str + "]";
+        return str + ">";
     }
 
     function printVerb(verb)
     {
-        let str = "[VERB " + verb.word.loruun;
-        if (typeof verb.tense != "undefined")
-            str += " [TENSE " + verb.tense.loruun + "]";
-        if (verb.modifiers.length) str += " [MODS";
-        for (let mod of verb.modifiers)
+        let str = "\n    <VERB " + printEntry(verb.word);
+        if (verb.tense != "")
+            str += "\n      <TENSE " + printEntry(verb.tense) + ">";
+        if (verb.modifiers.length) str += "\n      <MODS";
+        for (let i in verb.modifiers)
         {
-            str += " " + mod.loruun;
+            str += " " + printEntry(verb.modifiers[i]);
+            if (i < verb.modifiers.length - 1)
+                str += ",";
         }
-        if (verb.modifiers.length) str += "]";
-        return str + "]";
+        if (verb.modifiers.length) str += ">";
+        return str + ">";
     }
 
     function printNoun(noun)
     {
-        let str = "[NOUN " + noun.word.loruun;
-        if (noun.modifiers.length) str += " [MODS";
-        for (let mod of noun.modifiers)
+        let str = "\n    <NOUN " + printEntry(noun.word);
+        if (noun.article != "")
+            str += "\n      <ARTICLE " + printEntry(noun.article) + ">";
+        if (noun.modifiers.length) str += "\n      <MODS";
+        for (let i in noun.modifiers)
         {
-            str += " " + mod.loruun;
+            str += " " + printEntry(noun.modifiers[i]);
+            if (i < noun.modifiers.length - 1)
+                str += ",";
         }
-        if (noun.modifiers.length) str += "]";
-        return str + "]";
+        if (noun.modifiers.length) str += ">";
+        return str + ">";
+    }
+
+    function printEntry(entry)
+    {
+        return entry.loruun + " -> " + entry.english;
     }
 }

@@ -45,7 +45,7 @@ input
 
 input.loruun
 {
-    font-size: 32px;
+    font-size: 28px;
     padding: 10px;
     border: 0;
     font-family: Garamond, Cambria, serif;
@@ -102,6 +102,27 @@ ul
 li
 {
     margin: 7px 0 7px 0;
+}
+
+table
+{
+    white-space: nowrap;
+    margin: 10px auto 10px auto;
+    font-size: 24px;
+    border-collapse: collapse;
+}
+
+th
+{
+    padding: 5px 20px;
+    margin: 0px;
+}
+
+td
+{
+    border-top: 1px dotted #DDDDDD;
+    padding: 8px 20px;
+    margin: 0px;
 }
 
 button

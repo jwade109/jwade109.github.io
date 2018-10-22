@@ -86,7 +86,7 @@ towol;towards;towards;MOD
 slina;sprint;to sprint;VRB
 smot;smelly;smelly;MOD
 feoline;skunk;skunk;NON
-posmodin;postpostmodernism;postpostmodernism;NON
+posmodin;postmodernism;postmodernism;NON
 egenale;in general;in general;MOD
 forl;from;from;MOD
 decid;decide;to decide;VRB
