@@ -222,6 +222,7 @@ function structStr(clauses)
 
     function printFlags(flags)
     {
+        if (!flags.length) return "";
         let str = "\n    <FLAGS";
         for (let i in flags)
         {

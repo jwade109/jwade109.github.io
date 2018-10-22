@@ -49,14 +49,19 @@
                 output.innerHTML = "";
                 return;
             }
-            var tr = structStr(parse(tokenize(treeInput.value)));
+            let tr = "";
+            try
+            {
+                tr = structStr(parse(tokenize(treeInput.value)));
+            }
+            catch (e) {};
+            console.log(tr);
             tr = tr.replace(/->/g, '**');
             tr = tr.replace(/[\<\>]/g, '');
             tr = tr.replace(/\*\*/g, '->');
             tr = tr.replace(/\\n/g, '<br>');
             event.preventDefault();
             output.innerHTML = tr;
-
         });
         // treeInput.dispatchEvent(new Event("keyup"));
 
