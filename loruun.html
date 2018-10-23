@@ -24,90 +24,88 @@
     </div>
 
     <div class="center" style="text-align: center">
-
-      <div style="height: 100px"></div>
-      <input id="userinput"
+      <h1>Parser</h1>
+      <input id="treeInput"
         class="loruun"
         type="text"
         name="input"
-        placeholder="uul be si lo sinda ed">
+        value="vo afisan be lo kli subli?"
+        placeholder="vo afisan be lo kli subli?">
       </input>
-      <div style="height: 200px">
-        <p id="output" style="font-size: 32px"></p>
-      </div>
+    </div>
 
+    <div class="center" style="width: 60%">
+      <pre id="output" style="font-size: 28px"></pre>
+      <script src="scripts/language/loruun.js"></script>
+      <script src="scripts/language/compiler.js"></script>
       <script>
-      var userinput = document.getElementById("userinput");
-      userinput.addEventListener("keyup", function(event)
-      {
-          var tr = translate(userinput.value);
-          tr = tr.split("[").join("<i>");
-          tr = tr.split("]").join("</i>");
-          event.preventDefault();
-          if (tr == "[] ")
-              document.getElementById("output").innerHTML = "";
-          else
-              document.getElementById("output").innerHTML = tr;
-      });
+
+        var treeInput = document.getElementById("treeInput");
+        var output = document.getElementById("output");
+        treeInput.addEventListener("keyup", function(event)
+        {
+            if (treeInput.value == "")
+            {
+                output.innerHTML = "";
+                return;
+            }
+            let tr = "";
+            try
+            {
+                tr = structStr(parse(tokenize(treeInput.value)));
+            }
+            catch (e) {};
+            console.log(tr);
+            tr = tr.replace(/->/g, '**');
+            tr = tr.replace(/[\<\>]/g, '');
+            tr = tr.replace(/\*\*/g, '->');
+            tr = tr.replace(/\\n/g, '<br>');
+            event.preventDefault();
+            output.innerHTML = tr;
+        });
+        // treeInput.dispatchEvent(new Event("keyup"));
+
       </script>
-
     </div>
 
-    <div class="center">
-      <div style="text-align: center">
-        <h2>The object of Loruun is to be as close to the ideal
-          of language as possible.</h2>
-      </div>
+    <div style="text-align: center">
+      <h1>Dictionary</h1>
+      <table id="dictionary">
+        <tr>
+          <th>English</th>
+          <th>Loruun</th>
+          <th>Definition</th>
+          <th>Type</th>
+          <th>ID</th>
+        </tr>
+      </table>
+      <script>
 
-      <img class="inline"
-        src="resources/symbols.png"
-        title="Letters."
-      </img>
+        function entry2table(entry)
+        {
+            return "<tr>" +
+              "<td>" + entry.english + "</td>" +
+              "<td>" + entry.loruun + "</td>" +
+              "<td>" + entry.definition + "</td>" +
+              "<td>" + entry.type + "</td>" +
+              "<td>" + entry.id + "</td>" + "</tr>";
+        }
 
-      <h4>The ideal language, it is held,
-        has the following characteristics.</h4>
+        dict.sort(function(e1, e2)
+        {
+            // console.log(e1.english, e2.english, e1.english < e2.english);
+            return e1.english > e2.english ? 1 : -1;
+        });
+        let table = document.getElementById("dictionary");
+        for (let entry of dict)
+        {
+            table.innerHTML += entry2table(entry);
+        }
 
-      <ul>
-        <li>It is semantically and syntactically precise.</li>
-        <li>It is easy to print, write, read, hear, and dictate.</li>
-        <li>It is a potent tool for poets, novelists,
-          scientists, and engineers alike.</li>
-        <li>It is accessible across cultures and
-          age cohorts, and to machines.</li>
-        <li>It is expandable, adaptable, fluid.</li>
-      </ul>
-
-      <img class="inline"
-        src="resources/syntax.png"
-        title="Loruun syntax."
-      </img>
-
-      <p>Limitations placed on Loruun in service to
-        these goals are as follows.</p>
-
-      <p>Every letter makes a noise. Words are spelled how they sound,
-        no exceptions. There are no homonyms, no homophones, and no
-        homographs. One word maps onto exactly one concept, full stop.</p>
-      <p>Capitalization is not used. The only non-audible symbols are
-        the short pause, which delimits words, and a long pause, which
-        delimits sentences. Question marks, quotation marks, exclamation
-        points, and other frills are removed. Any important flow control
-        structures are conveyed with spoken word. Furthermore inflection,
-        cadence, and emphasis are semantically irrelevant.</p>
-      <p>A given word can never have more than one role in grammar. For
-        example, the ambiguity in English between “house” the noun and
-        “house” the verb will never be permitted in Loruun because these
-        would be two different words.</p>
-      <p>Strict word orderings are only necessary in specific circumstances.
-        Not all orderings of words are valid and changing the order of
-        words can likely change the meaning of a sentence, but there are
-        often many ways to write an equivalent sentence.</p>
-      <p>In Loruun, the animated image format is spelled “gif” and
-        pronounced with a hard g, because no other g exists. If you want
-        a soft g, you’d better spell it with a j.<p>
+      </script>
     </div>
+
   </body>
 
-  <script src="scripts/loruun.js"></script>
   <script src="scripts/global.js"></script>
 </html>
