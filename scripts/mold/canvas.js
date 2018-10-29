@@ -15,18 +15,18 @@ canvas.onmousemove = function(e)
 canvas.onmousedown = function(e)
 {
     let newVertex = new Vertex(mx, my);
-    mold.traverseVertices(function(v)
+    network.traverseVertices(function(v)
     {
-        for (let nearby of mold.kNearest(newVertex, 3))
+        for (let nearby of network.kNearest(newVertex, 3))
         {
             newVertex.addNeighbor(nearby, 1);
         }
     });
-    mold.addVertex(newVertex);
+    network.addVertex(newVertex);
     lastVertex = newVertex;
 
     if (lastVertex != null);
-        trace = astar(mold.root, newVertex);
+        trace = astar(network.root, newVertex);
 }
 
 function draw()
@@ -41,7 +41,7 @@ function draw()
         height = ctx.canvas.height;
         requestAnimationFrame(draw);
 
-        mold.draw(ctx);
+        network.draw(ctx);
         if (trace != null) drawTrace(ctx, trace);
 
     }, 1000/fps);
@@ -53,7 +53,7 @@ let mx = width/2, my = height/2;
 
 let vertices = [];
 let num = Math.random()*10 + 10;
-let mold = new Graph();
+let network = new Graph();
 
 draw();
 
@@ -61,10 +61,10 @@ for (let i = 0; i < 12; ++i)
 {
     let newVertex = new Vertex(Math.random()*width*7/8 + width/16,
                                Math.random()*height*7/8 + height/16);
-    for (let nearby of mold.kNearest(newVertex, 2))
+    for (let nearby of network.kNearest(newVertex, 2))
     {
         newVertex.addNeighbor(nearby, 1);
     }
-    mold.addVertex(newVertex);
+    network.addVertex(newVertex);
     lastVertex = newVertex;
 }
