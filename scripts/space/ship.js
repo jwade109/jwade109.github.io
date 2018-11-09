@@ -7,6 +7,7 @@ class Thruster
         this.width = width;
         this.thrust = thrust;
         this.firing = false;
+        this.drawbell = true;
     }
 
     draw(ctx)
@@ -14,22 +15,27 @@ class Thruster
         ctx.save();
         ctx.translate(-this.pos[0], this.pos[1]);
         ctx.rotate(-this.theta + Math.PI/2)
-        ctx.fillStyle = "black";
-        ctx.globalAlpha = 1;
-        ctx.beginPath();
-        ctx.moveTo(-this.width/2, this.width);
-        ctx.lineTo(0, 0);
-        ctx.lineTo(this.width/2, this.width);
-        ctx.fill();
+
+        if (this.drawbell)
+        {
+            ctx.fillStyle = "black";
+            ctx.globalAlpha = 1;
+            ctx.beginPath();
+            ctx.moveTo(-this.width/2, this.width);
+            ctx.lineTo(0, 0);
+            ctx.lineTo(this.width/2, this.width);
+            ctx.fill();
+            ctx.translate(0, this.width);
+        }
 
         if (this.firing)
         {
             ctx.fillStyle = "red";
             ctx.globalAlpha = 0.5;
             ctx.beginPath();
-            ctx.moveTo(-this.width/3, this.width);
-            ctx.lineTo(0, 3*this.width);
-            ctx.lineTo(this.width/3, this.width);
+            ctx.moveTo(-this.width/3, 0);
+            ctx.lineTo(0, 2*this.width);
+            ctx.lineTo(this.width/3, 0);
             ctx.fill();
         }
 
@@ -50,10 +56,12 @@ class Ship
         this.alpha = 0;
 
         this.mass = 1;
-        this.j = 1200;
+        this.j = 500;
+        this.maxfuel = 300000;
+        this.fuel = this.maxfuel;
 
-        this.w = 40;
-        this.l = 90;
+        this.w = 22;
+        this.l = 40;
 
         let tx = this.w*0.7;
         let ty = this.w*0.7;
@@ -66,7 +74,9 @@ class Ship
                           new Thruster([-tx, -ty], Math.PI, thr, 6),
                           new Thruster([-tx, -ty], 3*Math.PI/2, thr, 6),
                           new Thruster([tx, -ty], 3*Math.PI/2, thr, 6),
-                          new Thruster([tx, -ty], 0, thr, 6)];
+                          new Thruster([tx, -ty], 0, thr, 6),
+                          new Thruster([0, -this.w*1.7], -Math.PI/2, 9*thr, 30)];
+        this.thrusters[8].drawbell = false;
     }
 
     draw(ctx)
@@ -103,7 +113,8 @@ class Ship
         // ctx.lineTo(0, 0);
         // ctx.fill();
 
-        for (let t of this.thrusters) t.draw(ctx);
+        for (let t of this.thrusters)
+            if (t.thrust <= this.fuel) t.draw(ctx);
 
         ctx.restore();
         //
@@ -120,17 +131,18 @@ class Ship
     {
         let bodyacc = [0, 0];
         let moment = 0;
+        let dfuel = 0;
         for (let t of this.thrusters)
         {
-            if (t.firing)
+            if (t.firing && this.fuel >= t.thrust)
             {
+                this.fuel -= t.thrust;
                 let thrustv = [-t.thrust*Math.sin(t.theta),
                                -t.thrust*Math.cos(t.theta)];
                 bodyacc[0] += thrustv[0]/this.mass;
                 bodyacc[1] += thrustv[1]/this.mass;
 
                 moment += thrustv[0]*t.pos[0] - thrustv[1]*t.pos[1];
-                console.log(thrustv[1], t.pos[1], moment);
             }
 
             t.firing = false;

@@ -103,10 +103,20 @@ function draw()
             ship.thrusters[3].firing = true;
             ship.thrusters[7].firing = true;
         }
-        if (xkey)
+        if (skey)
         {
-            ship.stop();
+            ship.thrusters[8].firing = true;
         }
+
+        ctx.fillStyle = "green";
+        ctx.globalAlpha = 0.3;
+        ctx.fillRect(10, 10, 20, ship.fuel/ship.maxfuel*(height - 40));
+
+        ctx.fillStyle = "gray";
+        ctx.globalAlpha = 1;
+        ctx.font = "14px Arial";
+        ctx.fillText("Control thrusters with Up, " +
+            "Down, Left, Right, A, S, D", 10, height - 10);
 
     }, 1000/fps);
 }
