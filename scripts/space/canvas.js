@@ -66,6 +66,9 @@ function draw()
         width = ctx.canvas.width;
         height = ctx.canvas.height;
         requestAnimationFrame(draw);
+
+        ctx.save();
+        ctx.translate(-ship.pos[0] + width/2, -ship.pos[1] + height/2);
         ship.draw(ctx);
         ship.step(1/fps);
 
@@ -108,15 +111,44 @@ function draw()
             ship.thrusters[8].firing = true;
         }
 
-        ctx.fillStyle = "green";
+        ctx.strokeStyle = "gray";
+        ctx.globalAlpha = 0.05;
+        let grid = 200;
+        let startx = (ship.pos[0] - width) - ((ship.pos[0] - width) % grid);
+        let starty = (ship.pos[1] - height) - ((ship.pos[1] - height) % grid);
+        for (let x = startx; x < ship.pos[0] + width; x += grid)
+        {
+            for (let y = starty; y < ship.pos[1] + height; y += grid)
+            {
+                ctx.strokeRect(x, y, grid, grid);
+            }
+        }
+
+        ctx.restore();
+
+        ctx.fillStyle = "gray";
         ctx.globalAlpha = 0.3;
-        ctx.fillRect(10, 10, 20, ship.fuel/ship.maxfuel*(height - 40));
+        let fh = ship.fuel/ship.maxfuel*(height - 60);
+        ctx.fillRect(10, (height - 50) - fh, 21, fh);
+
+        ctx.save();
+        ctx.translate(28, height - 53);
+        ctx.rotate(-Math.PI/2);
+        ctx.font = "20px Arial";
+        ctx.fillStyle = "white";
+        ctx.globalAlpha = 1;
+        ctx.fillText("FUEL", 0, 0);
+        ctx.restore();
 
         ctx.fillStyle = "gray";
         ctx.globalAlpha = 1;
         ctx.font = "14px Arial";
+        let v = Math.sqrt(Math.pow(ship.vel[0], 2) + Math.pow(ship.vel[1], 2));
+        ctx.fillText("1 Grid = 20 meters -- Velocity: " + Math.round(v/10) +
+            " m/s", 10, height - 30);
         ctx.fillText("Control thrusters with Up, " +
             "Down, Left, Right, A, S, D", 10, height - 10);
+
 
     }, 1000/fps);
 }

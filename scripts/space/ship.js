@@ -57,7 +57,7 @@ class Ship
 
         this.mass = 1;
         this.j = 500;
-        this.maxfuel = 300000;
+        this.maxfuel = 600000;
         this.fuel = this.maxfuel;
 
         this.w = 22;
