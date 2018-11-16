@@ -110,6 +110,11 @@ function draw()
         {
             ship.thrusters[8].firing = true;
         }
+        if (space)
+        {
+            ship.spawnTorpedo();
+            space = false;
+        }
 
         ctx.strokeStyle = "gray";
         ctx.globalAlpha = 0.05;
@@ -147,7 +152,8 @@ function draw()
         ctx.fillText("1 Grid = 20 meters -- Velocity: " + Math.round(v/10) +
             " m/s", 10, height - 30);
         ctx.fillText("Control thrusters with Up, " +
-            "Down, Left, Right, A, S, D", 10, height - 10);
+            "Down, Left, Right, A, S, D; " +
+            "launch torpedoes with Space", 10, height - 10);
 
 
     }, 1000/fps);
@@ -157,6 +163,5 @@ let width = document.body.clientWidth;
 let height = document.body.scrollHeight;
 let mx = width/2, my = height/2;
 var ship = new Ship([width/2, height/2], Math.PI/2);
-
 
 draw();
