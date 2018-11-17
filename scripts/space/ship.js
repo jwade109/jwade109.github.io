@@ -50,6 +50,7 @@ class Torpedo
         this.pos = pos;
         this.vel = vel;
         this.theta = theta;
+        this.omega = 0;
         this.width = width;
         this.thrust = thrust;
         this.length = length;
@@ -67,6 +68,7 @@ class Torpedo
     {
         ctx.save();
         ctx.translate(this.pos[0], this.pos[1]);
+        ctx.save();
         ctx.rotate(-this.theta - Math.PI/2);
 
         ctx.globalAlpha = 1;
@@ -74,12 +76,16 @@ class Torpedo
         ctx.fillRect(-this.width/2, -this.length/2, this.width, this.length);
 
         this.thruster.draw(ctx);
+        ctx.restore();
 
         ctx.restore();
     }
 
     step(dt)
     {
+        let tx = mx;
+        let ty = my;
+
         let bodyacc = [0, 0];
         if (this.drifttimer > 0) this.drifttimer -= dt;
         else
@@ -91,13 +97,34 @@ class Torpedo
             bodyacc[0] = thrustv[0]/this.mass;
             bodyacc[1] = thrustv[1]/this.mass;
         }
-        //
+
+        let pointing = rot2d([1, 0], this.theta);
+        let tg = [tx - this.pos[0], ty - this.pos[1]];
+        let angle = Math.acos(dot2d(pointing, tg)/
+            Math.sqrt(tg[0]*tg[0] + tg[1]*tg[1]));
+        if (det2d(pointing, tg) > 0) angle *= -1;
+
+        let vel = this.vel.slice();
+        let corr = Math.acos(dot2d(pointing, this.vel)/
+            Math.sqrt(vel[0]*vel[0] + vel[1]*vel[1]));
+        if (det2d(pointing, vel) < 0) corr *= -1;
+        if (Math.sqrt(vel[0]*vel[0] + vel[1]*vel[1]) < 5) corr = 0;
+
         let acc = this.b2g(bodyacc);
+        let alpha = 150*angle + 130*corr - 30*this.omega
+        if (this.drifttimer > 0) alpha = 0;
 
         this.vel[0] += acc[0]*dt;
         this.vel[1] += acc[1]*dt;
         this.pos[0] += this.vel[0]*dt;
         this.pos[1] += this.vel[1]*dt;
+        this.omega += alpha*dt;
+        this.theta += this.omega*dt;
+        if (Math.sqrt(tg[0]*tg[0] + tg[1]*tg[1]) < 50)
+        {
+            this.drifttimer = Infinity;
+            this.thruster.firing = false;
+        }
     }
 
     b2g(v)
@@ -165,7 +192,7 @@ class Ship
         tpos[1] += poff[1];
         tvel[0] += voff[0];
         tvel[1] += voff[1];
-        this.torpedoes.push(new Torpedo(tpos, tvel, this.theta, 5500, 20));
+        this.torpedoes.push(new Torpedo(tpos, tvel, this.theta, 700, 20));
     }
 
     draw(ctx)
@@ -307,4 +334,16 @@ function rot2d(u, theta)
     let x =  u[0]*Math.cos(theta) + u[1]*Math.sin(theta);
     let y =  u[1]*Math.cos(theta) - u[0]*Math.sin(theta);
     return [x, y];
+}
+
+// dot product of u and v
+function dot2d(u, v)
+{
+    return u[0]*v[0] + u[1]*v[1];
+}
+
+// determinant of u and v
+function det2d(u, v)
+{
+    return u[0]*v[1] - u[1]*v[0];
 }

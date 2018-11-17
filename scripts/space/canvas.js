@@ -5,11 +5,16 @@ var ctx = canvas.getContext("2d");
 var left = false, right = false, up = false, down = false, space = false;
 var akey = false, wkey = false, dkey = false, skey = false, xkey = false;
 
+var width = document.body.clientWidth;
+var height = document.body.scrollHeight;
+var mx = 0, my = 0;
+var ship = new Ship([width/2, height/2], Math.PI/2);
+
 canvas.onmousemove = function(e)
 {
-    var rect = canvas.getBoundingClientRect();
-    mx = e.clientX - rect.left;
-    my = e.clientY - rect.top;
+    let rect = canvas.getBoundingClientRect();
+    mx = e.clientX - rect.left + ship.pos[0] - width/2;
+    my = e.clientY - rect.top + ship.pos[1] - height/2;
 }
 
 canvas.onmousedown = function(e)
@@ -129,6 +134,13 @@ function draw()
             }
         }
 
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = "black";
+        ctx.beginPath();
+        ctx.arc(mx, my, 2, 0, Math.PI*2);
+        ctx.moveTo()
+        ctx.fill();
+
         ctx.restore();
 
         ctx.fillStyle = "gray";
@@ -155,13 +167,7 @@ function draw()
             "Down, Left, Right, A, S, D; " +
             "launch torpedoes with Space", 10, height - 10);
 
-
     }, 1000/fps);
 }
-
-let width = document.body.clientWidth;
-let height = document.body.scrollHeight;
-let mx = width/2, my = height/2;
-var ship = new Ship([width/2, height/2], Math.PI/2);
 
 draw();
