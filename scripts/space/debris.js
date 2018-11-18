@@ -1,12 +1,14 @@
 class Debris
 {
-    constructor(pos, vel, theta, omega, size)
+    constructor(pos, vel, theta, omega, radius)
     {
         this.pos = pos;
         this.vel = vel;
         this.theta = theta;
         this.omega = omega;
-        this.size = size;
+        this.radius = radius;
+
+        this.world = null;
     }
 
     step(dt)
@@ -21,9 +23,36 @@ class Debris
         ctx.save();
         ctx.translate(this.pos[0], this.pos[1]);
         ctx.rotate(-this.theta);
-        ctx.fillRect(-this.size/2,
-                     -this.size/2,
-                     this.size, this.size);
+        ctx.strokeStyle = "black";
+        ctx.fillStyle = "black";
+        ctx.globalAlpha = 0.4;
+        ctx.fillRect(-this.radius/2,
+                     -this.radius/2,
+                     this.radius, this.radius);
+        ctx.globalAlpha = 1;
+        ctx.strokeRect(-this.radius/2,
+                       -this.radius/2,
+                       this.radius, this.radius);
         ctx.restore();
+    }
+
+    explode()
+    {
+        let num_debris = Math.round(Math.random()*12 + 4);
+        if (this.radius < 4) num_debris = 0;
+        for (let i = 0; i < num_debris; ++i)
+        {
+
+            let pos = this.pos.slice();
+            let vel = this.vel.slice();
+            vel[0] += Math.random()*80 - 40;
+            vel[1] += Math.random()*80 - 40;
+            let deb = new Debris(pos, vel,
+                Math.random()*Math.PI*2,
+                Math.random()*5 - 2.5, 2*Math.random()*this.radius/3);
+            deb.world = this.world;
+            this.world.push(deb);
+        }
+        this.remove = true;
     }
 }

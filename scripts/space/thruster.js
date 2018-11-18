@@ -8,6 +8,8 @@ class Thruster
         this.thrust = thrust;
         this.firing = false;
         this.drawbell = true;
+
+        this.world = null;
     }
 
     draw(ctx)
@@ -30,7 +32,7 @@ class Thruster
 
         if (this.firing)
         {
-            ctx.fillStyle = "red";
+            ctx.fillStyle = "gray";
             ctx.globalAlpha = 0.5;
             ctx.beginPath();
             ctx.moveTo(-this.width/3, 0);

@@ -12,10 +12,12 @@ class Ship
 
         this.mass = 1;
         this.j = 500;
-        this.maxfuel = 600000;
+        this.maxfuel = 600000*10000;
         this.fuel = this.maxfuel;
         this.side = true;
-        this.reloadtimer = 0;
+        this.torpedo_reload = 0;
+        this.railgun_reload = 1;
+        this.pdc_reload = 0.03;
 
         this.w = 40;
         this.l = 144;
@@ -32,20 +34,25 @@ class Ship
                           new Thruster([-tx, -ty], 3*Math.PI/2, thr, 6),
                           new Thruster([tx, -ty], 3*Math.PI/2, thr, 6),
                           new Thruster([tx, -ty], 0, thr, 6),
-                          new Thruster([0, -this.l/2], -Math.PI/2, 9*thr, this.w)];
-        this.thrusters[8].drawbell = false;
+                          new Thruster([0, -this.l/2],
+                                       -Math.PI/2, 9*thr, this.w)];
+        for (let t of this.thrusters)
+        {
+            t.drawbell = false;
+            t.world = this.world;
+        }
 
-        this.torpedoes = [];
+        this.world = null;
     }
 
-    spawnTorpedo()
+    launchTorpedo()
     {
-        if (this.reloadtimer > 0) return;
-        this.reloadtimer = 0.12;
+        if (this.torpedo_reload > 0) return;
+        this.torpedo_reload = 0.12;
         this.side = !this.side;
         let poff = rot2d([this.w/3, 0], this.theta + Math.PI/2);
         if (!this.side)
-            poff = rot2d([this.w/3, 0], this.theta - Math.PI/2);
+            poff = rot2d([-this.w/3, 0], this.theta + Math.PI/2);
         let voff = rot2d([80, 0], this.theta + Math.PI/2);
         if (!this.side)
             voff = rot2d([80, 0], this.theta - Math.PI/2);
@@ -55,13 +62,45 @@ class Ship
         tpos[1] += poff[1];
         tvel[0] += voff[0];
         tvel[1] += voff[1];
-        this.torpedoes.push(new Torpedo(tpos, tvel, this.theta, 5500, 20));
+        let torp = new Torpedo(tpos, tvel, this.theta, 5500, 20);
+        torp.world = this.world;
+        this.world.push(torp);
+    }
+
+    fireRailgun()
+    {
+        if (this.railgun_reload > 0) return;
+        this.railgun_reload = 1;
+        let vel = rot2d([5000, 0], this.theta);
+        let dv = rot2d([-60, 0], this.theta);
+        console.log(vel);
+        let torp = new Torpedo(this.pos.slice(), vel, this.theta, 0, 12);
+        torp.world = this.world;
+        torp.railgun = true;
+        torp.drifttimer = Infinity;
+        world.push(torp);
+        this.vel[0] += dv[0];
+        this.vel[1] += dv[1];
+    }
+
+    firePDC()
+    {
+        if (this.pdc_reload > 0) return;
+        this.pdc_reload = 0.03;
+        let theta = Math.atan2(mx - ship.pos[0], my - ship.pos[1]) - Math.PI/2;
+        let vel = rot2d([800 + Math.random()*10 - 5,
+                         Math.random()*40 - 20], theta);
+        vel[0] += this.vel[0];
+        vel[1] += this.vel[1];
+        let torp = new Torpedo(this.pos.slice(), vel, theta, 0, 7);
+        torp.pdc = true;
+        torp.drifttimer = Infinity;
+        torp.world = this.world;
+        world.push(torp);
     }
 
     draw(ctx)
     {
-        for (let t of this.torpedoes) t.draw(ctx);
-
         ctx.save(); // save global reference frame
         ctx.translate(this.pos[0], this.pos[1]);
         ctx.rotate(-this.theta - Math.PI/2)
@@ -139,6 +178,7 @@ class Ship
         for (let t of this.thrusters)
         {
             if (this.fuel <= t.thrust) t.firing = false;
+            t.world = this.world;
             t.draw(ctx);
         }
 
@@ -147,7 +187,9 @@ class Ship
 
     step(dt)
     {
-        if (this.reloadtimer > 0) this.reloadtimer -= dt;
+        if (this.torpedo_reload > 0) this.torpedo_reload -= dt;
+        if (this.railgun_reload > 0) this.railgun_reload -= dt;
+        if (this.pdc_reload > 0) this.pdc_reload -= dt;
         let bodyacc = [0, 0];
         let moment = 0;
         let dfuel = 0;
@@ -180,7 +222,7 @@ class Ship
         this.acc = [0, 0];
         this.alpha = 0;
 
-        for (let t of this.torpedoes) t.step(dt);
+        // for (let t of this.torpedoes) t.step(dt);
     }
 
     b2g(v)
@@ -192,24 +234,4 @@ class Ship
     {
         return rot2d(v, -this.theta);
     }
-}
-
-// rotates a vector CCW by theta radians
-function rot2d(u, theta)
-{
-    let x =  u[0]*Math.cos(theta) + u[1]*Math.sin(theta);
-    let y =  u[1]*Math.cos(theta) - u[0]*Math.sin(theta);
-    return [x, y];
-}
-
-// dot product of u and v
-function dot2d(u, v)
-{
-    return u[0]*v[0] + u[1]*v[1];
-}
-
-// determinant of u and v
-function det2d(u, v)
-{
-    return u[0]*v[1] - u[1]*v[0];
 }
