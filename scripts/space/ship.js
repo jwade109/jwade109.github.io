@@ -73,7 +73,8 @@ class Ship
         this.railgun_reload = 1;
         let vel = rot2d([5000, 0], this.theta);
         let dv = rot2d([-60, 0], this.theta);
-        console.log(vel);
+        vel[0] += this.vel[0];
+        vel[1] += this.vel[1];
         let torp = new Torpedo(this.pos.slice(), vel, this.theta, 0, 12);
         torp.world = this.world;
         torp.railgun = true;
