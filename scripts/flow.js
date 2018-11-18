@@ -93,7 +93,7 @@ function uniform(theta, v)
 
     return function(x, y)
     {
-        return v*z[0]*Math.cos(-theta) + v*z[1]*Math.sin(-theta);
+        return v*x*Math.cos(-theta) + v*y*Math.sin(-theta);
     }
 }
 
@@ -196,10 +196,10 @@ function draw()
 }
 
 potential.push(uniform(0, 1))
-// potential.push(vortex(width/2, height/4, 5000));
-// potential.push(vortex(width/2, 3*height/4, -5000));
-// potential.push(source(width/4, height/2, 1000));
-// potential.push(source(3*width/4, height/2, -1000));
+potential.push(vortex(width/2, height/4, 5000));
+potential.push(vortex(width/2, 3*height/4, -5000));
+potential.push(source(width/4, height/2, 1000));
+potential.push(source(3*width/4, height/2, -1000));
 // potential.push(doublet(mouseX, mouseY, 50000));
 
 draw();
