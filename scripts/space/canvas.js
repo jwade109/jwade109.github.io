@@ -4,6 +4,7 @@ var ctx = canvas.getContext("2d");
 
 var left = false, right = false, up = false, down = false, space = false;
 var akey = false, wkey = false, dkey = false, skey = false, xkey = false;
+var mouse = false;
 
 var width = document.body.clientWidth;
 var height = document.body.scrollHeight;
@@ -19,7 +20,12 @@ canvas.onmousemove = function(e)
 
 canvas.onmousedown = function(e)
 {
+    mouse = true;
+}
 
+canvas.onmouseup = function(e)
+{
+    mouse = false;
 }
 
 document.addEventListener('keydown', function(event)
@@ -120,33 +126,33 @@ function draw()
             ship.spawnTorpedo();
             space = false;
         }
-
-        ctx.strokeStyle = "gray";
-        ctx.globalAlpha = 0.05;
-        let grid = 200;
-        let startx = (ship.pos[0] - width) - ((ship.pos[0] - width) % grid);
-        let starty = (ship.pos[1] - height) - ((ship.pos[1] - height) % grid);
-        for (let x = startx; x < ship.pos[0] + width; x += grid)
+        if (mouse)
         {
-            for (let y = starty; y < ship.pos[1] + height; y += grid)
-            {
-                ctx.strokeRect(x, y, grid, grid);
-            }
+
         }
 
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = "black";
-        ctx.beginPath();
-        ctx.arc(mx, my, 2, 0, Math.PI*2);
-        ctx.moveTo()
-        ctx.fill();
-
+        // ctx.strokeStyle = "gray";
+        // ctx.globalAlpha = 0.05;
+        // let grid = 200;
+        // let startx = (ship.pos[0] - width) - ((ship.pos[0] - width) % grid);
+        // let starty = (ship.pos[1] - height) - ((ship.pos[1] - height) % grid);
+        // for (let x = startx; x < ship.pos[0] + width; x += grid)
+        // {
+        //     for (let y = starty; y < ship.pos[1] + height; y += grid)
+        //     {
+        //         ctx.strokeRect(x, y, grid, grid);
+        //     }
+        // }
         ctx.restore();
 
         ctx.fillStyle = "gray";
         ctx.globalAlpha = 0.3;
         let fh = ship.fuel/ship.maxfuel*(height - 60);
         ctx.fillRect(10, (height - 50) - fh, 21, fh);
+        // ctx.fillStyle = "gray";
+        // ctx.globalAlpha = 0.3;
+        // let fh = ship.fuel/ship.maxfuel*(height - 60);
+        // ctx.fillRect(10, (height - 50) - fh, 21, fh);
 
         ctx.save();
         ctx.translate(28, height - 53);
