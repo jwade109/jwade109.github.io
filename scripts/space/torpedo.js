@@ -14,6 +14,7 @@ class Torpedo
         this.drifttimer = 0.5;
         this.railgun = false;
         this.pdc = false;
+        this.radius = length/2;
 
         this.world = null;
 
@@ -21,18 +22,16 @@ class Torpedo
             [0, -this.length/2], -Math.PI/2, thrust, this.width);
         this.thruster.firing = false;
         this.thruster.drawbell = false;
-        this.thruster.world = world;
     }
 
     draw(ctx)
     {
-        // if (this.exploded)
-        // {
-        //     for (let d of this.debris) d.draw(ctx);
-        //     return;
-        // }
         ctx.save();
         ctx.translate(this.pos[0], this.pos[1]);
+        // ctx.beginPath();
+        // ctx.moveTo(0, 0);
+        // ctx.lineTo(this.vel[0], this.vel[1]);
+        // ctx.stroke();
         ctx.rotate(-this.theta - Math.PI/2);
         ctx.globalAlpha = 1;
         ctx.fillStyle = "black";
@@ -43,8 +42,8 @@ class Torpedo
 
     step(dt)
     {
-        // let tx = mx;
-        // let ty = my;
+        let theta = Math.atan2(mx - this.pos[0], my - this.pos[1]) -
+            Math.PI/2 - this.theta;
 
         let bodyacc = [0, 0];
         if (this.drifttimer > 0) this.drifttimer -= dt;
@@ -59,41 +58,38 @@ class Torpedo
         }
         let acc = this.b2g(bodyacc);
 
-        // let pointing = rot2d([1, 0], this.theta);
-        // let tg = [tx - this.pos[0], ty - this.pos[1]];
-        // let angle = Math.acos(dot2d(pointing, tg)/
-        //     Math.sqrt(tg[0]*tg[0] + tg[1]*tg[1]));
-        // if (det2d(pointing, tg) > 0) angle *= -1;
-        //
-        // let vel = this.vel.slice();
-        // let corr = Math.acos(dot2d(pointing, this.vel)/
-        //     Math.sqrt(vel[0]*vel[0] + vel[1]*vel[1]));
-        // if (det2d(pointing, vel) < 0) corr *= -1;
-        // if (Math.sqrt(vel[0]*vel[0] + vel[1]*vel[1]) < 5) corr = 0;
+        let pointing = this.b2g([1, 0]);
+        let vmag = Math.sqrt(Math.pow(this.vel[0], 2) + Math.pow(this.vel[1], 2));
+        let vunit = [this.vel[0]/vmag, this.vel[1]/vmag];
+        let corr = dot2d(pointing, vunit);
+        // if (det2d(pointing, vunit) > 0) corr *= -1;
+        console.log(corr*180/Math.PI);
 
-        // let alpha = 150*angle + 130*corr - 30*this.omega
-        // if (this.drifttimer > 0) alpha = 0;
-        // alpha = 0;
-
+        while (theta > Math.PI) theta -= Math.PI*2;
+        while (theta < -Math.PI) theta += Math.PI*2;
+        let alpha = 200*theta - 40*this.omega;
+        if (this.drifttimer <= 0) alpha = this.omega = 0;
         this.vel[0] += acc[0]*dt;
         this.vel[1] += acc[1]*dt;
         this.pos[0] += this.vel[0]*dt;
         this.pos[1] += this.vel[1]*dt;
+        this.theta += this.omega*dt;
+        this.omega += alpha*dt;
     }
 
     explode()
     {
-        let num_debris = Math.round(Math.random()*12 + 4);
+        let num_debris = Math.round(Math.random()*6 + 8);
         if (this.pdc) num_debris = 0;
         for (let i = 0; i < num_debris; ++i)
         {
             let pos = this.pos.slice();
             let vel = this.vel.slice();
-            vel[0] += Math.random()*300 - 150;
-            vel[1] += Math.random()*300 - 150;
+            vel[0] += Math.random()*200 - 100;
+            vel[1] += Math.random()*200 - 100;
             let deb = new Debris(pos, vel,
                 Math.random()*Math.PI*2,
-                Math.random()*40 - 20, Math.random()*4 + 2);
+                Math.random()*40 - 20, Math.random()*6 + 3);
             deb.world = this.world;
             this.world.push(deb);
         }

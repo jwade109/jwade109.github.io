@@ -19,6 +19,8 @@ let ship = new Ship([0, 0], Math.PI/2);
 ship.world = world;
 world.push(ship);
 
+let current = new Date().getTime(), last = current, dt = 0;
+
 for (let i = 0; i < 20; ++i)
 {
     let r = Math.random()*world.render_distance;
@@ -105,6 +107,7 @@ function collide(obj1, obj2)
     let dx = obj2.pos[0] - obj1.pos[0];
     let dy = obj2.pos[1] - obj1.pos[1];
     let dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist > 500) return false;
     if (typeof obj1.radius == 'undefined' && typeof obj2.radius == 'undefined')
     {
         return dist <= default_radius;
@@ -120,11 +123,91 @@ function collide(obj1, obj2)
     return dist <= obj1.radius + obj2.radius;
 }
 
+function handleCollision(obj1, obj2)
+{
+    function objectsAre(str1, str2)
+    {
+        return (obj1.constructor.name == str1 &&
+                obj2.constructor.name == str2) ||
+               (obj1.constructor.name == str2 &&
+                obj2.constructor.name == str1);
+    }
+
+    if (obj1 === obj2) return;
+    if (obj1.constructor.name == obj2.constructor.name) return;
+    if (objectsAre("Ship", "Debris"))
+    {
+        return;
+    }
+    if (objectsAre("Ship", "Torpedo"))
+    {
+        return;
+    }
+    if (objectsAre("Ship", "Bullet"))
+    {
+        return;
+    }
+    else if (objectsAre("Bullet", "Debris") || objectsAre("Torpedo", "Debris"))
+    {
+        if (obj1 instanceof Debris)
+        {
+            if (obj1.radius < 12 && objectsAre("Torpedo", "Debris")) return;
+            obj2.vel = obj1.vel.slice();
+            if (obj1.radius > 40 && objectsAre("Bullet", "Debris"))
+            {
+                obj2.explode();
+                return;
+            }
+            obj1.explode();
+            obj2.explode();
+        }
+        if (obj2 instanceof Debris)
+        {
+            if (obj2.radius < 12 && objectsAre("Torpedo", "Debris")) return;
+            obj1.vel = obj2.vel.slice();
+            if (obj2.radius > 40 && objectsAre("Bullet", "Debris"))
+            {
+                obj1.explode();
+                return;
+            }
+            obj1.explode();
+            obj2.explode();
+        }
+        return;
+    }
+    else if (objectsAre("Torpedo", "Bullet"))
+    {
+        obj1.explode();
+        obj2.explode();
+        return;
+    }
+    else if (objectsAre("Railgun", "Debris"))
+    {
+        let railgun = obj1, debris = obj2;
+        if (railgun instanceof Debris)
+        {
+            railgun = obj2;
+            debris = obj1;
+        }
+        debris.explode();
+        return;
+    }
+    else if (objectsAre("Railgun", "Ship"))
+    {
+        return;
+    }
+    console.log("unhandled collision between " +
+                obj1.constructor.name + " and " +
+                obj2.constructor.name);
+}
+
 function draw()
 {
-    var fps = 50;
+    let fps = 100;
     setTimeout(function()
     {
+        current = new Date().getTime();
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.canvas.width = document.body.clientWidth;
         ctx.canvas.height = document.body.scrollHeight;
@@ -136,42 +219,24 @@ function draw()
         ctx.save();
         ctx.translate(-ship.pos[0] + width/2, -ship.pos[1] + height/2);
 
-        // ctx.fillStyle = "black";
-        // ctx.fillRect(-width/2, -height/2, width, height);
+        ctx.fillRect(mx, my, 2, 2);
 
-        let explode = false, debris = null, torpedo = null;
+        let exploded = [];
         for (let i = 0; i < world.length; ++i)
         {
-            if (world[i] instanceof Torpedo)
+            for (let j = 0; j < world.length &&
+                !(world[i] instanceof Debris); ++j)
             {
-                for (let j = 0; j < world.length; ++j)
+                if (collide(world[i], world[j]))
                 {
-                    if (world[j] instanceof Debris)
-                    {
-                        let col = collide(world[i], world[j]);
-                        if (col && i != j && world[i] !== ship &&
-                            world[j] !== ship)
-                        {
-                            explode = true;
-                            debris = world[j];
-                            torpedo = world[i];
-                        }
-                    }
+                    if (exploded.length > -1)
+                        exploded.push([world[i], world[j]]);
                 }
             }
         }
-        if (explode)
+        for (let obj of exploded)
         {
-            debris.explode();
-            if (!torpedo.railgun && !torpedo.pdc)
-            {
-                torpedo.vel = debris.vel.slice();
-                torpedo.explode();
-            }
-            if (torpedo.pdc && Math.random() < 0.6)
-            {
-                torpedo.explode();
-            }
+            handleCollision(obj[0], obj[1]);
         }
 
         // WORLD ELEMENTS
@@ -185,15 +250,15 @@ function draw()
                 world[i].remove = true;
             }
             world[i].draw(ctx);
-            world[i].step(1/fps);
+            world[i].step(dt);
         }
         for (let i = 0; i < world.length; ++i)
             if (world[i].remove == true) world.splice(i, 1);
 
-        mx += ship.vel[0]/fps;
-        my += ship.vel[1]/fps;
+        mx += ship.vel[0]*dt;
+        my += ship.vel[1]*dt;
 
-        if (world.length < 50)
+        while (world.length < 100)
         {
             let donut = world.render_distance - Math.max(width, height);
             let r = world.render_distance - Math.random()*donut;
@@ -279,10 +344,15 @@ function draw()
         ctx.font = "14px Arial";
         let v = Math.sqrt(Math.pow(ship.vel[0], 2) + Math.pow(ship.vel[1], 2));
         let weapon = firemode ? "torpedoes" : "railgun";
+        ctx.fillText(world.length + " " +
+            Math.round(1000/(current - last)), 10, height - 30);
         ctx.fillText("Control thrusters with [W], [A], [S], [D], [Q], " +
             "[E], [SHIFT]; launch torpedoes/railgun with [SPACE]; " +
             "toggle firing mode with [F] (current mode: " + weapon + ")",
             10, height - 10);
+
+        dt = (current - last)/1000;
+        last = current;
 
     }, 1000/fps);
 }

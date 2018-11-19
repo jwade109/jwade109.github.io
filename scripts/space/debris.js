@@ -38,7 +38,7 @@ class Debris
 
     explode()
     {
-        let num_debris = Math.round(Math.random()*12 + 4);
+        let num_debris = 4;
         if (this.radius < 4) num_debris = 0;
         for (let i = 0; i < num_debris; ++i)
         {
@@ -47,9 +47,10 @@ class Debris
             let vel = this.vel.slice();
             vel[0] += Math.random()*80 - 40;
             vel[1] += Math.random()*80 - 40;
+            let size = this.radius/2;
             let deb = new Debris(pos, vel,
-                Math.random()*Math.PI*2,
-                Math.random()*5 - 2.5, 2*Math.random()*this.radius/3);
+                this.theta,
+                this.omega + Math.random()*5 - 2.5, size);
             deb.world = this.world;
             this.world.push(deb);
         }

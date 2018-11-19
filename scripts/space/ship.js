@@ -19,8 +19,8 @@ class Ship
         this.railgun_reload = 1;
         this.pdc_reload = 0.03;
 
-        this.w = 40;
-        this.l = 144;
+        this.w = 40/1.5;
+        this.l = 144/1.5;
 
         let tx = this.w*0.5;
         let ty = this.w*0.7;
@@ -62,7 +62,7 @@ class Ship
         tpos[1] += poff[1];
         tvel[0] += voff[0];
         tvel[1] += voff[1];
-        let torp = new Torpedo(tpos, tvel, this.theta, 5500, 20);
+        let torp = new Torpedo(tpos, tvel, this.theta, 5500, 13);
         torp.world = this.world;
         this.world.push(torp);
     }
@@ -75,11 +75,9 @@ class Ship
         let dv = rot2d([-60, 0], this.theta);
         vel[0] += this.vel[0];
         vel[1] += this.vel[1];
-        let torp = new Torpedo(this.pos.slice(), vel, this.theta, 0, 12);
-        torp.world = this.world;
-        torp.railgun = true;
-        torp.drifttimer = Infinity;
-        world.push(torp);
+        let r = new Railgun(this.pos.slice(), vel, this.theta, 12);
+        r.world = this.world;
+        world.push(r);
         this.vel[0] += dv[0];
         this.vel[1] += dv[1];
     }
@@ -88,16 +86,14 @@ class Ship
     {
         if (this.pdc_reload > 0) return;
         this.pdc_reload = 0.03;
-        let theta = Math.atan2(mx - ship.pos[0], my - ship.pos[1]) - Math.PI/2;
+        let theta = Math.atan2(mx - this.pos[0], my - this.pos[1]) - Math.PI/2;
         let vel = rot2d([800 + Math.random()*10 - 5,
                          Math.random()*40 - 20], theta);
         vel[0] += this.vel[0];
         vel[1] += this.vel[1];
-        let torp = new Torpedo(this.pos.slice(), vel, theta, 0, 7);
-        torp.pdc = true;
-        torp.drifttimer = Infinity;
-        torp.world = this.world;
-        world.push(torp);
+        let b = new Bullet(this.pos.slice(), vel, theta, 7);
+        b.world = this.world;
+        world.push(b);
     }
 
     draw(ctx)
