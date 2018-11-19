@@ -2,22 +2,29 @@
 let canvas = document.getElementById("canvas");
 let ctx = canvas.getContext("2d");
 
-let left = false, right = false, up = false, down = false, space = false;
-let akey = false, wkey = false, dkey = false, skey = false, xkey = false;
-let fkey = false, qkey = false, ekey = false, mouse = false, shift = false;
+let left = false, right = false, up = false, down = false, space = false,
+    akey = false, wkey = false, dkey = false, skey = false, xkey = false,
+    fkey = false, qkey = false, ekey = false, leftClick = false,
+    rightClick = false, shift = false;
 
 let firemode = true;
+let large_radius = 40;
+let small_radius = 12;
 
 let width = document.body.clientWidth;
 let height = document.body.scrollHeight;
 let mx = 0, my = 0;
+let mousepos = [mx, my];
 
 let world = [];
-world.render_distance = Math.max(width, height)*1.5;
+world.render_distance = Math.max(width, height)*3;
 
 let ship = new Ship([0, 0], Math.PI/2);
 ship.world = world;
 world.push(ship);
+let corvette = new Corvette([200, 0], Math.PI/3);
+corvette.world = world;
+world.push(corvette);
 
 let current = new Date().getTime(), last = current, dt = 0;
 
@@ -42,16 +49,25 @@ canvas.onmousemove = function(e)
     let rect = canvas.getBoundingClientRect();
     mx = e.clientX - rect.left + ship.pos[0] - width/2;
     my = e.clientY - rect.top + ship.pos[1] - height/2;
+    mousepos = [mx, my];
 }
 
 canvas.onmousedown = function(e)
 {
-    mouse = true;
+    switch (e.button)
+    {
+        case 0: leftClick = true;
+        case 2: rightClick = true;
+    }
 }
 
 canvas.onmouseup = function(e)
 {
-    mouse = false;
+    switch (e.button)
+    {
+        case 0: leftClick = false;
+        case 2: rightClick = false;
+    }
 }
 
 document.addEventListener('keydown', function(event)
@@ -137,10 +153,28 @@ function handleCollision(obj1, obj2)
     if (obj1.constructor.name == obj2.constructor.name) return;
     if (objectsAre("Ship", "Debris"))
     {
+        let debris = obj1;
+        if (!(debris instanceof Debris))
+        {
+            debris = obj2;
+        }
+        if (debris.radius > large_radius) debris.explode();
         return;
     }
     if (objectsAre("Ship", "Torpedo"))
     {
+        let ship = obj1, torpedo = obj2;
+        if (!(ship instanceof Ship))
+        {
+            ship = obj2;
+            torpedo = obj1;
+        }
+        if (torpedo.origin !== ship)
+        {
+            torpedo.vel = ship.vel.slice();
+            ship.explode();
+            torpedo.explode();
+        }
         return;
     }
     if (objectsAre("Ship", "Bullet"))
@@ -151,9 +185,10 @@ function handleCollision(obj1, obj2)
     {
         if (obj1 instanceof Debris)
         {
-            if (obj1.radius < 12 && objectsAre("Torpedo", "Debris")) return;
+            if (obj1.radius < small_radius && objectsAre("Torpedo", "Debris"))
+                return;
             obj2.vel = obj1.vel.slice();
-            if (obj1.radius > 40 && objectsAre("Bullet", "Debris"))
+            if (obj1.radius > large_radius && objectsAre("Bullet", "Debris"))
             {
                 obj2.explode();
                 return;
@@ -163,9 +198,10 @@ function handleCollision(obj1, obj2)
         }
         if (obj2 instanceof Debris)
         {
-            if (obj2.radius < 12 && objectsAre("Torpedo", "Debris")) return;
+            if (obj2.radius < small_radius && objectsAre("Torpedo", "Debris"))
+                return;
             obj1.vel = obj2.vel.slice();
-            if (obj2.radius > 40 && objectsAre("Bullet", "Debris"))
+            if (obj2.radius > large_radius && objectsAre("Bullet", "Debris"))
             {
                 obj1.explode();
                 return;
@@ -194,6 +230,59 @@ function handleCollision(obj1, obj2)
     }
     else if (objectsAre("Railgun", "Ship"))
     {
+        return;
+    }
+    else if (objectsAre("Railgun", "Corvette"))
+    {
+        let corvette = obj1;
+        if (!(corvette instanceof Corvette))
+        {
+            corvette = obj2;
+        }
+        corvette.damage(400);
+        console.log("boom");
+        return;
+    }
+    else if (objectsAre("Debris", "Corvette"))
+    {
+        let debris = obj1;
+        if (!(debris instanceof Debris))
+        {
+            debris = obj2;
+        }
+        if (debris.radius > large_radius)
+        {
+            debris.explode();
+        }
+        return;
+    }
+    else if (objectsAre("Bullet", "Corvette"))
+    {
+        let corvette = obj1, bullet = obj2;
+        if (!(corvette instanceof Corvette))
+        {
+            corvette = obj2;
+            bullet = obj1;
+        }
+        // corvette.explode();
+        bullet.explode();
+        corvette.damage(1);
+        return;
+    }
+    else if (objectsAre("Torpedo", "Corvette"))
+    {
+        let corvette = obj1, torpedo = obj2;
+        if (!(corvette instanceof Corvette))
+        {
+            corvette = obj2;
+            torpedo = obj1;
+        }
+        if (torpedo.origin !== corvette)
+        {
+            torpedo.vel = corvette.vel.slice();
+            corvette.damage(100);
+            torpedo.explode();
+        }
         return;
     }
     console.log("unhandled collision between " +
@@ -257,11 +346,11 @@ function draw()
 
         mx += ship.vel[0]*dt;
         my += ship.vel[1]*dt;
+        mousepos = [mx, my];
 
         while (world.length < 100)
         {
-            let donut = world.render_distance - Math.max(width, height);
-            let r = world.render_distance - Math.random()*donut;
+            let r = Math.max(width, height) + Math.random()*200;
             let rot = Math.random()*Math.PI*2;
             let pos = [Math.cos(rot)*r + ship.pos[0],
                        Math.sin(rot)*r + ship.pos[1]];
@@ -274,6 +363,21 @@ function draw()
             deb.world = world;
             world.push(deb);
         }
+
+        // if (corvette.remove)
+        // {
+        //     let donut = world.render_distance - Math.max(width, height);
+        //     let r = world.render_distance - Math.random()*donut;
+        //     let rot = Math.random()*Math.PI*2;
+        //     let pos = [Math.cos(rot)*r + ship.pos[0],
+        //                Math.sin(rot)*r + ship.pos[1]];
+        //     let vel = [Math.random()*200 - 100 + ship.vel[0],
+        //                Math.random()*200 - 100 + ship.vel[1]]
+        //     corvette = new Corvette(pos, Math.random()*Math.PI*2);
+        //     corvette.world = world;
+        //     corvette.vel = vel;
+        //     world.push(corvette);
+        // }
 
         if (wkey)
         {
@@ -318,7 +422,7 @@ function draw()
             if (firemode) ship.launchTorpedo();
             else ship.fireRailgun();
         }
-        if (mouse)
+        if (leftClick)
         {
             ship.firePDC();
         }

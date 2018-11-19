@@ -8,6 +8,9 @@ class Debris
         this.omega = omega;
         this.radius = radius;
 
+        this.color = "black";
+        if (Math.random() < 0.4)
+            this.color = "darkgray";
         this.world = null;
     }
 
@@ -24,8 +27,8 @@ class Debris
         ctx.translate(this.pos[0], this.pos[1]);
         ctx.rotate(-this.theta);
         ctx.strokeStyle = "black";
-        ctx.fillStyle = "black";
-        ctx.globalAlpha = 0.4;
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = 0.5
         ctx.fillRect(-this.radius/2,
                      -this.radius/2,
                      this.radius, this.radius);
@@ -52,6 +55,7 @@ class Debris
                 this.theta,
                 this.omega + Math.random()*5 - 2.5, size);
             deb.world = this.world;
+            deb.color = this.color;
             this.world.push(deb);
         }
         this.remove = true;

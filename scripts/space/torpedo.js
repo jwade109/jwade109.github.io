@@ -17,6 +17,7 @@ class Torpedo
         this.radius = length/2;
 
         this.world = null;
+        this.target = mousepos;
 
         this.thruster = new Thruster(
             [0, -this.length/2], -Math.PI/2, thrust, this.width);
@@ -42,8 +43,8 @@ class Torpedo
 
     step(dt)
     {
-        let theta = Math.atan2(mx - this.pos[0], my - this.pos[1]) -
-            Math.PI/2 - this.theta;
+        let theta = Math.atan2(this.target[0] - this.pos[0],
+            this.target[1] - this.pos[1]) - Math.PI/2 - this.theta;
 
         let bodyacc = [0, 0];
         if (this.drifttimer > 0) this.drifttimer -= dt;
@@ -58,16 +59,9 @@ class Torpedo
         }
         let acc = this.b2g(bodyacc);
 
-        let pointing = this.b2g([1, 0]);
-        let vmag = Math.sqrt(Math.pow(this.vel[0], 2) + Math.pow(this.vel[1], 2));
-        let vunit = [this.vel[0]/vmag, this.vel[1]/vmag];
-        let corr = dot2d(pointing, vunit);
-        // if (det2d(pointing, vunit) > 0) corr *= -1;
-        console.log(corr*180/Math.PI);
-
         while (theta > Math.PI) theta -= Math.PI*2;
         while (theta < -Math.PI) theta += Math.PI*2;
-        let alpha = 200*theta - 40*this.omega;
+        let alpha = 600*theta - 40*this.omega;
         if (this.drifttimer <= 0) alpha = this.omega = 0;
         this.vel[0] += acc[0]*dt;
         this.vel[1] += acc[1]*dt;

@@ -21,6 +21,7 @@ class Ship
 
         this.w = 40/1.5;
         this.l = 144/1.5;
+        this.radius = this.w*2;
 
         let tx = this.w*0.5;
         let ty = this.w*0.7;
@@ -63,6 +64,7 @@ class Ship
         tvel[0] += voff[0];
         tvel[1] += voff[1];
         let torp = new Torpedo(tpos, tvel, this.theta, 5500, 13);
+        torp.origin = this;
         torp.world = this.world;
         this.world.push(torp);
     }
@@ -77,6 +79,7 @@ class Ship
         vel[1] += this.vel[1];
         let r = new Railgun(this.pos.slice(), vel, this.theta, 12);
         r.world = this.world;
+        r.origin = this;
         world.push(r);
         this.vel[0] += dv[0];
         this.vel[1] += dv[1];
@@ -93,6 +96,7 @@ class Ship
         vel[1] += this.vel[1];
         let b = new Bullet(this.pos.slice(), vel, theta, 7);
         b.world = this.world;
+        b.origin = this;
         world.push(b);
     }
 
@@ -100,6 +104,7 @@ class Ship
     {
         ctx.save(); // save global reference frame
         ctx.translate(this.pos[0], this.pos[1]);
+
         ctx.rotate(-this.theta - Math.PI/2)
         // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE FRAME
 
@@ -218,8 +223,11 @@ class Ship
 
         this.acc = [0, 0];
         this.alpha = 0;
+    }
 
-        // for (let t of this.torpedoes) t.step(dt);
+    explode()
+    {
+
     }
 
     b2g(v)
