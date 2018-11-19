@@ -13,8 +13,7 @@ let small_radius = 12;
 
 let width = document.body.clientWidth;
 let height = document.body.scrollHeight;
-let mx = 0, my = 0;
-let mousepos = [mx, my];
+let mx = 0, my = 0, mousepos = [mx, my];
 
 let world = [];
 world.render_distance = Math.max(width, height)*3;
@@ -239,8 +238,7 @@ function handleCollision(obj1, obj2)
         {
             corvette = obj2;
         }
-        corvette.damage(400);
-        console.log("boom");
+        corvette.damage(200);
         return;
     }
     else if (objectsAre("Debris", "Corvette"))
@@ -264,9 +262,11 @@ function handleCollision(obj1, obj2)
             corvette = obj2;
             bullet = obj1;
         }
-        // corvette.explode();
-        bullet.explode();
-        corvette.damage(1);
+        if (bullet.origin !== corvette)
+        {
+            bullet.explode();
+            corvette.damage(1);
+        }
         return;
     }
     else if (objectsAre("Torpedo", "Corvette"))
@@ -346,7 +346,7 @@ function draw()
 
         mx += ship.vel[0]*dt;
         my += ship.vel[1]*dt;
-        mousepos = [mx, my];
+        mousepos[0] = mx; mousepos[1] = my;
 
         while (world.length < 100)
         {
@@ -364,20 +364,20 @@ function draw()
             world.push(deb);
         }
 
-        // if (corvette.remove)
-        // {
-        //     let donut = world.render_distance - Math.max(width, height);
-        //     let r = world.render_distance - Math.random()*donut;
-        //     let rot = Math.random()*Math.PI*2;
-        //     let pos = [Math.cos(rot)*r + ship.pos[0],
-        //                Math.sin(rot)*r + ship.pos[1]];
-        //     let vel = [Math.random()*200 - 100 + ship.vel[0],
-        //                Math.random()*200 - 100 + ship.vel[1]]
-        //     corvette = new Corvette(pos, Math.random()*Math.PI*2);
-        //     corvette.world = world;
-        //     corvette.vel = vel;
-        //     world.push(corvette);
-        // }
+        if (corvette.remove)
+        {
+            let donut = world.render_distance - Math.max(width, height);
+            let r = world.render_distance - Math.random()*donut;
+            let rot = Math.random()*Math.PI*2;
+            let pos = [Math.cos(rot)*r + ship.pos[0],
+                       Math.sin(rot)*r + ship.pos[1]];
+            let vel = [Math.random()*200 - 100 + ship.vel[0],
+                       Math.random()*200 - 100 + ship.vel[1]]
+            corvette = new Corvette(pos, Math.random()*Math.PI*2);
+            corvette.world = world;
+            corvette.vel = vel;
+            world.push(corvette);
+        }
 
         if (wkey)
         {

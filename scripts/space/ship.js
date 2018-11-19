@@ -66,6 +66,8 @@ class Ship
         let torp = new Torpedo(tpos, tvel, this.theta, 5500, 13);
         torp.origin = this;
         torp.world = this.world;
+        torp.target = mousepos;
+        torp.launch_vel = this.vel.slice();
         this.world.push(torp);
     }
 

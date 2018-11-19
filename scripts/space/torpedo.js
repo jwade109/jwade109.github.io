@@ -43,11 +43,17 @@ class Torpedo
 
     step(dt)
     {
+        mousepos[0] = mx; mousepos[1] = my;
+
         let theta = Math.atan2(this.target[0] - this.pos[0],
             this.target[1] - this.pos[1]) - Math.PI/2 - this.theta;
 
         let bodyacc = [0, 0];
-        if (this.drifttimer > 0) this.drifttimer -= dt;
+        if (this.drifttimer > 0)
+        {
+            this.drifttimer -= dt;
+            if (this.drifttimer <= 0) this.vel = this.launch_vel;
+        }
         else
         {
             this.thruster.firing = true;
@@ -67,6 +73,8 @@ class Torpedo
         this.vel[1] += acc[1]*dt;
         this.pos[0] += this.vel[0]*dt;
         this.pos[1] += this.vel[1]*dt;
+        this.target[0] += this.vel[0]*dt;
+        this.target[1] += this.vel[1]*dt;
         this.theta += this.omega*dt;
         this.omega += alpha*dt;
     }
