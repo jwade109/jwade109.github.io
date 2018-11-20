@@ -15,6 +15,10 @@ class Torpedo
         this.railgun = false;
         this.pdc = false;
         this.radius = length/2;
+        this.box = new Hitbox([[this.width/2, this.length/2],
+                               [this.width/2, -this.length/2],
+                               [-this.width/2, -this.length/2],
+                               [-this.width/2, this.length/2]]);
 
         this.world = null;
         this.target = mousepos;
@@ -38,6 +42,7 @@ class Torpedo
         ctx.fillStyle = "black";
         ctx.fillRect(-this.width/2, -this.length/2, this.width, this.length);
         this.thruster.draw(ctx);
+        if (DRAW_HITBOX) this.box.draw(ctx);
         ctx.restore();
     }
 
@@ -91,7 +96,8 @@ class Torpedo
             vel[1] += Math.random()*200 - 100;
             let deb = new Debris(pos, vel,
                 Math.random()*Math.PI*2,
-                Math.random()*40 - 20, Math.random()*6 + 3);
+                Math.random()*40 - 20,
+                (Math.random()*3 + 2)*METERS);
             deb.world = this.world;
             this.world.push(deb);
         }

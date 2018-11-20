@@ -1,3 +1,6 @@
+var METERS = 1.3;
+var DRAW_HITBOX = false;
+var ENEMY_NO = 0;
 
 let canvas = document.getElementById("canvas");
 let ctx = canvas.getContext("2d");
@@ -8,8 +11,8 @@ let left = false, right = false, up = false, down = false, space = false,
     rightClick = false, shift = false;
 
 let firemode = true;
-let large_radius = 40;
-let small_radius = 12;
+let large_radius = 40*METERS;
+let small_radius = 12*METERS;
 
 let width = document.body.clientWidth;
 let height = document.body.scrollHeight;
@@ -21,7 +24,8 @@ world.render_distance = Math.max(width, height)*3;
 let ship = new Ship([0, 0], Math.PI/2);
 ship.world = world;
 world.push(ship);
-let corvette = new Corvette([200, 0], Math.PI/3);
+let corvette = new Corvette([NaN, NaN], 0);
+corvette.remove = true;
 corvette.world = world;
 world.push(corvette);
 
@@ -33,11 +37,11 @@ for (let i = 0; i < 20; ++i)
     let rot = Math.random()*Math.PI*2;
     let pos = [Math.cos(rot)*r + ship.pos[0],
                Math.sin(rot)*r + ship.pos[1]];
-    let vel = [Math.random()*200 - 100 + ship.vel[0],
-               Math.random()*200 - 100 + ship.vel[1]]
+    let vel = [(Math.random()*200 - 100)*METERS + ship.vel[0],
+               (Math.random()*200 - 100)*METERS + ship.vel[1]]
     let theta = Math.random()*Math.PI*2;
     let omega = Math.random()*10 - 5;
-    let size = Math.random()*50 + 20;
+    let size = (Math.random()*25 + 10)*METERS;
     let deb = new Debris(pos, vel, theta, omega, size);
     deb.world = world;
     world.push(deb);
@@ -150,6 +154,12 @@ function handleCollision(obj1, obj2)
 
     if (obj1 === obj2) return;
     if (obj1.constructor.name == obj2.constructor.name) return;
+    if (objectsAre("Ship", "Corvette"))
+    {
+        ship.damage(ship.health);
+        corvette.damage(corvette.health);
+        return;
+    }
     if (objectsAre("Ship", "Debris"))
     {
         let debris = obj1;
@@ -157,7 +167,17 @@ function handleCollision(obj1, obj2)
         {
             debris = obj2;
         }
-        if (debris.radius > large_radius) debris.explode();
+        if (debris.radius > large_radius)
+        {
+            let vel = [(ship.vel[0] + debris.vel[0])/2,
+                       (ship.vel[1] + debris.vel[1])/2];
+            let domega = Math.random()*8 - 4;
+            debris.vel = vel;
+            ship.vel = vel;
+            ship.omega += domega;
+            debris.explode();
+            ship.damage(50);
+        }
         return;
     }
     if (objectsAre("Ship", "Torpedo"))
@@ -171,13 +191,25 @@ function handleCollision(obj1, obj2)
         if (torpedo.origin !== ship)
         {
             torpedo.vel = ship.vel.slice();
-            ship.explode();
             torpedo.explode();
+            ship.damage(200);
         }
         return;
     }
     if (objectsAre("Ship", "Bullet"))
     {
+        let ship = obj1, bullet = obj2;
+        if (!(ship instanceof Ship))
+        {
+            ship = obj2;
+            bullet = obj1;
+        }
+        if (bullet.origin !== ship)
+        {
+            bullet.vel = ship.vel.slice();
+            bullet.explode();
+            ship.damage(1);
+        }
         return;
     }
     else if (objectsAre("Bullet", "Debris") || objectsAre("Torpedo", "Debris"))
@@ -250,6 +282,7 @@ function handleCollision(obj1, obj2)
         }
         if (debris.radius > large_radius)
         {
+            debris.vel = corvette.vel.slice();
             debris.explode();
         }
         return;
@@ -306,8 +339,20 @@ function draw()
         world.render_distance = Math.max(width, height)*1.5;
 
         ctx.save();
-        ctx.translate(-ship.pos[0] + width/2, -ship.pos[1] + height/2);
+        ctx.translate(-ship.pos[0] + width/2,
+                      -ship.pos[1] + height/2);
 
+        ctx.strokeStyle = "black";
+        ctx.fillStyle = "black";
+        ctx.globalAlpha = 0.03;
+        for (let i = 0; i < 4; ++i)
+        {
+            ctx.beginPath();
+            ctx.arc(ship.pos[0], ship.pos[1], 100*(i + 1)*METERS, 0, Math.PI*2);
+            ctx.stroke();
+        }
+
+        ctx.globalAlpha = 1;
         ctx.fillRect(mx, my, 2, 2);
 
         let exploded = [];
@@ -377,55 +422,60 @@ function draw()
             corvette.world = world;
             corvette.vel = vel;
             world.push(corvette);
+            ++ENEMY_NO;
         }
 
-        if (wkey)
+        if (!ship.remove)
         {
-            ship.thrusters[5].firing = true;
-            ship.thrusters[6].firing = true;
+            if (wkey)
+            {
+                ship.thrusters[5].firing = true;
+                ship.thrusters[6].firing = true;
+            }
+            if (qkey)
+            {
+                ship.thrusters[0].firing = true;
+                ship.thrusters[7].firing = true;
+            }
+            if (ekey)
+            {
+                ship.thrusters[3].firing = true;
+                ship.thrusters[4].firing = true;
+            }
+            if (skey || down)
+            {
+                ship.thrusters[1].firing = true;
+                ship.thrusters[2].firing = true;
+            }
+            if (akey || left)
+            {
+                ship.thrusters[2].firing = true;
+                ship.thrusters[6].firing = true;
+                ship.thrusters[0].firing = true;
+                ship.thrusters[4].firing = true;
+            }
+            if (dkey || right)
+            {
+                ship.thrusters[1].firing = true;
+                ship.thrusters[5].firing = true;
+                ship.thrusters[3].firing = true;
+                ship.thrusters[7].firing = true;
+            }
+            if (shift || up)
+            {
+                ship.thrusters[8].firing = true;
+            }
+            if (space)
+            {
+                if (firemode) ship.launchTorpedo();
+                else ship.fireRailgun();
+            }
+            if (leftClick)
+            {
+                ship.firePDC();
+            }
         }
-        if (qkey)
-        {
-            ship.thrusters[0].firing = true;
-            ship.thrusters[7].firing = true;
-        }
-        if (ekey)
-        {
-            ship.thrusters[3].firing = true;
-            ship.thrusters[4].firing = true;
-        }
-        if (skey || down)
-        {
-            ship.thrusters[1].firing = true;
-            ship.thrusters[2].firing = true;
-        }
-        if (akey || left)
-        {
-            ship.thrusters[2].firing = true;
-            ship.thrusters[6].firing = true;
-            ship.thrusters[0].firing = true;
-            ship.thrusters[4].firing = true;
-        }
-        if (dkey || right)
-        {
-            ship.thrusters[1].firing = true;
-            ship.thrusters[5].firing = true;
-            ship.thrusters[3].firing = true;
-            ship.thrusters[7].firing = true;
-        }
-        if (shift || up)
-        {
-            ship.thrusters[8].firing = true;
-        }
-        if (space)
-        {
-            if (firemode) ship.launchTorpedo();
-            else ship.fireRailgun();
-        }
-        if (leftClick)
-        {
-            ship.firePDC();
-        }
+        else ship.step(dt);
 
         ctx.restore();
 
@@ -433,14 +483,22 @@ function draw()
         ctx.globalAlpha = 0.3;
         let fh = ship.fuel/ship.maxfuel*(height - 60);
         ctx.fillRect(10, (height - 50) - fh, 21, fh);
+        ctx.fillStyle = "green";
+        let hh = Math.max(0, ship.health)/1000*(height - 60);
+        ctx.fillRect(34, (height - 50) - hh, 21, hh);
+        ctx.fillStyle = "red";
+        let ch = Math.max(0, corvette.health)/1000*(height - 60);
+        ctx.fillRect(58, (height - 50) - ch, 21, ch);
 
-        ctx.save();
-        ctx.translate(28, height - 53);
-        ctx.rotate(-Math.PI/2);
         ctx.font = "20px Arial";
         ctx.fillStyle = "white";
         ctx.globalAlpha = 1;
+        ctx.save();
+        ctx.translate(28, height - 53);
+        ctx.rotate(-Math.PI/2);
         ctx.fillText("FUEL", 0, 0);
+        ctx.fillText("HULL STRENGH", 0, 24);
+        ctx.fillText("ENEMY #" + ENEMY_NO, 0, 48);
         ctx.restore();
 
         ctx.fillStyle = "gray";
@@ -449,7 +507,8 @@ function draw()
         let v = Math.sqrt(Math.pow(ship.vel[0], 2) + Math.pow(ship.vel[1], 2));
         let weapon = firemode ? "torpedoes" : "railgun";
         ctx.fillText(world.length + " " +
-            Math.round(1000/(current - last)), 10, height - 30);
+            Math.round(1000/(current - last)) + " " +
+            corvette.health + " " + ship.health, 10, height - 30);
         ctx.fillText("Control thrusters with [W], [A], [S], [D], [Q], " +
             "[E], [SHIFT]; launch torpedoes/railgun with [SPACE]; " +
             "toggle firing mode with [F] (current mode: " + weapon + ")",

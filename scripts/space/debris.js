@@ -7,10 +7,14 @@ class Debris
         this.theta = theta;
         this.omega = omega;
         this.radius = radius;
+        this.box = new Hitbox([[this.radius/2, this.radius/2],
+                               [this.radius/2, -this.radius/2],
+                               [-this.radius/2, -this.radius/2],
+                               [-this.radius/2, this.radius/2]]);
 
-        this.color = "black";
+        this.color = "darkgray";
         if (Math.random() < 0.4)
-            this.color = "darkgray";
+            this.color = "gray";
         this.world = null;
     }
 
@@ -28,14 +32,14 @@ class Debris
         ctx.rotate(-this.theta);
         ctx.strokeStyle = "black";
         ctx.fillStyle = this.color;
-        ctx.globalAlpha = 0.5
+        ctx.globalAlpha = 1;
         ctx.fillRect(-this.radius/2,
                      -this.radius/2,
                      this.radius, this.radius);
-        ctx.globalAlpha = 1;
         ctx.strokeRect(-this.radius/2,
                        -this.radius/2,
                        this.radius, this.radius);
+        if (DRAW_HITBOX) this.box.draw(ctx);
         ctx.restore();
     }
 
@@ -48,8 +52,8 @@ class Debris
 
             let pos = this.pos.slice();
             let vel = this.vel.slice();
-            vel[0] += Math.random()*80 - 40;
-            vel[1] += Math.random()*80 - 40;
+            vel[0] += (Math.random()*60 - 40)*METERS;
+            vel[1] += (Math.random()*80 - 40)*METERS;
             let size = this.radius/2;
             let deb = new Debris(pos, vel,
                 this.theta,

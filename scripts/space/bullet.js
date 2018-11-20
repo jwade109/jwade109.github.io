@@ -9,7 +9,7 @@ class Bullet
         this.length = length;
         this.width = this.length/5;
         this.mass = 1;
-        this.radius = length/2;
+        this.radius = this.width;
 
         this.world = null;
     }

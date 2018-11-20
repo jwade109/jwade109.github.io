@@ -16,22 +16,19 @@ class Corvette
         this.pdc_reload = 0;
         this.side = true;
 
-        this.width = 30
-        this.length = 70;
-        this.radius = this.length - 10;
-        this.health = 1000;
+        this.width = 9*METERS;
+        this.length = 31*METERS;
+        this.radius = this.width/2;
+        this.box = new Hitbox([[this.width/2, this.length/2],
+                               [this.width/2, -this.length/2],
+                               [-this.width/2, -this.length/2],
+                               [-this.width/2, this.length/2]]);
+        this.health = 350;
 
         this.world = null;
 
-        this.nodes = [];
-        for (let i = 0; i < 30; ++i)
-        {
-            this.nodes.push([Math.random()*this.width - this.width/2,
-                             Math.random()*this.length - this.length/2,
-                             Math.random()*this.width,
-                             Math.random()*this.width,
-                             Math.random()/2 + 0.5]);
-        }
+        this.gray = "#606060";
+        this.orange = "#8D3F32";
     }
 
     launchTorpedo()
@@ -52,15 +49,14 @@ class Corvette
         this.world.push(torp);
     }
 
-
     firePDC()
     {
         if (this.pdc_reload > 0) return;
         this.pdc_reload = 0.03;
         let theta = Math.atan2(ship.pos[0] - this.pos[0],
             ship.pos[1] - this.pos[1]) - Math.PI/2;
-        let vel = rot2d([800 + Math.random()*10 - 5,
-                         Math.random()*40 - 20], theta);
+        let vel = rot2d([(500 + Math.random()*10 - 5)*METERS,
+                         (Math.random()*70 - 35)*METERS], theta);
         vel[0] += this.vel[0];
         vel[1] += this.vel[1];
         let b = new Bullet(this.pos.slice(), vel, theta, 7);
@@ -73,23 +69,69 @@ class Corvette
     {
         ctx.save(); // save global reference frame
         ctx.translate(this.pos[0], this.pos[1]);
-        ctx.rotate(-this.theta - Math.PI/2)
+        ctx.rotate(-this.theta);
         // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE FRAME
 
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = "#FFAAAA";
-        ctx.strokeStyle = "black";
-        ctx.fillRect(-this.width/2, -this.length/2, this.width, this.length);
-        ctx.strokeRect(-this.width/2, -this.length/2, this.width, this.length);
-        for (let node of this.nodes)
-        {
-            ctx.globalAlpha = node[4];
-            let x = node[0], y = node[1], s1 = node[2], s2 = node[3];
-            ctx.fillRect(x - s1/2, y - s2/2, s1, s2);
-            ctx.globalAlpha = 1;
-            ctx.strokeRect(x - s1/2, y - s2/2, s1, s2);
-        }
+        let x0 = -0.50*this.length;
+        let x1 = -0.47*this.length;
+        let x2 = -0.39*this.length;
+        let x3 = -0.36*this.length;
+        let x4 = -0.25*this.length;
+        let x5 = -0.10*this.length;
+        let x6 =  0.10*this.length;
+        let x7 =  0.20*this.length;
+        let x8 =  0.25*this.length;
+        let x9 =  0.3*this.length;
+        let x10 = 0.50*this.length;
+        let x11 = 0.65*this.length;
 
+        let y0 = 0.05*this.width;
+        let y1 = 0.15*this.width;
+        let y2 = 0.25*this.width;
+        let y3 = 0.35*this.width;
+        let y4 = 0.50*this.width;
+
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = "black";
+        ctx.fillStyle = this.gray;
+        ctx.beginPath();
+        ctx.moveTo(x0, y2);
+        ctx.lineTo(x1, y1);
+        ctx.lineTo(x1, y3);
+        ctx.lineTo(x3, y4);
+        ctx.lineTo(x5, y4);
+        ctx.lineTo(x6, y3);
+        ctx.lineTo(x7, y4);
+        ctx.lineTo(x10, y3);
+        ctx.lineTo(x10, -y3);
+        ctx.lineTo(x7, -y4);
+        ctx.lineTo(x6, -y3);
+        ctx.lineTo(x5, -y4);
+        ctx.lineTo(x3, -y4);
+        ctx.lineTo(x1, -y3);
+        ctx.lineTo(x1, -y1);
+        ctx.lineTo(x0, -y2);
+        ctx.lineTo(x0, y2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = this.orange;
+        ctx.beginPath();
+        // ctx.rect(x5, y2, x4 - x2, y4 - y2);
+        // ctx.rect(x5, -y2 - (y4 - y2), x4 - x2, y4 - y2);
+        ctx.rect(-0.3*this.length, -0.15*this.width,
+                        0.6*this.length, 0.3*this.width);
+        ctx.rect(-0.3*this.length, -0.15*this.width,
+                        0.6*this.length, 0.3*this.width);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.moveTo(x10, y1);
+        ctx.lineTo(x11, y1);
+        ctx.stroke();
+
+        ctx.rotate(-Math.PI/2);
+        if (DRAW_HITBOX) this.box.draw(ctx);
         ctx.restore();
     }
 
@@ -97,26 +139,26 @@ class Corvette
     {
         let dist = distance(ship.pos, this.pos);
         if (this.torpedo_reload > 0) this.torpedo_reload -= dt;
-        else if (400 < dist && dist < 1200)
+        else if (200*METERS < dist && dist < 700*METERS)
         {
             this.launchTorpedo();
             this.torpedo_reload = Math.random()*7;
         }
 
         if (this.pdc_reload > 0) this.pdc_reload -= dt;
-        else if (Math.random() < 0.2 && dist < 400)
+        else if (Math.random() < 0.5 && dist < 200*METERS)
             this.firePDC();
 
         let dx = ship.pos[0] - this.pos[0];
         let dy = ship.pos[1] - this.pos[1];
-        let bodyacc = [-(700 - dist)/10, 0];
+        let bodyacc = [-(300*METERS - dist)/10, 0];
         this.acc = this.b2g(bodyacc);
         this.acc[0] += (ship.vel[0] - this.vel[0])/3;
         this.acc[1] += (ship.vel[1] - this.vel[1])/3;
-        let theta = Math.atan2(dx, dy) - Math.PI/2;
+        let theta = angle2d(this.pos, ship.pos) - this.theta;
         while (theta > Math.PI) theta -= Math.PI*2;
         while (theta < -Math.PI) theta += Math.PI*2;
-        this.alpha = (theta - this.theta) - this.omega;
+        this.alpha = theta - this.omega;
 
         this.vel[0] += this.acc[0]*dt;
         this.vel[1] += this.acc[1]*dt;
@@ -131,19 +173,20 @@ class Corvette
 
     explode()
     {
-        let num_debris = 10 + Math.random()*7;
+        let num_debris = 15 + Math.random()*7;
         for (let i = 0; i < num_debris; ++i)
         {
             let pos = this.pos.slice();
             let vel = this.vel.slice();
             vel[0] += Math.random()*200 - 100;
             vel[1] += Math.random()*200 - 100;
-            let size = Math.random()*this.length/2;
+            let size = Math.random()*this.width/2 + this.width/2;
             let deb = new Debris(pos, vel,
                 this.theta,
                 this.omega + Math.random()*5 - 2.5, size);
             deb.world = this.world;
-            deb.color = "red";
+            deb.color = this.gray;
+            if (Math.random() < 0.4) deb.color = this.orange;
             this.world.push(deb);
         }
         this.remove = true;

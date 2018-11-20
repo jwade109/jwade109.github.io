@@ -86,3 +86,8 @@ function rot2d(u, theta)
     var y =  u[1]*Math.cos(theta) - u[0]*Math.sin(theta);
     return [x, y];
 }
+
+function angle2d(u, v)
+{
+    return Math.atan2(v[0] - u[0], v[1] - u[1]) - Math.PI/2;
+}
