@@ -30,6 +30,7 @@ class Corvette
         this.engine.drawbell = false;
 
         this.world = null;
+        this.is_enemy = true;
 
         this.gray = "#606060";
         this.orange = "#8D3F32";
@@ -49,7 +50,7 @@ class Corvette
         torp.origin = this;
         torp.target = PLAYER_SHIP.pos;
         torp.world = this.world;
-        torp.launch_vel = this.vel.slice();
+        torp.launch_vel = PLAYER_SHIP.vel.slice();
         this.world.push(torp);
     }
 
@@ -73,6 +74,15 @@ class Corvette
     {
         ctx.save(); // save global reference frame
         ctx.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+
+        // ctx.save();
+        // if (LOCK_CAMERA) ctx.rotate(-PLAYER_SHIP.theta);
+        // ctx.globalAlpha = 0.4;
+        // ctx.strokeStyle = "red";
+        // ctx.strokeRect(-this.length/2, -this.length/2,
+        //                this.length, this.length);
+        // ctx.restore();
+
         ctx.rotate(-this.theta);
         // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE FRAME
 
@@ -196,8 +206,6 @@ class Corvette
 
         this.acc = [0, 0];
         this.alpha = 0;
-
-        console.log(bodyacc[0]);
     }
 
     explode()

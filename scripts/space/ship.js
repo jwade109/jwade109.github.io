@@ -102,7 +102,7 @@ class Ship
                          Math.random()*70 - 35], theta);
         vel[0] += this.vel[0];
         vel[1] += this.vel[1];
-        let b = new Bullet(this.pos.slice(), vel, theta, 4);
+        let b = new Bullet(this.pos.slice(), vel, theta, PDC_LENGTH);
         b.world = this.world;
         b.origin = this;
         world.push(b);
@@ -119,9 +119,20 @@ class Ship
         ctx.save();
         ctx.rotate(Math.PI/2);
 
+        if (!firemode)
+        {
+            ctx.globalAlpha = 0.2;
+            ctx.strokeStyle = "red";
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(Math.max(width, height), 0);
+            ctx.stroke();
+        }
+
         let off = this.width/2;
         ctx.strokeStyle = "black";
         ctx.fillStyle = this.gray;
+
         ctx.globalAlpha = 1;
         ctx.beginPath();
 
@@ -277,6 +288,8 @@ class Ship
         this.omega = 0;
         this.health = -Infinity;
         this.remove = true;
+        for (let t of this.thrusters) t.firing = false;
+        GAME_OVER = true;
     }
 
     b2g(v)

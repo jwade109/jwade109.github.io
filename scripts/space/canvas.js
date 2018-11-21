@@ -1,7 +1,8 @@
 var PIXELS = 1.3; //  pixels per meter
-var DRAW_HITBOX = false;
+var DRAW_HITBOX = true;
 var LOCK_CAMERA = false;
 var SPAWN_ENEMIES = true;
+var MAX_ENEMIES = 2;
 var GAME_PAUSED = true;
 var SHOW_HELP = false;
 var LAST_EVENT = null;
@@ -10,36 +11,45 @@ var INFINITE_FUEL = true;
 var PLAYER_MAX_HEALTH = 1000;
 var PASSIVE_REGEN = PLAYER_MAX_HEALTH/(60*3);
 var PDC_LENGTH = 4;
+var INFINITE_AMMO = false;
+var PLAYER_MAX_MISSILES = 30;
+var PLAYER_MAX_RAILGUN = 40;
+var GAME_OVER = false;
 
 var ENEMY_NO = 0;
 let LARGE_DEBRIS = 25;
 let SMALL_DEBRIS = 6;
 var TORPEDO_THRUST = 2500;
+var RESPAWN_TIMER = 0;
 
 let canvas = document.getElementById("canvas");
 let ctx = canvas.getContext("2d");
 
-let left = false, right = false, up = false, down = false, space = false,
+var left = false, right = false, up = false, down = false, space = false,
     akey = false, wkey = false, dkey = false, skey = false, xkey = false,
     fkey = false, qkey = false, ekey = false, leftClick = false,
     rightClick = false, shift = false;
 
-let firemode = true;
+var firemode = true;
 
-let width = document.body.clientWidth;
-let height = document.body.scrollHeight;
-let MOUSEX = 0, MOUSEY = 0, MOUSEPOS = [MOUSEX, MOUSEY];
+var width = document.body.clientWidth;
+var height = document.body.scrollHeight;
+var MOUSEX = 0, MOUSEY = 0, MOUSEPOS = [MOUSEX, MOUSEY];
 
-let world = [];
+var world = [];
 world.render_distance = Math.max(width, height)*3;
 
-let PLAYER_SHIP = new Ship([0, 0], Math.PI/2);
-PLAYER_SHIP.world = world;
+var PLAYER_SHIP = new Ship([0, 0], Math.PI/2);
 world.push(PLAYER_SHIP);
-let corvette = new Corvette([NaN, NaN], 0);
-corvette.remove = true;
-corvette.world = world;
-world.push(corvette);
+PLAYER_SHIP.world = world;
+
+function respawn()
+{
+    PLAYER_SHIP = new Ship([0, 0], Math.PI/2);
+    PLAYER_SHIP.world = world;
+    world.push(PLAYER_SHIP);
+    GAME_OVER = false;
+}
 
 let current = new Date().getTime(), last = current, dt = 0;
 
@@ -113,7 +123,9 @@ document.addEventListener('keydown', function(event)
         case 27: GAME_PAUSED = !GAME_PAUSED;
                  SHOW_HELP = false;
                  break;
-        case 32: space = true; break;
+        case 32: if (GAME_OVER) respawn();
+                 else space = true;
+                 break;
         case 37: left = true; break;
         case 38: up = true; break;
         case 39: right = true; break;
@@ -205,6 +217,11 @@ function handleCollision(obj1, obj2)
     if (objectsAre("Ship", "Corvette"))
     {
         PLAYER_SHIP.damage(PLAYER_SHIP.health);
+        let corvette = obj1;
+        if (!(corvette instanceof Corvette))
+        {
+            corvette = obj2;
+        }
         corvette.damage(corvette.health);
         return;
     }
@@ -307,6 +324,16 @@ function handleCollision(obj1, obj2)
         debris.explode();
         return;
     }
+    else if (objectsAre("Railgun", "Torpedo"))
+    {
+        let torpedo = obj1;
+        if (!(torpedo instanceof Torpedo))
+        {
+            torpedo = obj2;
+        }
+        if (Math.random() < 0.2) torpedo.explode();
+        return;
+    }
     else if (objectsAre("Railgun", "Ship"))
     {
         return;
@@ -323,10 +350,11 @@ function handleCollision(obj1, obj2)
     }
     else if (objectsAre("Debris", "Corvette"))
     {
-        let debris = obj1;
+        let debris = obj1, corvette = obj2;
         if (!(debris instanceof Debris))
         {
             debris = obj2;
+            corvette = obj1;
         }
         if (debris.radius > LARGE_DEBRIS)
         {
@@ -395,14 +423,19 @@ function draw()
 
         ctx.strokeStyle = "black";
         ctx.fillStyle = "black";
-        ctx.globalAlpha = 0.03;
-        for (let i = 0; i < 4; ++i)
+        for (let i = 0; 250*(i + 1)*PIXELS < Math.max(width, height); ++i)
         {
             ctx.beginPath();
             ctx.arc(PLAYER_SHIP.pos[0]*PIXELS, PLAYER_SHIP.pos[1]*PIXELS,
-                    100*(i + 1)*PIXELS, 0, Math.PI*2);
+                    250*(i + 1)*PIXELS, 0, Math.PI*2);
+            ctx.globalAlpha = 0.06;
             ctx.stroke();
+            ctx.globalAlpha = 0.2;
+            ctx.fillText(250*(i + 1) + " m",
+                (PLAYER_SHIP.pos[0] + 250*(i + 1))*PIXELS + 3,
+                PLAYER_SHIP.pos[1]*PIXELS - 3);
         }
+        ctx.globalAlpha = 0.06;
         ctx.moveTo(PLAYER_SHIP.pos[0]*PIXELS,
                    PLAYER_SHIP.pos[1]*PIXELS - Math.max(width, height));
         ctx.lineTo(PLAYER_SHIP.pos[0]*PIXELS,
@@ -414,7 +447,9 @@ function draw()
         ctx.stroke();
 
         ctx.globalAlpha = 1;
-        ctx.fillRect(MOUSEX*PIXELS, MOUSEY*PIXELS, 2, 2);
+        ctx.beginPath();
+        ctx.arc(MOUSEX*PIXELS, MOUSEY*PIXELS, 1, 0, Math.PI*2);
+        ctx.fill();
 
         let exploded = [];
         for (let i = 0; i < world.length; ++i)
@@ -444,13 +479,13 @@ function draw()
             if (world[i].remove == true) world.splice(i, 1);
         }
 
-        for (let obj of world) obj.draw(ctx);
+        let enemy_count = 0;
+        for (let obj of world)
+        {
+            obj.draw(ctx);
+            if (obj.is_enemy) ++enemy_count;
+        }
         if (!GAME_PAUSED) for (let obj of world) obj.step(dt);
-        // for (let obj of world)
-        // {
-        //     obj.vel[0] -= PLAYER_SHIP.vel[0];
-        //     obj.vel[1] -= PLAYER_SHIP.vel[1];
-        // }
 
         while (world.length < 100)
         {
@@ -468,7 +503,7 @@ function draw()
             world.push(deb);
         }
 
-        if (corvette.remove && SPAWN_ENEMIES)
+        if (enemy_count < MAX_ENEMIES && SPAWN_ENEMIES && !GAME_OVER)
         {
             let donut = world.render_distance - Math.max(width, height);
             let r = world.render_distance - Math.random()*donut;
@@ -476,11 +511,10 @@ function draw()
             let pos = [Math.cos(rot)*r + PLAYER_SHIP.pos[0],
                        Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
             let vel = [PLAYER_SHIP.vel[0], PLAYER_SHIP.vel[1]];
-            corvette = new Corvette(pos, Math.random()*Math.PI*2);
+            let corvette = new Corvette(pos, Math.random()*Math.PI*2);
             corvette.world = world;
             corvette.vel = vel;
             world.push(corvette);
-            ++ENEMY_NO;
         }
 
         if (!PLAYER_SHIP.remove && !GAME_PAUSED)
@@ -544,15 +578,15 @@ function draw()
             let spacing = 5;
             let fh = PLAYER_SHIP.fuel/PLAYER_SHIP.maxfuel*(height - 2*border);
             let hh = Math.max(0, PLAYER_SHIP.health)/1000*(height - 2*border);
-            let ch = Math.max(0, corvette.health)/1000*(height - 2*border);
+            // let ch = Math.max(0, corvette.health)/1000*(height - 2*border);
 
             ctx.globalAlpha = 0.3;
             ctx.fillStyle = "black";
             ctx.fillRect(border, (height - border) - fh, cw, fh);
             ctx.fillStyle = "green";
             ctx.fillRect(border + cw + spacing, (height - border) - hh, cw, hh);
-            ctx.fillStyle = "red";
-            ctx.fillRect(border + 2*(cw + spacing), (height - border) - ch, cw, ch);
+            // ctx.fillStyle = "red";
+            // ctx.fillRect(border + 2*(cw + spacing), (height - border) - ch, cw, ch);
 
             ctx.textAlign = "left";
             ctx.font = "15px Helvetica";
@@ -563,7 +597,7 @@ function draw()
             ctx.rotate(-Math.PI/2);
             ctx.fillText("FUEL", 0, -2);
             ctx.fillText("HULL", 0, cw + spacing - 2);
-            ctx.fillText("ENEMY #" + ENEMY_NO, 0, 2*(cw + spacing) - 2);
+            // ctx.fillText("ENEMY #" + ENEMY_NO, 0, 2*(cw + spacing) - 2);
             ctx.restore();
         }
         // ctx.fillStyle = "gray";
@@ -643,6 +677,9 @@ function draw()
             ctx.globalAlpha = 1;
             ctx.fillStyle = "darkgray";
             ctx.fillText("YOU DIED", width/2 + 20, height/2 - 20);
+            ctx.font = "25px Helvetica";
+            ctx.fillText("PRESS [SPACE] TO RESPAWN",
+                         width/2 + 20, height/2 + 30);
         }
 
         dt = (current - last)/1000;

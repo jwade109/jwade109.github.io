@@ -30,8 +30,8 @@ class Thruster
 
         if (this.firing)
         {
-            ctx.fillStyle = "gray";
-            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = "blue";
+            ctx.globalAlpha = 0.3;
             ctx.beginPath();
             ctx.moveTo(-this.width/3*PIXELS, 0);
             ctx.lineTo(0, 2*this.width*PIXELS);
