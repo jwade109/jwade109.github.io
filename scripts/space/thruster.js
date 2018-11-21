@@ -8,14 +8,12 @@ class Thruster
         this.thrust = thrust;
         this.firing = false;
         this.drawbell = true;
-
-        this.world = null;
     }
 
     draw(ctx)
     {
         ctx.save();
-        ctx.translate(-this.pos[0], this.pos[1]);
+        ctx.translate(-this.pos[0]*PIXELS, this.pos[1]*PIXELS);
         ctx.rotate(-this.theta + Math.PI/2)
 
         if (this.drawbell)
@@ -23,11 +21,11 @@ class Thruster
             ctx.fillStyle = "black";
             ctx.globalAlpha = 1;
             ctx.beginPath();
-            ctx.moveTo(-this.width/2, this.width);
+            ctx.moveTo(-this.width/2*PIXELS, this.width*PIXELS);
             ctx.lineTo(0, 0);
-            ctx.lineTo(this.width/2, this.width);
+            ctx.lineTo(this.width/2*PIXELS, this.width*PIXELS);
             ctx.fill();
-            ctx.translate(0, this.width);
+            ctx.translate(0, this.width*PIXELS);
         }
 
         if (this.firing)
@@ -35,9 +33,9 @@ class Thruster
             ctx.fillStyle = "gray";
             ctx.globalAlpha = 0.5;
             ctx.beginPath();
-            ctx.moveTo(-this.width/3, 0);
-            ctx.lineTo(0, 2*this.width);
-            ctx.lineTo(this.width/3, 0);
+            ctx.moveTo(-this.width/3*PIXELS, 0);
+            ctx.lineTo(0, 2*this.width*PIXELS);
+            ctx.lineTo(this.width/3*PIXELS, 0);
             ctx.fill();
         }
 

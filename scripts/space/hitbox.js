@@ -40,15 +40,16 @@ class Hitbox
         ctx.strokeStyle = "green";
         ctx.fillStyle = "green";
         ctx.beginPath();
-        ctx.moveTo(this.points[this.points.length - 1][0],
-                   this.points[this.points.length - 1][1]);
+        ctx.moveTo(this.points[this.points.length - 1][0]*PIXELS,
+                   this.points[this.points.length - 1][1]*PIXELS);
         for (let p of this.points)
         {
-            ctx.lineTo(p[0], p[1]);
+            ctx.lineTo(p[0]*PIXELS, p[1]*PIXELS);
         }
         ctx.stroke();
         ctx.beginPath();
-        ctx.arc(this.centroid[0], this.centroid[1], 2, 0, Math.PI*2);
+        ctx.arc(this.centroid[0]*PIXELS,
+            this.centroid[1]*PIXELS, 2, 0, Math.PI*2);
         ctx.fill();
     }
 }

@@ -17,11 +17,12 @@ class Bullet
     draw(ctx)
     {
         ctx.save();
-        ctx.translate(this.pos[0], this.pos[1]);
+        ctx.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
         ctx.rotate(-this.theta - Math.PI/2);
         ctx.globalAlpha = 1;
         ctx.fillStyle = "black";
-        ctx.fillRect(-this.width/2, -this.length/2, this.width, this.length);
+        ctx.fillRect(-this.width/2*PIXELS, -this.length/2*PIXELS,
+                     this.width*PIXELS, this.length*PIXELS);
         ctx.restore();
     }
 

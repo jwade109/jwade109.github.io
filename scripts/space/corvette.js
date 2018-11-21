@@ -16,14 +16,18 @@ class Corvette
         this.pdc_reload = 0;
         this.side = true;
 
-        this.width = 9*METERS;
-        this.length = 31*METERS;
+        this.width = 9;
+        this.length = 31;
         this.radius = this.width/2;
         this.box = new Hitbox([[this.width/2, this.length/2],
                                [this.width/2, -this.length/2],
                                [-this.width/2, -this.length/2],
                                [-this.width/2, this.length/2]]);
         this.health = 350;
+
+        this.engine = new Thruster([0, -this.length/2], -Math.PI/2,
+            this.mass, this.width);
+        this.engine.drawbell = false;
 
         this.world = null;
 
@@ -34,16 +38,16 @@ class Corvette
     launchTorpedo()
     {
         let poff = rot2d([this.width/2, 0], this.theta + Math.PI/2);
-        let voff = rot2d([80, 0], this.theta + Math.PI/2);
+        let voff = rot2d([40, 0], this.theta + Math.PI/2);
         let tpos = this.pos.slice();
         let tvel = this.vel.slice();
         tpos[0] += poff[0];
         tpos[1] += poff[1];
         tvel[0] += voff[0];
         tvel[1] += voff[1];
-        let torp = new Torpedo(tpos, tvel, this.theta, 5500, 13);
+        let torp = new Torpedo(tpos, tvel, this.theta, TORPEDO_THRUST, 7);
         torp.origin = this;
-        torp.target = ship.pos.slice();
+        torp.target = PLAYER_SHIP.pos;
         torp.world = this.world;
         torp.launch_vel = this.vel.slice();
         this.world.push(torp);
@@ -53,13 +57,13 @@ class Corvette
     {
         if (this.pdc_reload > 0) return;
         this.pdc_reload = 0.03;
-        let theta = Math.atan2(ship.pos[0] - this.pos[0],
-            ship.pos[1] - this.pos[1]) - Math.PI/2;
-        let vel = rot2d([(500 + Math.random()*10 - 5)*METERS,
-                         (Math.random()*70 - 35)*METERS], theta);
+        let theta = Math.atan2(PLAYER_SHIP.pos[0] - this.pos[0],
+            PLAYER_SHIP.pos[1] - this.pos[1]) - Math.PI/2;
+        let vel = rot2d([500 + Math.random()*10 - 5,
+                         Math.random()*70 - 35], theta);
         vel[0] += this.vel[0];
         vel[1] += this.vel[1];
-        let b = new Bullet(this.pos.slice(), vel, theta, 7);
+        let b = new Bullet(this.pos.slice(), vel, theta, PDC_LENGTH);
         b.world = this.world;
         b.origin = this;
         world.push(b);
@@ -68,34 +72,34 @@ class Corvette
     draw(ctx)
     {
         ctx.save(); // save global reference frame
-        ctx.translate(this.pos[0], this.pos[1]);
+        ctx.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
         ctx.rotate(-this.theta);
         // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE FRAME
 
-        let x0 = -0.50*this.length;
-        let x1 = -0.47*this.length;
-        let x2 = -0.39*this.length;
-        let x3 = -0.36*this.length;
-        let x4 = -0.25*this.length;
-        let x5 = -0.10*this.length;
-        let x6 =  0.10*this.length;
-        let x7 =  0.20*this.length;
-        let x8 =  0.25*this.length;
-        let x9 =  0.3*this.length;
-        let x10 = 0.50*this.length;
-        let x11 = 0.65*this.length;
+        let x0 = -0.50*this.length*PIXELS;
+        let x1 = -0.40*this.length*PIXELS;
+        let x2 = -0.37*this.length*PIXELS;
+        let x3 = -0.32*this.length*PIXELS;
+        let x4 = -0.25*this.length*PIXELS;
+        let x5 = -0.10*this.length*PIXELS;
+        let x6 =  0.10*this.length*PIXELS;
+        let x7 =  0.20*this.length*PIXELS;
+        let x8 =  0.25*this.length*PIXELS;
+        let x9 =  0.3*this.length*PIXELS;
+        let x10 = 0.50*this.length*PIXELS;
+        let x11 = 0.65*this.length*PIXELS;
 
-        let y0 = 0.05*this.width;
-        let y1 = 0.15*this.width;
-        let y2 = 0.25*this.width;
-        let y3 = 0.35*this.width;
-        let y4 = 0.50*this.width;
+        let y0 = 0.05*this.width*PIXELS;
+        let y1 = 0.15*this.width*PIXELS;
+        let y2 = 0.25*this.width*PIXELS;
+        let y3 = 0.35*this.width*PIXELS;
+        let y4 = 0.50*this.width*PIXELS;
 
         ctx.globalAlpha = 1;
         ctx.strokeStyle = "black";
         ctx.fillStyle = this.gray;
         ctx.beginPath();
-        ctx.moveTo(x0, y2);
+        ctx.moveTo(x0, y3);
         ctx.lineTo(x1, y1);
         ctx.lineTo(x1, y3);
         ctx.lineTo(x3, y4);
@@ -110,8 +114,8 @@ class Corvette
         ctx.lineTo(x3, -y4);
         ctx.lineTo(x1, -y3);
         ctx.lineTo(x1, -y1);
-        ctx.lineTo(x0, -y2);
-        ctx.lineTo(x0, y2);
+        ctx.lineTo(x0, -y3);
+        ctx.lineTo(x0, y3);
         ctx.fill();
         ctx.stroke();
 
@@ -119,10 +123,10 @@ class Corvette
         ctx.beginPath();
         // ctx.rect(x5, y2, x4 - x2, y4 - y2);
         // ctx.rect(x5, -y2 - (y4 - y2), x4 - x2, y4 - y2);
-        ctx.rect(-0.3*this.length, -0.15*this.width,
-                        0.6*this.length, 0.3*this.width);
-        ctx.rect(-0.3*this.length, -0.15*this.width,
-                        0.6*this.length, 0.3*this.width);
+        ctx.rect(-0.3*this.length*PIXELS, -0.15*this.width*PIXELS,
+                        0.6*this.length*PIXELS, 0.3*this.width*PIXELS);
+        ctx.rect(-0.3*this.length*PIXELS, -0.15*this.width*PIXELS,
+                        0.6*this.length*PIXELS, 0.3*this.width*PIXELS);
         ctx.fill();
         ctx.stroke();
 
@@ -130,32 +134,55 @@ class Corvette
         ctx.lineTo(x11, y1);
         ctx.stroke();
 
+
         ctx.rotate(-Math.PI/2);
+        this.engine.draw(ctx);
         if (DRAW_HITBOX) this.box.draw(ctx);
         ctx.restore();
     }
 
     step(dt)
     {
-        let dist = distance(ship.pos, this.pos);
+        if (PLAYER_SHIP.remove)
+        {
+            this.alpha = -this.omega;
+            this.acc = this.b2g([10, 0]);
+
+            this.vel[0] += this.acc[0]*dt;
+            this.vel[1] += this.acc[1]*dt;
+            this.pos[0] += this.vel[0]*dt;
+            this.pos[1] += this.vel[1]*dt;
+            this.omega += this.alpha*dt;
+            this.theta += this.omega*dt;
+
+            this.acc = [0, 0];
+            this.alpha = 0;
+            this.engine.firing = true;
+
+            return;
+        }
+
+        let dist = distance(PLAYER_SHIP.pos, this.pos);
         if (this.torpedo_reload > 0) this.torpedo_reload -= dt;
-        else if (200*METERS < dist && dist < 700*METERS)
+        else if (200 < dist && dist < 700)
         {
             this.launchTorpedo();
             this.torpedo_reload = Math.random()*7;
         }
 
         if (this.pdc_reload > 0) this.pdc_reload -= dt;
-        else if (Math.random() < 0.5 && dist < 200*METERS)
+        else if (Math.random() < 0.5 && dist < 200)
             this.firePDC();
 
-        let dx = ship.pos[0] - this.pos[0];
-        let dy = ship.pos[1] - this.pos[1];
-        let bodyacc = [-(300*METERS - dist)/10, 0];
+        let dx = PLAYER_SHIP.pos[0] - this.pos[0];
+        let dy = PLAYER_SHIP.pos[1] - this.pos[1];
+        let bodyacc = [-(300 - dist)/10, 0];
+        if (bodyacc[0] > 4) this.engine.firing = true;
+        else this.engine.firing = false;
         this.acc = this.b2g(bodyacc);
-        this.acc[0] += (ship.vel[0] - this.vel[0])/3;
-        this.acc[1] += (ship.vel[1] - this.vel[1])/3;
-        let theta = angle2d(this.pos, ship.pos) - this.theta;
+        this.acc[0] += (PLAYER_SHIP.vel[0] - this.vel[0])/3;
+        this.acc[1] += (PLAYER_SHIP.vel[1] - this.vel[1])/3;
+        let theta = angle2d(this.pos, PLAYER_SHIP.pos) - this.theta;
         while (theta > Math.PI) theta -= Math.PI*2;
         while (theta < -Math.PI) theta += Math.PI*2;
         this.alpha = theta - this.omega;
@@ -169,6 +196,8 @@ class Corvette
 
         this.acc = [0, 0];
         this.alpha = 0;
+
+        console.log(bodyacc[0]);
     }
 
     explode()

@@ -11,9 +11,9 @@ class Torpedo
         this.length = length;
         this.width = this.length/5;
         this.mass = 1;
+        this.time = 0;
         this.drifttimer = 0.5;
-        this.railgun = false;
-        this.pdc = false;
+        this.tracking = true;
         this.radius = length/2;
         this.box = new Hitbox([[this.width/2, this.length/2],
                                [this.width/2, -this.length/2],
@@ -21,7 +21,7 @@ class Torpedo
                                [-this.width/2, this.length/2]]);
 
         this.world = null;
-        this.target = mousepos;
+        this.target = MOUSEPOS;
 
         this.thruster = new Thruster(
             [0, -this.length/2], -Math.PI/2, thrust, this.width);
@@ -32,15 +32,24 @@ class Torpedo
     draw(ctx)
     {
         ctx.save();
-        ctx.translate(this.pos[0], this.pos[1]);
-        // ctx.beginPath();
-        // ctx.moveTo(0, 0);
-        // ctx.lineTo(this.vel[0], this.vel[1]);
-        // ctx.stroke();
-        ctx.rotate(-this.theta - Math.PI/2);
-        ctx.globalAlpha = 1;
+        ctx.strokeStyle = "red";
+        ctx.fillStyle = "red";
+        ctx.globalAlpha = 0.3;
+        if (this.target === PLAYER_SHIP.pos)
+        {
+            ctx.beginPath();
+            let theta = Math.PI - angle2d(this.pos, this.target);
+            ctx.arc(this.target[0]*PIXELS, this.target[1]*PIXELS,
+                50*PIXELS, theta - 0.3, theta + 0.3);
+            ctx.stroke();
+        }
+        ctx.strokeStyle = "black";
         ctx.fillStyle = "black";
-        ctx.fillRect(-this.width/2, -this.length/2, this.width, this.length);
+        ctx.globalAlpha = 1;
+        ctx.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+        ctx.rotate(-this.theta - Math.PI/2);
+        ctx.fillRect(-this.width/2*PIXELS, -this.length/2*PIXELS,
+                     this.width*PIXELS, this.length*PIXELS);
         this.thruster.draw(ctx);
         if (DRAW_HITBOX) this.box.draw(ctx);
         ctx.restore();
@@ -48,18 +57,15 @@ class Torpedo
 
     step(dt)
     {
-        mousepos[0] = mx; mousepos[1] = my;
-
-        let theta = Math.atan2(this.target[0] - this.pos[0],
-            this.target[1] - this.pos[1]) - Math.PI/2 - this.theta;
+        this.time += dt;
+        if (this.time > this.drifttimer && this.time - dt < this.drifttimer)
+        {
+            this.vel = this.launch_vel.slice();
+        }
+        let theta = angle2d(this.pos, this.target) - this.theta;
 
         let bodyacc = [0, 0];
-        if (this.drifttimer > 0)
-        {
-            this.drifttimer -= dt;
-            if (this.drifttimer <= 0) this.vel = this.launch_vel;
-        }
-        else
+        if (this.time > this.drifttimer)
         {
             this.thruster.firing = true;
             let thrustv =
@@ -72,14 +78,17 @@ class Torpedo
 
         while (theta > Math.PI) theta -= Math.PI*2;
         while (theta < -Math.PI) theta += Math.PI*2;
+
+        if (Math.abs(theta) > Math.PI/3 && this.time > this.drifttimer)
+            this.tracking = false;
+
         let alpha = 600*theta - 40*this.omega;
-        if (this.drifttimer <= 0) alpha = this.omega = 0;
+        if (this.time > this.drifttimer) alpha = 50*theta - 20*this.omega;
+        if (!this.tracking) alpha = this.omega = 0;
         this.vel[0] += acc[0]*dt;
         this.vel[1] += acc[1]*dt;
         this.pos[0] += this.vel[0]*dt;
         this.pos[1] += this.vel[1]*dt;
-        this.target[0] += this.vel[0]*dt;
-        this.target[1] += this.vel[1]*dt;
         this.theta += this.omega*dt;
         this.omega += alpha*dt;
     }
@@ -97,7 +106,7 @@ class Torpedo
             let deb = new Debris(pos, vel,
                 Math.random()*Math.PI*2,
                 Math.random()*40 - 20,
-                (Math.random()*3 + 2)*METERS);
+                Math.random()*3 + 2);
             deb.world = this.world;
             this.world.push(deb);
         }

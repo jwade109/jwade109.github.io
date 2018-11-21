@@ -28,17 +28,15 @@ class Debris
     draw(ctx)
     {
         ctx.save();
-        ctx.translate(this.pos[0], this.pos[1]);
+        ctx.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
         ctx.rotate(-this.theta);
         ctx.strokeStyle = "black";
         ctx.fillStyle = this.color;
         ctx.globalAlpha = 1;
-        ctx.fillRect(-this.radius/2,
-                     -this.radius/2,
-                     this.radius, this.radius);
-        ctx.strokeRect(-this.radius/2,
-                       -this.radius/2,
-                       this.radius, this.radius);
+        ctx.fillRect(-this.radius/2*PIXELS, -this.radius/2*PIXELS,
+                     this.radius*PIXELS, this.radius*PIXELS);
+        ctx.strokeRect(-this.radius/2*PIXELS, -this.radius/2*PIXELS,
+                     this.radius*PIXELS, this.radius*PIXELS);
         if (DRAW_HITBOX) this.box.draw(ctx);
         ctx.restore();
     }
@@ -52,8 +50,8 @@ class Debris
 
             let pos = this.pos.slice();
             let vel = this.vel.slice();
-            vel[0] += (Math.random()*60 - 40)*METERS;
-            vel[1] += (Math.random()*80 - 40)*METERS;
+            vel[0] += Math.random()*60 - 40;
+            vel[1] += Math.random()*80 - 40;
             let size = this.radius/2;
             let deb = new Debris(pos, vel,
                 this.theta,

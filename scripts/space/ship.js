@@ -11,7 +11,7 @@ class Ship
         this.alpha = 0;
 
         this.mass = 1;
-        this.j = 500;
+        this.j = 300;
         this.maxfuel = 800000;
         this.fuel = this.maxfuel;
         this.side = true;
@@ -20,8 +20,8 @@ class Ship
         this.pdc_reload = 0.03;
         this.health = 1000;
 
-        this.width = 11*METERS; // 40/1.5;
-        this.length = 42*METERS; // 144/1.5;
+        this.width = 11; // 40/1.5;
+        this.length = 42; // 144/1.5;
         this.radius = this.width/2;
         this.box = new Hitbox([[this.width/2, this.length/2],
                                [this.width/2, -this.length/2],
@@ -32,23 +32,21 @@ class Ship
         let ty = this.width*0.7;
 
         let thr = 20;
-        this.thrusters = [new Thruster([tx, ty], 0, thr, 6),
-                          new Thruster([tx, ty], Math.PI/2, thr, 6),
-                          new Thruster([-tx, ty], Math.PI/2, thr, 6),
-                          new Thruster([-tx, ty], Math.PI, thr, 6),
-                          new Thruster([-tx, -ty], Math.PI, thr, 6),
-                          new Thruster([-tx, -ty], 3*Math.PI/2, thr, 6),
-                          new Thruster([tx, -ty], 3*Math.PI/2, thr, 6),
-                          new Thruster([tx, -ty], 0, thr, 6),
+        let th_width = 3;
+        this.thrusters = [new Thruster([tx, ty], 0, thr, th_width),
+                          new Thruster([tx, ty], Math.PI/2, thr, th_width),
+                          new Thruster([-tx, ty], Math.PI/2, thr, th_width),
+                          new Thruster([-tx, ty], Math.PI, thr, th_width),
+                          new Thruster([-tx, -ty], Math.PI, thr, th_width),
+                          new Thruster([-tx, -ty], 3*Math.PI/2, thr, th_width),
+                          new Thruster([tx, -ty], 3*Math.PI/2, thr, th_width),
+                          new Thruster([tx, -ty], 0, thr, th_width),
                           new Thruster([0, -this.length/2],
                                        -Math.PI/2, 9*thr, this.width)];
-        for (let t of this.thrusters)
-        {
-            t.drawbell = false;
-            t.world = this.world;
-        }
+        for (let t of this.thrusters) t.drawbell = false;
 
         this.world = null;
+        this.gray = "#909090";
     }
 
     launchTorpedo()
@@ -59,19 +57,20 @@ class Ship
         let poff = rot2d([this.width/3, 0], this.theta + Math.PI/2);
         if (!this.side)
             poff = rot2d([-this.width/3, 0], this.theta + Math.PI/2);
-        let voff = rot2d([80, 0], this.theta + Math.PI/2);
+        let voff = rot2d([40, 0], this.theta + Math.PI/2);
         if (!this.side)
-            voff = rot2d([80, 0], this.theta - Math.PI/2);
+            voff = rot2d([40, 0], this.theta - Math.PI/2);
         let tpos = this.pos.slice();
         let tvel = this.vel.slice();
         tpos[0] += poff[0];
         tpos[1] += poff[1];
         tvel[0] += voff[0];
         tvel[1] += voff[1];
-        let torp = new Torpedo(tpos, tvel, this.theta, 5500, 13);
+        let torp = new Torpedo(tpos, tvel, this.theta,
+            TORPEDO_THRUST, 7);
         torp.origin = this;
         torp.world = this.world;
-        torp.target = mousepos;
+        torp.target = MOUSEPOS;
         torp.launch_vel = this.vel.slice();
         this.world.push(torp);
     }
@@ -94,14 +93,16 @@ class Ship
 
     firePDC()
     {
+        updateMouse();
         if (this.pdc_reload > 0) return;
         this.pdc_reload = 0.03;
-        let theta = Math.atan2(mx - this.pos[0], my - this.pos[1]) - Math.PI/2;
-        let vel = rot2d([(500 + Math.random()*10 - 5)*METERS,
-                         (Math.random()*70 - 35)*METERS], theta);
+        let theta = Math.atan2(MOUSEX - this.pos[0],
+            MOUSEY - this.pos[1]) - Math.PI/2;
+        let vel = rot2d([500 + Math.random()*10 - 5,
+                         Math.random()*70 - 35], theta);
         vel[0] += this.vel[0];
         vel[1] += this.vel[1];
-        let b = new Bullet(this.pos.slice(), vel, theta, 7);
+        let b = new Bullet(this.pos.slice(), vel, theta, 4);
         b.world = this.world;
         b.origin = this;
         world.push(b);
@@ -110,7 +111,7 @@ class Ship
     draw(ctx)
     {
         ctx.save(); // save global reference frame
-        ctx.translate(this.pos[0], this.pos[1]);
+        ctx.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
 
         ctx.rotate(-this.theta - Math.PI/2)
         // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE FRAME
@@ -120,23 +121,23 @@ class Ship
 
         let off = this.width/2;
         ctx.strokeStyle = "black";
-        ctx.fillStyle = "#909090";
+        ctx.fillStyle = this.gray;
         ctx.globalAlpha = 1;
         ctx.beginPath();
 
-        let y0 =  0.50*this.width;
-        let y1 =  0.44*this.width;
-        let y2 =  0.36*this.width;
-        let y3 =  0.20*this.width;
+        let y0 =  0.50*this.width*PIXELS;
+        let y1 =  0.44*this.width*PIXELS;
+        let y2 =  0.36*this.width*PIXELS;
+        let y3 =  0.20*this.width*PIXELS;
 
-        let x0 = -0.50*this.length;
-        let x1 = -0.40*this.length;
-        let x2 = -0.25*this.length;
-        let x3 = -0.07*this.length;
+        let x0 = -0.50*this.length*PIXELS;
+        let x1 = -0.40*this.length*PIXELS;
+        let x2 = -0.25*this.length*PIXELS;
+        let x3 = -0.07*this.length*PIXELS;
         let x4 =  0.00;
-        let x5 =  0.20*this.length;
-        let x6 =  0.30*this.length;
-        let x7 =  0.50*this.length;
+        let x5 =  0.20*this.length*PIXELS;
+        let x6 =  0.30*this.length*PIXELS;
+        let x7 =  0.50*this.length*PIXELS;
 
         ctx.moveTo(x0, y2);
         ctx.lineTo(x1, y3);
@@ -174,14 +175,22 @@ class Ship
         ctx.lineTo(x5, -y3);
 
         ctx.moveTo(x7, y3);
-        ctx.lineTo(x7 + this.width*0.3, y3);
+        ctx.lineTo(x7 + this.width*0.3*PIXELS, y3);
         ctx.moveTo(x7, -y3);
-        ctx.lineTo(x7 + this.width*0.4, -y3);
-        ctx.moveTo(x7, -y3 + this.width*0.1);
-        ctx.lineTo(x7 + this.width*0.2, -y3 + this.width*0.1);
+        ctx.lineTo(x7 + this.width*0.4*PIXELS, -y3);
+        ctx.moveTo(x7, -y3 + this.width*0.1*PIXELS);
+        ctx.lineTo(x7 + this.width*0.2*PIXELS, -y3 + this.width*0.1*PIXELS);
 
         ctx.fill();
+        ctx.fillStyle = "black";
+        ctx.fillRect(-this.length*0.4*PIXELS, -this.width*0.15*PIXELS,
+                     this.length*0.9*PIXELS, this.width*0.3*PIXELS);
+        ctx.fillStyle = "#CCCCCC";
+        ctx.fillRect(-this.length*0.4*PIXELS, -this.width*0.1*PIXELS,
+                     this.length*0.9*PIXELS, this.width*0.2*PIXELS);
         ctx.stroke();
+
+
         ctx.restore();
 
         for (let t of this.thrusters)
@@ -206,9 +215,9 @@ class Ship
         let dfuel = 0;
         for (let t of this.thrusters)
         {
-            if (t.firing && this.fuel >= t.thrust)
+            if (t.firing && (this.fuel >= t.thrust || INFINITE_FUEL))
             {
-                this.fuel -= t.thrust;
+                if (!INFINITE_FUEL) this.fuel -= t.thrust;
                 let thrustv = [-t.thrust*Math.sin(t.theta),
                                -t.thrust*Math.cos(t.theta)];
                 bodyacc[0] += thrustv[0]/this.mass;
@@ -232,10 +241,14 @@ class Ship
 
         this.acc = [0, 0];
         this.alpha = 0;
+
+        if (this.health < PLAYER_MAX_HEALTH)
+            this.health += PASSIVE_REGEN*dt;
     }
 
     damage(d)
     {
+        if (PLAYER_INVINCIBLE) return;
         this.health -= d;
         if (this.health < 1) this.explode();
     }
@@ -255,11 +268,14 @@ class Ship
                 this.omega + Math.random()*5 - 2.5, size);
             deb.world = this.world;
             deb.color = "#909090";
+            if (Math.random() < 0.1)
+                deb.color = "#CCCCCC";
             this.world.push(deb);
         }
         this.acc = [0, 0];
         this.alpha = 0;
         this.omega = 0;
+        this.health = -Infinity;
         this.remove = true;
     }
 
