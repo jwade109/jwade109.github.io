@@ -1,15 +1,14 @@
 var PI = Math.PI;
 
-var PIXELS = 1.7; //  pixels per meter
-var DRAW_HITBOX = false;
-var DRAW_TRACE = false;
+var DRAW_HITBOX = true;
+var DRAW_TRACE = true;
 var LOCK_CAMERA = false;
 var SPAWN_ENEMIES = true;
 var MAX_ENEMIES = 1;
 var GAME_PAUSED = true;
 var SHOW_HELP = false;
 var LAST_EVENT = null;
-var PLAYER_INVINCIBLE = false;
+var PLAYER_INVINCIBLE = true;
 var INFINITE_FUEL = true;
 var PLAYER_MAX_HEALTH = 1000;
 var PASSIVE_REGEN = PLAYER_MAX_HEALTH/(60*3);
@@ -47,9 +46,13 @@ var WIDTH = document.body.clientWidth;
 var HEIGHT = document.body.scrollHeight;
 var MOUSEX = 0, MOUSEY = 0, MOUSEPOS = [MOUSEX, MOUSEY];
 
+var VIEW_RADIUS = 500;
+var PIXELS = WIDTH/(2*VIEW_RADIUS); //  pixels per meter
+
 var world = [];
 world.render_distance = 2500;
 
+world.push(new Station([200, 200], 0));
 var PLAYER_SHIP = new Ship([0, 0], Math.PI/2);
 world.push(PLAYER_SHIP);
 PLAYER_SHIP.world = world;
@@ -174,6 +177,12 @@ document.addEventListener('keyup', function(event)
     }
 });
 
+function zoom(radius)
+{
+    VIEW_RADIUS = radius;
+    PIXELS = WIDTH/(2*VIEW_RADIUS); //  pixels per meter
+}
+
 function updateMouse()
 {
     if (LAST_EVENT == null) return;
@@ -197,24 +206,29 @@ function updateMouse()
 function collide(obj1, obj2)
 {
     if (obj1 === obj2) return false;
+
     let default_radius = 3;
     let dx = obj2.pos[0] - obj1.pos[0];
     let dy = obj2.pos[1] - obj1.pos[1];
     let dist = Math.sqrt(dx*dx + dy*dy);
-    if (dist > 500) return false;
+    if (dist > 1000) return false;
+
     if (typeof obj1.box == 'undefined' && typeof obj2.box == 'undefined')
     {
-        return false;
+        return doIntersect(obj1.pos, obj1.pos_prev,
+                           obj2.pos, obj2.pos_prev);
     }
     else if (typeof obj1.box == 'undefined')
     {
-        return obj2.box.contains(obj1.pos);
+        return obj2.box.trace_intersect(obj1.pos, obj1.pos_prev);
     }
     else if (typeof obj2.box == 'undefined')
     {
-        return obj1.box.contains(obj2.pos);
+        return obj1.box.trace_intersect(obj2.pos, obj2.pos_prev);
     }
-    return false; // obj1.box.intersects(obj2.box);
+    return obj1.box.intersects(obj2.box) ||
+           obj1.box.trace_intersect(obj2.pos, obj2.pos_prev) ||
+           obj2.box.trace_intersect(obj1.pos, obj1.pos_prev);
 }
 
 function handleCollision(obj1, obj2)
@@ -409,6 +423,30 @@ function handleCollision(obj1, obj2)
         }
         return;
     }
+    else if (objectsAre("Station", "Debris"))
+    {
+        return;
+    }
+    else if (objectsAre("Station", "Bullet"))
+    {
+        return;
+    }
+    else if (objectsAre("Station", "Ship"))
+    {
+        return;
+    }
+    else if (objectsAre("Station", "Torpedo"))
+    {
+        return;
+    }
+    else if (objectsAre("Station", "Railgun"))
+    {
+        return;
+    }
+    else if (objectsAre("Station", "Corvette"))
+    {
+        return;
+    }
     console.log("unhandled collision between " +
                 obj1.constructor.name + " and " +
                 obj2.constructor.name);
@@ -421,13 +459,7 @@ function physics(dt)
     {
         if (obj1 instanceof Debris) continue;
         for (let obj2 of world)
-        {
-            if (collide(obj1, obj2))
-            {
-                if (exploded.length > -1)
-                    exploded.push([obj1, obj2]);
-            }
-        }
+            if (collide(obj1, obj2)) exploded.push([obj1, obj2]);
     }
     for (let obj of exploded) handleCollision(obj[0], obj[1]);
 
@@ -437,7 +469,9 @@ function physics(dt)
         let dx = world[i].pos[0] - PLAYER_SHIP.pos[0];
         let dy = world[i].pos[1] - PLAYER_SHIP.pos[1];
         let dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist > world.render_distance) world[i].remove = true;
+        if (dist > world.render_distance &&
+            (typeof world[i].permanent === 'undefined'))
+                world[i].remove = true;
         if (world[i].remove == true) world.splice(i, 1);
     }
 
@@ -628,8 +662,7 @@ function draw()
     ctx.font = "12px Helvetica";
     let weapon = firemode ? "TORPEDOES" : "RAILGUN";
     ctx.fillText("FIRING MODE: " + weapon, 70, HEIGHT - 10);
-    ctx.fillText("SCALE: " + Math.round(PIXELS*10)/10 +
-                 " PIXELS/METER", 270, HEIGHT - 10);
+    ctx.fillText("VIEW: " + VIEW_RADIUS + " METERS", 270, HEIGHT - 10);
     ctx.fillText("PRESS [H] FOR HELP", 470, HEIGHT - 10);
     if (GAME_PAUSED)
         ctx.fillText("PRESS [ESC] TO UNPAUSE", 650, HEIGHT - 10);
@@ -708,8 +741,8 @@ function start()
         dt = (current - last)/1000;
         last = current;
 
-        if (ONE_KEY && PIXELS > 0.3) PIXELS -= 0.05;
-        if (TWO_KEY && PIXELS < 10) PIXELS += 0.05;
+        if (ONE_KEY && VIEW_RADIUS < 3000) zoom(VIEW_RADIUS + 10);
+        if (TWO_KEY && VIEW_RADIUS > 50) zoom(VIEW_RADIUS - 10);;
 
     }, 1000/FPS);
 }

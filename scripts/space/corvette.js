@@ -17,6 +17,7 @@ class Corvette
         this.pdc_reload = 0;
         this.side = true;
         this.health = 350;
+        this.permanent = true;
 
         this.width = 9;
         this.length = 31;
@@ -61,9 +62,9 @@ class Corvette
         if (this.pdc_reload > 0) return;
         this.pdc_reload = 0.03;
         let theta = Math.atan2(PLAYER_SHIP.pos[0] - this.pos[0],
-            PLAYER_SHIP.pos[1] - this.pos[1]) - Math.PI/2;
-        let vel = rot2d([500 + Math.random()*10 - 5,
-                         Math.random()*70 - 35], theta);
+            PLAYER_SHIP.pos[1] - this.pos[1]) - Math.PI/2 +
+            (Math.random()*2 - 1)*PDC_SPREAD;
+        let vel = rot2d([500 + Math.random()*10 - 5, 0], theta);
         vel[0] += this.vel[0];
         vel[1] += this.vel[1];
         let b = new Bullet(this.pos.slice(), vel, theta, PDC_LENGTH);

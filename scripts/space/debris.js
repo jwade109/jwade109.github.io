@@ -49,8 +49,8 @@ class Debris
         ctx.strokeStyle = "black";
         ctx.fillStyle = this.color;
         ctx.globalAlpha = 1;
-        // ctx.fillRect(-this.radius/2*PIXELS, -this.radius/2*PIXELS,
-        //              this.radius*PIXELS, this.radius*PIXELS);
+        ctx.fillRect(-this.radius/2*PIXELS, -this.radius/2*PIXELS,
+                     this.radius*PIXELS, this.radius*PIXELS);
         ctx.strokeRect(-this.radius/2*PIXELS, -this.radius/2*PIXELS,
                      this.radius*PIXELS, this.radius*PIXELS);
         ctx.restore();

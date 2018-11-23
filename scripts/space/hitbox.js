@@ -3,13 +3,6 @@ class Hitbox
     constructor(points)
     {
         this.points = points.slice();
-        this.centroid = [0, 0];
-        for (let p of this.points)
-        {
-            this.centroid[0] += p[0]/this.points.length;
-            this.centroid[1] += p[1]/this.points.length;
-        }
-
         this.object = null;
     }
 
@@ -20,12 +13,10 @@ class Hitbox
 
     intersects(hitbox)
     {
-        if (this.contains(hitbox.centroid)) return true;
         for (let op of hitbox.get_global())
         {
             if (this.contains(op)) return true;
         }
-        if (hitbox.contains(this.centroid)) return true;
         for (let p of this.get_global())
         {
             if (hitbox.contains(p)) return true;
@@ -33,40 +24,52 @@ class Hitbox
         return false;
     }
 
+    trace_intersect(p1, q1)
+    {
+        let glob = this.get_global();
+        for (let i = 0; i < glob.length - 1; ++i)
+        {
+            let x = glob[i], y = glob[i+1];
+            if (doIntersect(p1, q1, x, y)) return true;
+        }
+        return false;
+    }
+
     draw(ctx)
     {
-        ctx.save();
-        ctx.translate(this.object.pos[0]*PIXELS,
-                      this.object.pos[1]*PIXELS);
-        ctx.rotate(-this.object.theta - Math.PI/2);
-        ctx.globalAlpha = 1;
-        ctx.strokeStyle = "green";
-        ctx.fillStyle = "green";
-        ctx.beginPath();
-        ctx.moveTo(this.points[this.points.length - 1][0]*PIXELS,
-                   this.points[this.points.length - 1][1]*PIXELS);
-        for (let p of this.points)
-        {
-            ctx.lineTo(p[0]*PIXELS, p[1]*PIXELS);
-        }
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(this.centroid[0]*PIXELS,
-            this.centroid[1]*PIXELS, 2, 0, Math.PI*2);
-        ctx.fill();
-
-        ctx.restore();
-
-        // ctx.strokeStyle = "red";
+        // ctx.save();
+        // ctx.translate(this.object.pos[0]*PIXELS,
+        //               this.object.pos[1]*PIXELS);
+        // ctx.rotate(-this.object.theta - Math.PI/2);
+        // ctx.globalAlpha = 1;
+        // ctx.strokeStyle = "green";
+        // ctx.fillStyle = "green";
         // ctx.beginPath();
-        // let pts = this.get_global();
-        // ctx.moveTo(pts[pts.length - 1][0]*PIXELS,
-        //            pts[pts.length - 1][1]*PIXELS);
-        // for (let p of pts)
+        // ctx.moveTo(this.points[this.points.length - 1][0]*PIXELS,
+        //            this.points[this.points.length - 1][1]*PIXELS);
+        // for (let p of this.points)
         // {
         //     ctx.lineTo(p[0]*PIXELS, p[1]*PIXELS);
         // }
         // ctx.stroke();
+        // ctx.beginPath();
+        // ctx.arc(this.centroid[0]*PIXELS,
+        //     this.centroid[1]*PIXELS, 2, 0, Math.PI*2);
+        // ctx.fill();
+        //
+        // ctx.restore();
+
+        ctx.strokeStyle = "red";
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        let pts = this.get_global();
+        ctx.moveTo(pts[pts.length - 1][0]*PIXELS,
+                   pts[pts.length - 1][1]*PIXELS);
+        for (let p of pts)
+        {
+            ctx.lineTo(p[0]*PIXELS, p[1]*PIXELS);
+        }
+        ctx.stroke();
     }
 
     get_global()
