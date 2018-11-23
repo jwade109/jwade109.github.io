@@ -3,6 +3,7 @@ class Debris
     constructor(pos, vel, theta, omega, radius)
     {
         this.pos = pos;
+        this.pos_prev = pos;
         this.vel = vel;
         this.theta = theta;
         this.omega = omega;
@@ -21,6 +22,7 @@ class Debris
 
     step(dt)
     {
+        this.pos_prev = this.pos.slice();
         this.pos[0] += this.vel[0]*dt;
         this.pos[1] += this.vel[1]*dt;
         this.theta += this.omega*dt;
@@ -31,14 +33,24 @@ class Debris
 
     draw(ctx)
     {
+        if (DRAW_TRACE)
+        {
+            ctx.globalAlpha = 0.6;
+            ctx.strokeStyle = "red";
+            ctx.beginPath();
+            ctx.moveTo(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+            ctx.lineTo(this.pos_prev[0]*PIXELS, this.pos_prev[1]*PIXELS);
+            ctx.stroke();
+        }
+
         ctx.save();
         ctx.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
         ctx.rotate(-this.theta);
         ctx.strokeStyle = "black";
         ctx.fillStyle = this.color;
         ctx.globalAlpha = 1;
-        ctx.fillRect(-this.radius/2*PIXELS, -this.radius/2*PIXELS,
-                     this.radius*PIXELS, this.radius*PIXELS);
+        // ctx.fillRect(-this.radius/2*PIXELS, -this.radius/2*PIXELS,
+        //              this.radius*PIXELS, this.radius*PIXELS);
         ctx.strokeRect(-this.radius/2*PIXELS, -this.radius/2*PIXELS,
                      this.radius*PIXELS, this.radius*PIXELS);
         ctx.restore();

@@ -3,6 +3,7 @@ class Ship
     constructor(pos, theta)
     {
         this.pos = pos;
+        this.pos_prev = pos;
         this.vel = [0, 0];
         this.acc = [0, 0];
 
@@ -29,7 +30,7 @@ class Ship
                                [-this.width/3, this.length/2]]);
         this.box.object = this;
 
-        let tx = this.width*0.5;
+        let tx = this.width*0.45;
         let ty = this.width*0.7;
 
         let thr = 20;
@@ -80,7 +81,7 @@ class Ship
     {
         if (this.railgun_reload > 0) return;
         this.railgun_reload = 1;
-        let vel = rot2d([5000, 0], this.theta);
+        let vel = rot2d([RAILGUN_VEL, 0], this.theta);
         let dv = rot2d([-60, 0], this.theta);
         vel[0] += this.vel[0];
         vel[1] += this.vel[1];
@@ -97,10 +98,9 @@ class Ship
         updateMouse();
         if (this.pdc_reload > 0) return;
         this.pdc_reload = 0.01;
-        let theta = Math.atan2(MOUSEX - this.pos[0],
-            MOUSEY - this.pos[1]) - Math.PI/2;
-        let vel = rot2d([500 + Math.random()*10 - 5,
-                         Math.random()*70 - 35], theta);
+        let theta = Math.atan2(MOUSEX - this.pos[0], MOUSEY - this.pos[1]) -
+            Math.PI/2 + (Math.random()*2 - 1)*PDC_SPREAD;
+        let vel = rot2d([500 + Math.random()*10 - 5, 0], theta);
         vel[0] += this.vel[0];
         vel[1] += this.vel[1];
         let b = new Bullet(this.pos.slice(), vel, theta, PDC_LENGTH);
@@ -111,11 +111,28 @@ class Ship
 
     draw(ctx)
     {
+        if (DRAW_TRACE)
+        {
+            ctx.globalAlpha = 0.6;
+            ctx.strokeStyle = "red";
+            ctx.beginPath();
+            ctx.moveTo(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+            ctx.lineTo(this.pos_prev[0]*PIXELS, this.pos_prev[1]*PIXELS);
+            ctx.stroke();
+        }
+
         ctx.save(); // save global reference frame
         ctx.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
 
         ctx.rotate(-this.theta - Math.PI/2)
         // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE FRAME
+
+        for (let t of this.thrusters)
+        {
+            if (this.fuel <= t.thrust) t.firing = false;
+            t.world = this.world;
+            t.draw(ctx);
+        }
 
         ctx.save();
         ctx.rotate(Math.PI/2);
@@ -203,13 +220,6 @@ class Ship
         ctx.stroke();
 
         ctx.restore();
-
-        for (let t of this.thrusters)
-        {
-            if (this.fuel <= t.thrust) t.firing = false;
-            t.world = this.world;
-            t.draw(ctx);
-        }
         ctx.restore();
 
         if (DRAW_HITBOX) this.box.draw(ctx);
@@ -217,6 +227,7 @@ class Ship
 
     step(dt)
     {
+        this.pos_prev = this.pos.slice();
         if (this.torpedo_reload > 0) this.torpedo_reload -= dt;
         if (this.railgun_reload > 0) this.railgun_reload -= dt;
         if (this.pdc_reload > 0) this.pdc_reload -= dt;

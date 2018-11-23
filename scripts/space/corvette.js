@@ -3,6 +3,7 @@ class Corvette
     constructor(pos, theta)
     {
         this.pos = pos;
+        this.pos_prev = pos;
         this.vel = [0, 0];
         this.acc = [0, 0];
 
@@ -73,6 +74,16 @@ class Corvette
 
     draw(ctx)
     {
+        if (DRAW_TRACE)
+        {
+            ctx.globalAlpha = 0.6;
+            ctx.strokeStyle = "red";
+            ctx.beginPath();
+            ctx.moveTo(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+            ctx.lineTo(this.pos_prev[0]*PIXELS, this.pos_prev[1]*PIXELS);
+            ctx.stroke();
+        }
+
         ctx.save(); // save global reference frame
         ctx.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
 
@@ -187,7 +198,7 @@ class Corvette
 
         let dx = PLAYER_SHIP.pos[0] - this.pos[0];
         let dy = PLAYER_SHIP.pos[1] - this.pos[1];
-        let bodyacc = [-(350 - dist)/10, 0];
+        let bodyacc = [-(500 - dist)/10, 0];
         if (bodyacc[0] > 4) this.engine.firing = true;
         else this.engine.firing = false;
         this.acc = this.b2g(bodyacc);
@@ -198,6 +209,7 @@ class Corvette
         while (theta < -Math.PI) theta += Math.PI*2;
         this.alpha = theta - this.omega;
 
+        this.pos_prev = this.pos.slice();
         this.vel[0] += this.acc[0]*dt;
         this.vel[1] += this.acc[1]*dt;
         this.pos[0] += this.vel[0]*dt;

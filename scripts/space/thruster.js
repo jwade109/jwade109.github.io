@@ -31,10 +31,17 @@ class Thruster
         if (this.firing)
         {
             ctx.fillStyle = "blue";
-            ctx.globalAlpha = 0.3;
+            ctx.globalAlpha = 0.25 + Math.random()*0.1;
             ctx.beginPath();
             ctx.moveTo(-this.width/3*PIXELS, 0);
-            ctx.lineTo(0, 2*this.width*PIXELS);
+            ctx.lineTo(0, 2*this.width*PIXELS*(Math.random()/3 + 2/3));
+            ctx.lineTo(this.width/3*PIXELS, 0);
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.globalAlpha = 0.1 + Math.random()*0.1;
+            ctx.beginPath();
+            ctx.moveTo(-this.width/3*PIXELS, 0);
+            ctx.lineTo(0, 2*this.width*PIXELS*(Math.random()*0.2 + 0.3));
             ctx.lineTo(this.width/3*PIXELS, 0);
             ctx.fill();
         }

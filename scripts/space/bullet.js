@@ -3,6 +3,7 @@ class Bullet
     constructor(pos, vel, theta, length)
     {
         this.pos = pos;
+        this.pos_prev = pos;
         this.vel = vel;
         this.theta = theta;
         this.length = length;
@@ -15,6 +16,16 @@ class Bullet
 
     draw(ctx)
     {
+        if (DRAW_TRACE)
+        {
+            ctx.globalAlpha = 0.6;
+            ctx.strokeStyle = "red";
+            ctx.beginPath();
+            ctx.moveTo(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+            ctx.lineTo(this.pos_prev[0]*PIXELS, this.pos_prev[1]*PIXELS);
+            ctx.stroke();
+        }
+
         ctx.save();
         ctx.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
         ctx.rotate(-this.theta - Math.PI/2);
@@ -27,6 +38,7 @@ class Bullet
 
     step(dt)
     {
+        this.pos_prev = this.pos.slice();
         this.pos[0] += this.vel[0]*dt;
         this.pos[1] += this.vel[1]*dt;
     }

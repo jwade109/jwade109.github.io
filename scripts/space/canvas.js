@@ -1,8 +1,11 @@
+var PI = Math.PI;
+
 var PIXELS = 1.7; //  pixels per meter
-var DRAW_HITBOX = true;
+var DRAW_HITBOX = false;
+var DRAW_TRACE = false;
 var LOCK_CAMERA = false;
-var SPAWN_ENEMIES = false;
-var MAX_ENEMIES = 2;
+var SPAWN_ENEMIES = true;
+var MAX_ENEMIES = 1;
 var GAME_PAUSED = true;
 var SHOW_HELP = false;
 var LAST_EVENT = null;
@@ -11,12 +14,15 @@ var INFINITE_FUEL = true;
 var PLAYER_MAX_HEALTH = 1000;
 var PASSIVE_REGEN = PLAYER_MAX_HEALTH/(60*3);
 var PDC_LENGTH = 4;
+var PDC_SPREAD = 3*PI/180;
+var RAILGUN_VEL = 20000;
 var INFINITE_AMMO = false;
 var PLAYER_MAX_MISSILES = 30;
 var PLAYER_MAX_RAILGUN = 40;
 var GAME_OVER = false;
 
 var ENEMY_NO = 0;
+let SPAWN_DEBRIS = true;
 let LARGE_DEBRIS = 25;
 let SMALL_DEBRIS = 6;
 var TORPEDO_THRUST = 2500;
@@ -33,6 +39,8 @@ var left = false, right = false, up = false, down = false, space = false,
     fkey = false, qkey = false, ekey = false, leftClick = false,
     rightClick = false, shift = false;
 
+var ONE_KEY = false, TWO_KEY = false;
+
 var firemode = true;
 
 var WIDTH = document.body.clientWidth;
@@ -40,7 +48,7 @@ var HEIGHT = document.body.scrollHeight;
 var MOUSEX = 0, MOUSEY = 0, MOUSEPOS = [MOUSEX, MOUSEY];
 
 var world = [];
-world.render_distance = Math.max(WIDTH, HEIGHT)*3;
+world.render_distance = 2500;
 
 var PLAYER_SHIP = new Ship([0, 0], Math.PI/2);
 world.push(PLAYER_SHIP);
@@ -56,67 +64,47 @@ function respawn()
 
 let current = new Date().getTime(), last = current, dt = 0;
 
-// for (let i = 0; i < 20; ++i)
-// {
-//     let r = Math.random()*world.render_distance/2 + 200;
-//     let rot = Math.random()*Math.PI*2;
-//     let pos = [Math.cos(rot)*r + PLAYER_SHIP.pos[0],
-//                Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
-//     let vel = [Math.random()*200 - 100 + PLAYER_SHIP.vel[0],
-//                Math.random()*200 - 100 + PLAYER_SHIP.vel[1]]
-//     let theta = Math.random()*Math.PI*2;
-//     let omega = Math.random()*10 - 5;
-//     let size = Math.random()*25 + 10;
-//     let deb = new Debris(pos, vel, theta, omega, size);
-//     deb.world = world;
-//     world.push(deb);
-// }
-
-CANVAS.onmousemove = function(e)
+for (let i = 0; i < 20 && SPAWN_DEBRIS; ++i)
 {
-    LAST_EVENT = e;
-    updateMouse();
+    let r = Math.random()*world.render_distance/2 + 200;
+    let rot = Math.random()*Math.PI*2;
+    let pos = [Math.cos(rot)*r + PLAYER_SHIP.pos[0],
+               Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
+    let vel = [Math.random()*200 - 100 + PLAYER_SHIP.vel[0],
+               Math.random()*200 - 100 + PLAYER_SHIP.vel[1]]
+    let theta = Math.random()*Math.PI*2;
+    let omega = Math.random()*10 - 5;
+    let size = Math.random()*25 + 10;
+    let deb = new Debris(pos, vel, theta, omega, size);
+    deb.world = world;
+    world.push(deb);
 }
 
-CANVAS.onmousedown = function(e)
+document.addEventListener('mousemove', function(event)
 {
-    switch (e.button)
+    LAST_EVENT = event;
+    updateMouse();
+});
+
+document.addEventListener('mousedown', function(event)
+{
+    switch (event.button)
     {
         case 0: leftClick = true; break;
         case 2: rightClick = true; break;
         case 1: console.log("middle click down");
     }
-}
+});
 
-CANVAS.onmouseup = function(e)
+document.addEventListener('mouseup', function(event)
 {
-    switch (e.button)
+    switch (event.button)
     {
         case 0: leftClick = false; break;
         case 2: rightClick = false; break;
         case 1: console.log("middle click up");
     }
-}
-
-function updateMouse()
-{
-    if (LAST_EVENT == null) return;
-    let rect = CANVAS.getBoundingClientRect();
-    MOUSEX = (LAST_EVENT.clientX - rect.left +
-        PLAYER_SHIP.pos[0]*PIXELS - WIDTH/2)/PIXELS;
-    MOUSEY = (LAST_EVENT.clientY - rect.top +
-        PLAYER_SHIP.pos[1]*PIXELS - HEIGHT/2)/PIXELS;
-    if (LOCK_CAMERA)
-    {
-        let mp = rot2d([MOUSEX - PLAYER_SHIP.pos[0],
-                        MOUSEY - PLAYER_SHIP.pos[1]],
-                       PLAYER_SHIP.theta - Math.PI/2);
-        MOUSEX = (PLAYER_SHIP.pos[0] + mp[0]);
-        MOUSEY = (PLAYER_SHIP.pos[1] + mp[1]);
-    }
-    MOUSEPOS[0] = MOUSEX;
-    MOUSEPOS[1] = MOUSEY;
-}
+});
 
 document.addEventListener('keydown', function(event)
 {
@@ -133,15 +121,17 @@ document.addEventListener('keydown', function(event)
         case 38: up = true; break;
         case 39: right = true; break;
         case 40: down = true; break;
-        case 49: if (PIXELS >= 0.7) PIXELS -= 0.1;
-                 break;
-        case 50: if (PIXELS < 5) PIXELS += 0.1;
-                 break;
+        case 49: ONE_KEY = true; break
+        case 50: TWO_KEY = true; break;
         case 65: akey = true; break;
         case 69: ekey = true; break;
         case 70: fkey = true; firemode = !firemode; break;
         case 72: SHOW_HELP = !SHOW_HELP;
                  if (SHOW_HELP) GAME_PAUSED = true;
+                 break;
+        case 74: if (GAME_PAUSED) physics(-NOMINAL_DT);
+                 break;
+        case 75: if (GAME_PAUSED) physics(NOMINAL_DT);
                  break;
         case 81: qkey = true; break;
         case 86: LOCK_CAMERA = !LOCK_CAMERA; break;
@@ -165,12 +155,14 @@ document.addEventListener('keyup', function(event)
         case 38: up = false; break;
         case 39: right = false; break;
         case 40: down = false; break;
-        case 49: /* 1-KEY */; break;
-        case 50: /* 2-KEY */; break;
+        case 49: ONE_KEY = false; break
+        case 50: TWO_KEY = false; break;
         case 65: akey = false; break;
         case 69: ekey = false; break;
         case 70: fkey = false; break;
         case 72: /* HKEY */ break;
+        case 74: /* JKEY */ break;
+        case 75: /* KKEY */ break;
         case 81: qkey = false; break;
         case 86: /* VKEY */ break;
         case 87: wkey = false; break;
@@ -181,6 +173,26 @@ document.addEventListener('keyup', function(event)
             console.log('unhandled keycode: ' + event.keyCode);
     }
 });
+
+function updateMouse()
+{
+    if (LAST_EVENT == null) return;
+    let rect = CANVAS.getBoundingClientRect();
+    MOUSEX = (LAST_EVENT.clientX - rect.left +
+        PLAYER_SHIP.pos[0]*PIXELS - WIDTH/2)/PIXELS;
+    MOUSEY = (LAST_EVENT.clientY - rect.top +
+        PLAYER_SHIP.pos[1]*PIXELS - HEIGHT/2)/PIXELS;
+    if (LOCK_CAMERA)
+    {
+        let mp = rot2d([MOUSEX - PLAYER_SHIP.pos[0],
+                        MOUSEY - PLAYER_SHIP.pos[1]],
+                       PLAYER_SHIP.theta - Math.PI/2);
+        MOUSEX = (PLAYER_SHIP.pos[0] + mp[0]);
+        MOUSEY = (PLAYER_SHIP.pos[1] + mp[1]);
+    }
+    MOUSEPOS[0] = MOUSEX;
+    MOUSEPOS[1] = MOUSEY;
+}
 
 function collide(obj1, obj2)
 {
@@ -404,14 +416,12 @@ function handleCollision(obj1, obj2)
 
 function physics(dt)
 {
-    world.render_distance = Math.max(WIDTH, HEIGHT)*1.5;
-
     let exploded = [];
     for (let obj1 of world)
     {
+        if (obj1 instanceof Debris) continue;
         for (let obj2 of world)
         {
-            if (obj2 instanceof Debris) continue;
             if (collide(obj1, obj2))
             {
                 if (exploded.length > -1)
@@ -419,10 +429,7 @@ function physics(dt)
             }
         }
     }
-    for (let obj of exploded)
-    {
-        handleCollision(obj[0], obj[1]);
-    }
+    for (let obj of exploded) handleCollision(obj[0], obj[1]);
 
     // WORLD ELEMENTS
     for (let i = 0; i < world.length; ++i)
@@ -441,21 +448,23 @@ function physics(dt)
         obj.step(dt);
     }
 
-    // while (world.length < 100)
-    // {
-    //     let r = Math.max(WIDTH, HEIGHT) + Math.random()*200;
-    //     let rot = Math.random()*Math.PI*2;
-    //     let pos = [Math.cos(rot)*r + PLAYER_SHIP.pos[0],
-    //                Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
-    //     let vel = [Math.random()*200 - 100 + PLAYER_SHIP.vel[0],
-    //                Math.random()*200 - 100 + PLAYER_SHIP.vel[1]]
-    //     let theta = Math.random()*Math.PI*2;
-    //     let omega = Math.random()*10 - 5;
-    //     let size = Math.random()*20 + 10;
-    //     let deb = new Debris(pos, vel, theta, omega, size);
-    //     deb.world = world;
-    //     world.push(deb);
-    // }
+    while (world.length < 100 && SPAWN_DEBRIS)
+    {
+        let r = world.render_distance - 100;
+            // Math.max(WIDTH, HEIGHT) +
+            // Math.random()*(world.render_distance - Math.max(WIDTH, HEIGHT));
+        let rot = Math.random()*Math.PI*2;
+        let pos = [Math.cos(rot)*r + PLAYER_SHIP.pos[0],
+                   Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
+        let vel = [Math.random()*200 - 100, //  + PLAYER_SHIP.vel[0],
+                   Math.random()*200 - 100]; //  + PLAYER_SHIP.vel[1]]
+        let theta = Math.random()*Math.PI*2;
+        let omega = Math.random()*10 - 5;
+        let size = Math.random()*20 + 10;
+        let deb = new Debris(pos, vel, theta, omega, size);
+        deb.world = world;
+        world.push(deb);
+    }
 
     if (enemy_count < MAX_ENEMIES && SPAWN_ENEMIES && !GAME_OVER)
     {
@@ -521,6 +530,13 @@ function physics(dt)
             PLAYER_SHIP.firePDC();
         }
     }
+
+    let vel = PLAYER_SHIP.vel.slice();
+    for (let obj of world)
+    {
+        obj.vel[0] -= vel[0];
+        obj.vel[1] -= vel[1];
+    }
 }
 
 function draw()
@@ -540,18 +556,20 @@ function draw()
 
     ctx.strokeStyle = "black";
     ctx.fillStyle = "black";
-    for (let i = 0; 250*(i + 1)*PIXELS < Math.max(WIDTH, HEIGHT); ++i)
+    let interval = 500;
+    for (let i = 0; interval*(i + 1)*PIXELS < Math.max(WIDTH, HEIGHT); ++i)
     {
         ctx.beginPath();
         ctx.arc(PLAYER_SHIP.pos[0]*PIXELS, PLAYER_SHIP.pos[1]*PIXELS,
-                250*(i + 1)*PIXELS, 0, Math.PI*2);
+                interval*(i + 1)*PIXELS, 0, Math.PI*2);
         ctx.globalAlpha = 0.06;
         ctx.stroke();
         ctx.globalAlpha = 0.2;
-        ctx.fillText(250*(i + 1) + " m",
-            (PLAYER_SHIP.pos[0] + 250*(i + 1))*PIXELS + 3,
+        ctx.fillText(interval*(i + 1) + " m",
+            (PLAYER_SHIP.pos[0] + interval*(i + 1))*PIXELS + 3,
             PLAYER_SHIP.pos[1]*PIXELS - 3);
     }
+
     ctx.globalAlpha = 0.06;
     ctx.moveTo(PLAYER_SHIP.pos[0]*PIXELS,
                PLAYER_SHIP.pos[1]*PIXELS - Math.max(WIDTH, HEIGHT));
@@ -563,6 +581,12 @@ function draw()
                PLAYER_SHIP.pos[1]*PIXELS);
     ctx.stroke();
 
+    ctx.beginPath();
+    ctx.arc(PLAYER_SHIP.pos[0]*PIXELS, PLAYER_SHIP.pos[1]*PIXELS,
+            world.render_distance*PIXELS, 0, Math.PI*2);
+    ctx.globalAlpha = 0.2;
+    ctx.strokeStyle = "black";
+    ctx.stroke();
 
     for (let obj of world) obj.draw(ctx);
     ctx.globalAlpha = 1;
@@ -656,7 +680,7 @@ function draw()
     else if (GAME_PAUSED)
     {
         ctx.font = "100px Helvetica";
-        ctx.globalAlpha = 1;
+        ctx.globalAlpha = 0.4;
         ctx.fillStyle = "darkgray";
         ctx.fillText("PAUSED", WIDTH/2 + 20, HEIGHT/2 - 20);
     }
@@ -678,10 +702,14 @@ function start()
     {
         current = new Date().getTime();
         draw();
+        let time_passed = 0;
         if (!GAME_PAUSED) physics(dt);
         requestAnimationFrame(start);
         dt = (current - last)/1000;
         last = current;
+
+        if (ONE_KEY && PIXELS > 0.3) PIXELS -= 0.05;
+        if (TWO_KEY && PIXELS < 10) PIXELS += 0.05;
 
     }, 1000/FPS);
 }

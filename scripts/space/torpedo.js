@@ -3,6 +3,7 @@ class Torpedo
     constructor(pos, vel, theta, thrust, length)
     {
         this.pos = pos;
+        this.pos_prev = pos;
         this.vel = vel;
         this.theta = theta;
         this.omega = 0;
@@ -30,6 +31,16 @@ class Torpedo
 
     draw(ctx)
     {
+        if (DRAW_TRACE)
+        {
+            ctx.globalAlpha = 0.6;
+            ctx.strokeStyle = "red";
+            ctx.beginPath();
+            ctx.moveTo(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+            ctx.lineTo(this.pos_prev[0]*PIXELS, this.pos_prev[1]*PIXELS);
+            ctx.stroke();
+        }
+
         ctx.save();
         ctx.strokeStyle = "red";
         ctx.fillStyle = "red";
@@ -51,7 +62,7 @@ class Torpedo
                      this.width*PIXELS, this.length*PIXELS);
         this.thruster.draw(ctx);
         ctx.restore();
-        this.box.draw(ctx);
+        if (DRAW_HITBOX) this.box.draw(ctx);
     }
 
     step(dt)
@@ -84,6 +95,8 @@ class Torpedo
         let alpha = 600*theta - 40*this.omega;
         if (this.time > this.drifttimer) alpha = 50*theta - 20*this.omega;
         if (!this.tracking) alpha = this.omega = 0;
+
+        this.pos_prev = this.pos.slice();
         this.vel[0] += acc[0]*dt;
         this.vel[1] += acc[1]*dt;
         this.pos[0] += this.vel[0]*dt;
