@@ -15,6 +15,7 @@ class Corvette
         this.torpedo_reload = 0;
         this.pdc_reload = 0;
         this.side = true;
+        this.health = 350;
 
         this.width = 9;
         this.length = 31;
@@ -23,7 +24,7 @@ class Corvette
                                [this.width/2, -this.length/2],
                                [-this.width/2, -this.length/2],
                                [-this.width/2, this.length/2]]);
-        this.health = 350;
+        this.box.object = this;
 
         this.engine = new Thruster([0, -this.length/2], -Math.PI/2,
             this.mass, this.width);
@@ -147,8 +148,8 @@ class Corvette
 
         ctx.rotate(-Math.PI/2);
         this.engine.draw(ctx);
-        if (DRAW_HITBOX) this.box.draw(ctx);
         ctx.restore();
+        if (DRAW_HITBOX) this.box.draw(ctx);
     }
 
     step(dt)
@@ -186,7 +187,7 @@ class Corvette
 
         let dx = PLAYER_SHIP.pos[0] - this.pos[0];
         let dy = PLAYER_SHIP.pos[1] - this.pos[1];
-        let bodyacc = [-(300 - dist)/10, 0];
+        let bodyacc = [-(350 - dist)/10, 0];
         if (bodyacc[0] > 4) this.engine.firing = true;
         else this.engine.firing = false;
         this.acc = this.b2g(bodyacc);
@@ -206,6 +207,9 @@ class Corvette
 
         this.acc = [0, 0];
         this.alpha = 0;
+
+        this.box.pos = this.pos.slice();
+        this.box.theta = this.theta;
     }
 
     explode()

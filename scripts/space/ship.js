@@ -23,10 +23,11 @@ class Ship
         this.width = 11; // 40/1.5;
         this.length = 42; // 144/1.5;
         this.radius = this.width/2;
-        this.box = new Hitbox([[this.width/2, this.length/2],
+        this.box = new Hitbox([[this.width/3, this.length/2],
                                [this.width/2, -this.length/2],
                                [-this.width/2, -this.length/2],
-                               [-this.width/2, this.length/2]]);
+                               [-this.width/3, this.length/2]]);
+        this.box.object = this;
 
         let tx = this.width*0.5;
         let ty = this.width*0.7;
@@ -95,7 +96,7 @@ class Ship
     {
         updateMouse();
         if (this.pdc_reload > 0) return;
-        this.pdc_reload = 0.03;
+        this.pdc_reload = 0.01;
         let theta = Math.atan2(MOUSEX - this.pos[0],
             MOUSEY - this.pos[1]) - Math.PI/2;
         let vel = rot2d([500 + Math.random()*10 - 5,
@@ -125,7 +126,7 @@ class Ship
             ctx.strokeStyle = "red";
             ctx.beginPath();
             ctx.moveTo(0, 0);
-            ctx.lineTo(Math.max(width, height), 0);
+            ctx.lineTo(Math.max(WIDTH, HEIGHT), 0);
             ctx.stroke();
         }
 
@@ -201,7 +202,6 @@ class Ship
                      this.length*0.9*PIXELS, this.width*0.2*PIXELS);
         ctx.stroke();
 
-
         ctx.restore();
 
         for (let t of this.thrusters)
@@ -210,10 +210,9 @@ class Ship
             t.world = this.world;
             t.draw(ctx);
         }
+        ctx.restore();
 
         if (DRAW_HITBOX) this.box.draw(ctx);
-
-        ctx.restore();
     }
 
     step(dt)
@@ -252,6 +251,9 @@ class Ship
 
         this.acc = [0, 0];
         this.alpha = 0;
+
+        this.box.pos = this.pos.slice();
+        this.box.theta = this.theta;
 
         if (this.health < PLAYER_MAX_HEALTH)
             this.health += PASSIVE_REGEN*dt;

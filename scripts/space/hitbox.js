@@ -10,24 +10,23 @@ class Hitbox
             this.centroid[1] += p[1]/this.points.length;
         }
 
-        this.pos = [0, 0];
-        this.theta = 0;
+        this.object = null;
     }
 
     contains(point)
     {
-        return isInside(this.points, point);
+        return isInside(this.get_global(), point);
     }
 
     intersects(hitbox)
     {
         if (this.contains(hitbox.centroid)) return true;
-        for (let op of hitbox.points)
+        for (let op of hitbox.get_global())
         {
             if (this.contains(op)) return true;
         }
         if (hitbox.contains(this.centroid)) return true;
-        for (let p of this.points)
+        for (let p of this.get_global())
         {
             if (hitbox.contains(p)) return true;
         }
@@ -36,6 +35,10 @@ class Hitbox
 
     draw(ctx)
     {
+        ctx.save();
+        ctx.translate(this.object.pos[0]*PIXELS,
+                      this.object.pos[1]*PIXELS);
+        ctx.rotate(-this.object.theta - Math.PI/2);
         ctx.globalAlpha = 1;
         ctx.strokeStyle = "green";
         ctx.fillStyle = "green";
@@ -51,6 +54,31 @@ class Hitbox
         ctx.arc(this.centroid[0]*PIXELS,
             this.centroid[1]*PIXELS, 2, 0, Math.PI*2);
         ctx.fill();
+
+        ctx.restore();
+
+        // ctx.strokeStyle = "red";
+        // ctx.beginPath();
+        // let pts = this.get_global();
+        // ctx.moveTo(pts[pts.length - 1][0]*PIXELS,
+        //            pts[pts.length - 1][1]*PIXELS);
+        // for (let p of pts)
+        // {
+        //     ctx.lineTo(p[0]*PIXELS, p[1]*PIXELS);
+        // }
+        // ctx.stroke();
+    }
+
+    get_global()
+    {
+        let global_points = [];
+        for (let p of this.points)
+        {
+            let rp = rot2d(p, this.object.theta + Math.PI/2);
+            let gp = this.object.pos.slice();
+            global_points.push([gp[0] + rp[0], gp[1] + rp[1]]);
+        }
+        return global_points;
     }
 }
 

@@ -5,7 +5,6 @@ class Bullet
         this.pos = pos;
         this.vel = vel;
         this.theta = theta;
-        this.width = width;
         this.length = length;
         this.width = this.length/5;
         this.mass = 1;

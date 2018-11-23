@@ -6,7 +6,6 @@ class Torpedo
         this.vel = vel;
         this.theta = theta;
         this.omega = 0;
-        this.width = width;
         this.thrust = thrust;
         this.length = length;
         this.width = this.length/5;
@@ -14,11 +13,11 @@ class Torpedo
         this.time = 0;
         this.drifttimer = 0.5;
         this.tracking = true;
-        this.radius = length/2;
         this.box = new Hitbox([[this.width/2, this.length/2],
                                [this.width/2, -this.length/2],
                                [-this.width/2, -this.length/2],
                                [-this.width/2, this.length/2]]);
+        this.box.object = this;
 
         this.world = null;
         this.target = MOUSEPOS;
@@ -51,8 +50,8 @@ class Torpedo
         ctx.fillRect(-this.width/2*PIXELS, -this.length/2*PIXELS,
                      this.width*PIXELS, this.length*PIXELS);
         this.thruster.draw(ctx);
-        if (DRAW_HITBOX) this.box.draw(ctx);
         ctx.restore();
+        this.box.draw(ctx);
     }
 
     step(dt)

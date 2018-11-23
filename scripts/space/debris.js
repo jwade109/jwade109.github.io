@@ -11,6 +11,7 @@ class Debris
                                [this.radius/2, -this.radius/2],
                                [-this.radius/2, -this.radius/2],
                                [-this.radius/2, this.radius/2]]);
+        this.box.object = this;
 
         this.color = "darkgray";
         if (Math.random() < 0.4)
@@ -23,6 +24,9 @@ class Debris
         this.pos[0] += this.vel[0]*dt;
         this.pos[1] += this.vel[1]*dt;
         this.theta += this.omega*dt;
+
+        this.box.pos = this.pos.slice();
+        this.box.theta = this.theta;
     }
 
     draw(ctx)
@@ -37,8 +41,8 @@ class Debris
                      this.radius*PIXELS, this.radius*PIXELS);
         ctx.strokeRect(-this.radius/2*PIXELS, -this.radius/2*PIXELS,
                      this.radius*PIXELS, this.radius*PIXELS);
-        if (DRAW_HITBOX) this.box.draw(ctx);
         ctx.restore();
+        if (DRAW_HITBOX) this.box.draw(ctx);
     }
 
     explode()
