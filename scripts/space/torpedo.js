@@ -21,7 +21,7 @@ class Torpedo
         this.box.object = this;
 
         this.world = null;
-        this.target = MOUSEPOS;
+        this.target = null;
 
         this.thruster = new Thruster(
             [0, -this.length/2], -Math.PI/2, thrust, this.width);
@@ -42,16 +42,18 @@ class Torpedo
         }
 
         ctx.save();
-        ctx.strokeStyle = "red";
-        ctx.fillStyle = "red";
-        ctx.globalAlpha = 0.3;
         if (this.target === PLAYER_SHIP.pos)
         {
+            ctx.strokeStyle = "red";
+            ctx.fillStyle = "red";
+            ctx.globalAlpha = 0.5;
             ctx.beginPath();
             let theta = Math.PI - angle2d(this.pos, this.target);
             ctx.arc(this.target[0]*PIXELS, this.target[1]*PIXELS,
-                50*PIXELS, theta - 0.3, theta + 0.3);
-            ctx.stroke();
+                47*PIXELS, theta - 0.2, theta + 0.2, false);
+            ctx.arc(this.target[0]*PIXELS, this.target[1]*PIXELS,
+                50*PIXELS, theta + 0.2, theta - 0.2, true);
+            ctx.fill();
         }
         ctx.strokeStyle = "black";
         ctx.fillStyle = "black";
@@ -68,12 +70,7 @@ class Torpedo
     step(dt)
     {
         this.time += dt;
-        if (this.time > this.drifttimer && this.time - dt < this.drifttimer)
-        {
-            this.vel = this.launch_vel.slice();
-        }
         let theta = angle2d(this.pos, this.target) - this.theta;
-
         let bodyacc = [0, 0];
         if (this.time > this.drifttimer)
         {

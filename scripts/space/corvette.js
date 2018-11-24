@@ -1,4 +1,4 @@
-class Corvette
+class Destroyer
 {
     constructor(pos, theta)
     {
@@ -53,7 +53,6 @@ class Corvette
         torp.origin = this;
         torp.target = PLAYER_SHIP.pos;
         torp.world = this.world;
-        torp.launch_vel = PLAYER_SHIP.vel.slice();
         this.world.push(torp);
     }
 

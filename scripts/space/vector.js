@@ -91,3 +91,33 @@ function angle2d(u, v)
 {
     return Math.atan2(v[0] - u[0], v[1] - u[1]) - Math.PI/2;
 }
+
+function interceptSolution(tpos, tvel, ipos, ivel)
+{
+    // tpos: position of target
+    // tvel: velocity of target
+    // ipos: position of interceptor
+    // ivel: magnitude of velocity of interceptor
+    // returns: the angle of firing solution; NaN if none
+
+    let offset = [tpos[0] - ipos[0], tpos[1] - ipos[1]];
+    let h1 = tvel[0]*tvel[0] + tvel[1]*tvel[1] - ivel*ivel;
+    let h2 = offset[0]*tvel[0] + offset[1]*tvel[1];
+    let h3 = offset[0]*offset[0] + offset[1]*offset[1];
+
+    let t1 = -h2/h1 + Math.sqrt(Math.pow(h2/h1, 2) - h3/h1);
+    let t2 = -h2/h1 - Math.sqrt(Math.pow(h2/h1, 2) - h3/h1);
+    if (h1 == 0) t1 = t2 = -h3/(2*h2);
+
+    let tmin = Math.min(t1, t2);
+    let tmax = Math.max(t1, t2);
+
+    let t = tmin > 0 ? tmin : tmax;
+    if (t < 0) t = NaN;
+
+    let intercept = [0, 0];
+    intercept[0] = tpos[0] + t*tvel[0] - ipos[0];
+    intercept[1] = tpos[1] + t*tvel[1] - ipos[1];
+
+    return Math.atan2(intercept[1], intercept[0]);
+}

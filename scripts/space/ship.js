@@ -17,9 +17,9 @@ class Ship
         this.fuel = this.maxfuel;
         this.side = true;
         this.torpedo_reload = 0;
-        this.railgun_reload = 1;
+        this.railgun_reload = RAILGUN_COOLDOWN;
         this.pdc_reload = 0.03;
-        this.health = 1000;
+        this.health = PLAYER_MAX_HEALTH;
 
         this.width = 11; // 40/1.5;
         this.length = 42; // 144/1.5;
@@ -53,6 +53,7 @@ class Ship
 
     launchTorpedo()
     {
+        if (TARGET_OBJECT == null) return;
         if (this.torpedo_reload > 0) return;
         this.torpedo_reload = 0.12;
         this.side = !this.side;
@@ -70,17 +71,16 @@ class Ship
         tvel[1] += voff[1];
         let torp = new Torpedo(tpos, tvel, this.theta,
             TORPEDO_THRUST, 7);
+        torp.target = TARGET_OBJECT.pos;
         torp.origin = this;
         torp.world = this.world;
-        torp.target = MOUSEPOS;
-        torp.launch_vel = this.vel.slice();
         this.world.push(torp);
     }
 
     fireRailgun()
     {
         if (this.railgun_reload > 0) return;
-        this.railgun_reload = 1;
+        this.railgun_reload = RAILGUN_COOLDOWN;
         let vel = rot2d([RAILGUN_VEL, 0], this.theta);
         let dv = rot2d([-60, 0], this.theta);
         vel[0] += this.vel[0];
@@ -97,10 +97,21 @@ class Ship
     {
         updateMouse();
         if (this.pdc_reload > 0) return;
-        this.pdc_reload = 0.01;
-        let theta = Math.atan2(MOUSEX - this.pos[0], MOUSEY - this.pos[1]) -
-            Math.PI/2 + (Math.random()*2 - 1)*PDC_SPREAD;
-        let vel = rot2d([500 + Math.random()*10 - 5, 0], theta);
+        this.pdc_reload = 0.05;
+
+        let theta = Math.atan2(MOUSEX - this.pos[0],
+                               MOUSEY - this.pos[1]) - Math.PI/2;
+
+        if (TARGET_OBJECT != null)
+        {
+            let sol = -interceptSolution(TARGET_OBJECT.pos,
+                TARGET_OBJECT.vel, this.pos, PDC_VELOCITY);
+            if (!isNaN(sol)) theta = sol;
+        }
+
+        theta += (Math.random()*2 - 1)*PDC_SPREAD;
+
+        let vel = rot2d([PDC_VELOCITY + Math.random()*10 - 5, 0], theta);
         vel[0] += this.vel[0];
         vel[1] += this.vel[1];
         let b = new Bullet(this.pos.slice(), vel, theta, PDC_LENGTH);
@@ -213,16 +224,29 @@ class Ship
         ctx.fill();
         ctx.fillStyle = "black";
         ctx.fillRect(-this.length*0.4*PIXELS, -this.width*0.15*PIXELS,
-                     this.length*0.9*PIXELS, this.width*0.3*PIXELS);
+                      this.length*0.9*PIXELS, this.width*0.3*PIXELS);
         ctx.fillStyle = "#CCCCCC";
         ctx.fillRect(-this.length*0.4*PIXELS, -this.width*0.1*PIXELS,
-                     this.length*0.9*PIXELS, this.width*0.2*PIXELS);
+                      this.length*0.9*PIXELS, this.width*0.2*PIXELS);
         ctx.stroke();
 
         ctx.restore();
         ctx.restore();
 
         if (DRAW_HITBOX) this.box.draw(ctx);
+
+        if (TARGET_OBJECT != null)
+        {
+            let dist = distance(this.pos, TARGET_OBJECT.pos);
+            ctx.strokeStyle = "red";
+            ctx.globalAlpha = 0.4;
+            ctx.beginPath();
+            ctx.lineTo(25*TARGET_OBJECT.pos[0]*PIXELS/dist,
+                       25*TARGET_OBJECT.pos[1]*PIXELS/dist);
+            ctx.lineTo(35*TARGET_OBJECT.pos[0]*PIXELS/dist,
+                       35*TARGET_OBJECT.pos[1]*PIXELS/dist);
+            ctx.stroke();
+        }
     }
 
     step(dt)
