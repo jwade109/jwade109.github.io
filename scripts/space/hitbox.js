@@ -37,29 +37,7 @@ class Hitbox
 
     draw(ctx)
     {
-        // ctx.save();
-        // ctx.translate(this.object.pos[0]*PIXELS,
-        //               this.object.pos[1]*PIXELS);
-        // ctx.rotate(-this.object.theta - Math.PI/2);
-        // ctx.globalAlpha = 1;
-        // ctx.strokeStyle = "green";
-        // ctx.fillStyle = "green";
-        // ctx.beginPath();
-        // ctx.moveTo(this.points[this.points.length - 1][0]*PIXELS,
-        //            this.points[this.points.length - 1][1]*PIXELS);
-        // for (let p of this.points)
-        // {
-        //     ctx.lineTo(p[0]*PIXELS, p[1]*PIXELS);
-        // }
-        // ctx.stroke();
-        // ctx.beginPath();
-        // ctx.arc(this.centroid[0]*PIXELS,
-        //     this.centroid[1]*PIXELS, 2, 0, Math.PI*2);
-        // ctx.fill();
-        //
-        // ctx.restore();
-
-        ctx.strokeStyle = "red";
+        ctx.strokeStyle = "green";
         ctx.globalAlpha = 1;
         ctx.beginPath();
         let pts = this.get_global();

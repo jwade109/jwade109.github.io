@@ -8,6 +8,7 @@ class Debris
         this.theta = theta;
         this.omega = omega;
         this.radius = radius;
+        this.health = radius;
         this.box = new Hitbox([[this.radius/2, this.radius/2],
                                [this.radius/2, -this.radius/2],
                                [-this.radius/2, -this.radius/2],
@@ -45,6 +46,7 @@ class Debris
 
         ctx.save();
         ctx.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+
         ctx.rotate(-this.theta);
         ctx.strokeStyle = "black";
         ctx.fillStyle = this.color;
@@ -53,8 +55,15 @@ class Debris
                      this.radius*PIXELS, this.radius*PIXELS);
         ctx.strokeRect(-this.radius/2*PIXELS, -this.radius/2*PIXELS,
                      this.radius*PIXELS, this.radius*PIXELS);
+
         ctx.restore();
         if (DRAW_HITBOX) this.box.draw(ctx);
+    }
+
+    damage(d)
+    {
+        this.health -= d;
+        if (this.health <= 0) this.explode();
     }
 
     explode()

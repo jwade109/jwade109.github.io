@@ -3,6 +3,7 @@ var PI = Math.PI;
 var DRAW_HITBOX = false;
 var DRAW_TRACE = false;
 var LOCK_CAMERA = false;
+var MATCH_VELOCITY = false;
 var SPAWN_ENEMIES = true;
 var MAX_ENEMIES = 2;
 var GAME_PAUSED = true;
@@ -22,6 +23,11 @@ var INFINITE_AMMO = false;
 var PLAYER_MAX_MISSILES = 30;
 var PLAYER_MAX_RAILGUN = 40;
 var GAME_OVER = false;
+
+var TORPEDO_DAMAGE = 200;
+var RAILGUN_DAMAGE = 500;
+var PDC_DAMAGE = 1;
+var DEBRIS_DAMAGE = 50;
 
 var ENEMY_NO = 0;
 let SPAWN_DEBRIS = true;
@@ -60,7 +66,8 @@ var TARGET_OBJECT = null;
 var world = [];
 world.render_distance = 2500;
 
-world.push(new Station([200, 200], 0));
+world.push(new Station([1300, -2100], 0));
+TARGET_OBJECT = world[0];
 var PLAYER_SHIP = new Ship([0, 0], Math.PI/2);
 world.push(PLAYER_SHIP);
 PLAYER_SHIP.world = world;
@@ -94,6 +101,12 @@ for (let i = 0; i < 20 && SPAWN_DEBRIS; ++i)
 canvas.oncontextmenu = function (e) {
     e.preventDefault();
 };
+
+document.addEventListener('mousewheel', function(event)
+{
+    if (event.deltaY > 0 && VIEW_RADIUS < 3000) zoom(VIEW_RADIUS*1.3);
+    if (event.deltaY < 0 && VIEW_RADIUS > 50) zoom(VIEW_RADIUS/1.3);
+});
 
 document.addEventListener('mousemove', function(event)
 {
@@ -162,7 +175,7 @@ document.addEventListener('keydown', function(event)
         case 87: wkey = true; break;
         case 68: dkey = true; break;
         case 83: skey = true; break;
-        case 88: xkey = true; break;
+        case 88: MATCH_VELOCITY = true; break;
         default:
             console.log('unhandled keycode: ' + event.keyCode);
     }
@@ -192,7 +205,7 @@ document.addEventListener('keyup', function(event)
         case 87: wkey = false; break;
         case 68: dkey = false; break;
         case 83: skey = false; break;
-        case 88: xkey = false; break;
+        case 88: MATCH_VELOCITY = false; break;
         default:
             console.log('unhandled keycode: ' + event.keyCode);
     }
@@ -270,23 +283,25 @@ function handleCollision(obj1, obj2)
 {
     function objectsAre(str1, str2)
     {
-        return (obj1.constructor.name == str1 &&
-                obj2.constructor.name == str2) ||
-               (obj1.constructor.name == str2 &&
-                obj2.constructor.name == str1);
+        if ((obj1.constructor.name == str1 &&
+             obj2.constructor.name == str2)) return true;
+        if ((obj2.constructor.name == str1 &&
+             obj1.constructor.name == str2))
+        {
+            let temp = obj2;
+            obj2 = obj1;
+            obj1 = temp;
+            return true;
+        }
+        return false;
     }
 
     if (obj1 === obj2) return;
     if (obj1.constructor.name == obj2.constructor.name) return;
     if (objectsAre("Ship", "Destroyer"))
     {
-        PLAYER_SHIP.damage(PLAYER_SHIP.health);
-        let destroyer = obj1;
-        if (!(destroyer instanceof Destroyer))
-        {
-            destroyer = obj2;
-        }
-        destroyer.damage(destroyer.health);
+        obj1.damage(obj1.health);
+        obj2.damage(obj2.health);
         return;
     }
     if (objectsAre("Ship", "Debris"))
@@ -305,7 +320,7 @@ function handleCollision(obj1, obj2)
             debris.explode();
             PLAYER_SHIP.vel = vel;
             PLAYER_SHIP.omega += domega;
-            PLAYER_SHIP.damage(50);
+            PLAYER_SHIP.damage(DEBRIS_DAMAGE);
         }
         return;
     }
@@ -321,54 +336,45 @@ function handleCollision(obj1, obj2)
         {
             torpedo.vel = ship.vel.slice();
             torpedo.explode();
-            ship.damage(200);
+            ship.damage(TORPEDO_DAMAGE);
         }
         return;
     }
     if (objectsAre("Ship", "Bullet"))
     {
-        let ship = obj1, bullet = obj2;
-        if (!(ship instanceof Ship))
+        if (obj2.origin !== obj1)
         {
-            ship = obj2;
-            bullet = obj1;
-        }
-        if (bullet.origin !== ship)
-        {
-            bullet.vel = ship.vel.slice();
-            bullet.explode();
-            ship.damage(1);
+            obj2.vel = obj1.vel.slice();
+            obj2.explode();
+            obj1.damage(PDC_DAMAGE);
         }
         return;
     }
-    else if (objectsAre("Bullet", "Debris") || objectsAre("Torpedo", "Debris"))
+    else if (objectsAre("Torpedo", "Debris"))
     {
-        if (obj1 instanceof Debris)
-        {
-            if (obj1.radius < SMALL_DEBRIS && objectsAre("Torpedo", "Debris"))
-                return;
-            obj2.vel = obj1.vel.slice();
-            if (obj1.radius > LARGE_DEBRIS && objectsAre("Bullet", "Debris"))
-            {
-                obj2.explode();
-                return;
-            }
-            obj1.explode();
-            obj2.explode();
-        }
+        let debris = obj1, torpedo = obj2;
         if (obj2 instanceof Debris)
         {
-            if (obj2.radius < SMALL_DEBRIS && objectsAre("Torpedo", "Debris"))
-                return;
-            obj1.vel = obj2.vel.slice();
-            if (obj2.radius > LARGE_DEBRIS && objectsAre("Bullet", "Debris"))
-            {
-                obj1.explode();
-                return;
-            }
-            obj1.explode();
-            obj2.explode();
+            debris = obj2;
+            torpedo = obj1;
         }
+        if (debris.radius < SMALL_DEBRIS) return;
+        torpedo.vel = debris.vel.slice();
+        torpedo.explode();
+        debris.damage(TORPEDO_DAMAGE);
+        return;
+    }
+    else if (objectsAre("Bullet", "Debris"))
+    {
+        let debris = obj1, bullet = obj2;
+        if (obj2 instanceof Debris)
+        {
+            debris = obj2;
+            bullet = obj1;
+        }
+        bullet.vel = debris.vel.slice();
+        bullet.explode();
+        debris.damage(PDC_DAMAGE);
         return;
     }
     else if (objectsAre("Torpedo", "Bullet"))
@@ -460,31 +466,60 @@ function handleCollision(obj1, obj2)
     }
     else if (objectsAre("Station", "Debris"))
     {
+        if (obj2.radius > LARGE_DEBRIS)
+        {
+            obj2.vel = obj1.vel.slice();
+            obj2.explode();
+        }
         return;
     }
     else if (objectsAre("Station", "Bullet"))
     {
+        obj2.vel = obj1.vel.slice();
+        obj2.explode();
         return;
     }
     else if (objectsAre("Station", "Ship"))
     {
+        // obj2.vel = obj1.vel.slice();
+        obj2.damage(obj2.health);
         return;
     }
     else if (objectsAre("Station", "Torpedo"))
     {
+        obj2.vel = obj1.vel.slice();
+        obj2.explode();
         return;
     }
     else if (objectsAre("Station", "Railgun"))
     {
+        obj2.vel = obj1.vel.slice();
+        obj2.explode();
         return;
     }
     else if (objectsAre("Station", "Destroyer"))
     {
+        obj2.vel = obj1.vel.slice();
+        obj2.explode();
         return;
     }
     console.log("unhandled collision between " +
                 obj1.constructor.name + " and " +
                 obj2.constructor.name);
+}
+
+function isOffScreen(coords)
+{
+    let corners = [[-WIDTH/(2*PIXELS), -HEIGHT/(2*PIXELS)],
+                   [ WIDTH/(2*PIXELS), -HEIGHT/(2*PIXELS)],
+                   [ WIDTH/(2*PIXELS),  HEIGHT/(2*PIXELS)],
+                   [-WIDTH/(2*PIXELS),  HEIGHT/(2*PIXELS)]];
+    let hitbox = new Hitbox(corners);
+    hitbox.object = [];
+    hitbox.object.pos = PLAYER_SHIP.pos.slice();
+    hitbox.object.theta = -Math.PI/2;
+    if (LOCK_CAMERA) hitbox.object.theta = PLAYER_SHIP.theta;
+    return !hitbox.contains(coords);
 }
 
 function physics(dt)
@@ -606,9 +641,12 @@ function physics(dt)
         TIME += dt;
     }
 
+    let pos = PLAYER_SHIP.pos.slice();
     let vel = PLAYER_SHIP.vel.slice();
     for (let obj of world)
     {
+        obj.pos[0] -= pos[0];
+        obj.pos[1] -= pos[1];
         obj.vel[0] -= vel[0];
         obj.vel[1] -= vel[1];
     }
@@ -691,18 +729,36 @@ function draw()
     if (TARGET_OBJECT != null)
     {
         ctx.save();
-        ctx.translate(TARGET_OBJECT.pos[0]*PIXELS,
-                      TARGET_OBJECT.pos[1]*PIXELS);
-        if (LOCK_CAMERA) ctx.rotate(-PLAYER_SHIP.theta + Math.PI/2);
-        ctx.strokeStyle = "red";
-        ctx.fillStyle = "red";
-        ctx.globalAlpha = 0.6;
-        ctx.strokeRect(-10*PIXELS, -10*PIXELS, 20*PIXELS, 20*PIXELS);
-        ctx.globalAlpha = 1;
-        ctx.font = "15px Helvetica";
-        ctx.textAlign = "center";
-        ctx.fillText(TARGET_OBJECT.constructor.name.toUpperCase(),
-            0, -20*PIXELS);
+        if (!isOffScreen(TARGET_OBJECT.pos))
+        {
+            ctx.strokeStyle = "red";
+            ctx.fillStyle = "red";
+            ctx.translate(TARGET_OBJECT.pos[0]*PIXELS,
+                          TARGET_OBJECT.pos[1]*PIXELS);
+            if (LOCK_CAMERA) ctx.rotate(-PLAYER_SHIP.theta + Math.PI/2);
+            ctx.globalAlpha = 0.6;
+            ctx.strokeRect(-10*PIXELS, -10*PIXELS, 20*PIXELS, 20*PIXELS);
+            ctx.globalAlpha = 1;
+            ctx.font = "15px Helvetica";
+            ctx.textAlign = "center";
+            ctx.fillText(TARGET_OBJECT.constructor.name.toUpperCase(),
+                0, -20*PIXELS);
+        }
+        else
+        {
+            let angle = -angle2d(PLAYER_SHIP.pos,
+                                 TARGET_OBJECT.pos) + Math.PI/2;
+            ctx.rotate(angle);
+            ctx.globalAlpha = 0.4;
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 3*PIXELS;
+            ctx.beginPath();
+            ctx.moveTo(-10*PIXELS, -45*PIXELS);
+            ctx.lineTo(0, -55*PIXELS);
+            ctx.lineTo(10*PIXELS, -45*PIXELS);
+            ctx.stroke();
+        }
+
         ctx.restore();
     }
 
@@ -740,16 +796,17 @@ function draw()
     ctx.font = "12px Helvetica";
     let weapon = firemode ? "TORPEDOES" : "RAILGUN";
     ctx.fillText("FIRING MODE: " + weapon, 70, HEIGHT - 10);
-    ctx.fillText("RADAR RANGE: " + VIEW_RADIUS + " METERS", 270, HEIGHT - 10);
-    ctx.fillText("PRESS [H] FOR HELP", 470, HEIGHT - 10);
+    ctx.fillText("RADAR RANGE: " + Math.round(VIEW_RADIUS) + " METERS",
+        270, HEIGHT - 10);
     if (GAME_PAUSED)
-        ctx.fillText("PRESS [ESC] TO UNPAUSE", 650, HEIGHT - 10);
+        ctx.fillText("PRESS [ESC] TO UNPAUSE", 500, HEIGHT - 10);
     else
-        ctx.fillText("PRESS [ESC] TO PAUSE", 650, HEIGHT - 10);
+        ctx.fillText("PRESS [ESC] TO PAUSE", 500, HEIGHT - 10);
     if (TARGET_OBJECT != null)
         ctx.fillText("TARGET LOCKED: " +
-        TARGET_OBJECT.constructor.name.toUpperCase(),
-        850, HEIGHT - 10);
+        TARGET_OBJECT.constructor.name.toUpperCase() + " (" +
+        Math.round(distance(PLAYER_SHIP.pos, TARGET_OBJECT.pos)) + " M)",
+        800, HEIGHT - 10);
     ctx.textAlign = "right";
     let ftime = (Math.round(TIME*100)/100).toLocaleString("en",
         {useGrouping: false,minimumFractionDigits: 2});
@@ -840,7 +897,7 @@ function start()
         last = current;
 
         if (ONE_KEY && VIEW_RADIUS < 3000) zoom(VIEW_RADIUS + 10);
-        if (TWO_KEY && VIEW_RADIUS > 50) zoom(VIEW_RADIUS - 10);;
+        if (TWO_KEY && VIEW_RADIUS > 50) zoom(VIEW_RADIUS - 10);
 
     }, 1000/FPS);
 }

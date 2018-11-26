@@ -154,7 +154,7 @@ class Ship
             ctx.strokeStyle = "red";
             ctx.beginPath();
             ctx.moveTo(0, 0);
-            ctx.lineTo(Math.max(WIDTH, HEIGHT), 0);
+            ctx.lineTo(1000*PIXELS, 0);
             ctx.stroke();
         }
 
@@ -234,19 +234,6 @@ class Ship
         ctx.restore();
 
         if (DRAW_HITBOX) this.box.draw(ctx);
-
-        if (TARGET_OBJECT != null)
-        {
-            let dist = distance(this.pos, TARGET_OBJECT.pos);
-            ctx.strokeStyle = "red";
-            ctx.globalAlpha = 0.4;
-            ctx.beginPath();
-            ctx.lineTo(25*TARGET_OBJECT.pos[0]*PIXELS/dist,
-                       25*TARGET_OBJECT.pos[1]*PIXELS/dist);
-            ctx.lineTo(35*TARGET_OBJECT.pos[0]*PIXELS/dist,
-                       35*TARGET_OBJECT.pos[1]*PIXELS/dist);
-            ctx.stroke();
-        }
     }
 
     step(dt)
@@ -316,7 +303,7 @@ class Ship
                 this.omega + Math.random()*5 - 2.5, size);
             deb.world = this.world;
             deb.color = "#909090";
-            if (Math.random() < 0.1)
+            if (Math.random() < 0.2)
                 deb.color = "#CCCCCC";
             this.world.push(deb);
         }
