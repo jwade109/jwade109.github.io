@@ -32,7 +32,7 @@ class Hitbox
             let x = glob[i], y = glob[i+1];
             if (doIntersect(p1, q1, x, y)) return true;
         }
-        return false;
+        return doIntersect(p1, q1, glob[0], glob[glob.length - 1]);
     }
 
     draw(ctx)
@@ -59,6 +59,7 @@ class Hitbox
             let gp = this.object.pos.slice();
             global_points.push([gp[0] + rp[0], gp[1] + rp[1]]);
         }
+
         return global_points;
     }
 }

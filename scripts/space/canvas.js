@@ -4,19 +4,20 @@ var DRAW_HITBOX = false;
 var DRAW_TRACE = false;
 var LOCK_CAMERA = false;
 var MATCH_VELOCITY = false;
-var SPAWN_ENEMIES = true;
+var SPAWN_ENEMIES = false;
 var MAX_ENEMIES = 2;
 var GAME_PAUSED = true;
 var SLOW_TIME = false;
 var SHOW_HELP = false;
 var LAST_EVENT = null;
-var PLAYER_INVINCIBLE = false;
+var PLAYER_INVINCIBLE = true;
 var INFINITE_FUEL = true;
 var PLAYER_MAX_HEALTH = 2000;
 var PASSIVE_REGEN = PLAYER_MAX_HEALTH/(60*3);
 var PDC_LENGTH = 4;
 var PDC_SPREAD = 1.5*PI/180;
-var PDC_VELOCITY = 500;
+var PDC_VELOCITY = 800;
+var PDC_COOLDOWN = 1/20;
 var RAILGUN_VEL = 20000;
 var RAILGUN_COOLDOWN = 5;
 var INFINITE_AMMO = false;
@@ -28,6 +29,7 @@ var TORPEDO_DAMAGE = 200;
 var RAILGUN_DAMAGE = 500;
 var PDC_DAMAGE = 1;
 var DEBRIS_DAMAGE = 50;
+var BATTLESHIP_MAX_HEALTH = 10000;
 
 var ENEMY_NO = 0;
 let SPAWN_DEBRIS = true;
@@ -67,10 +69,14 @@ var world = [];
 world.render_distance = 2500;
 
 world.push(new Station([1300, -2100], 0));
-TARGET_OBJECT = world[0];
+// TARGET_OBJECT = world[0];
 var PLAYER_SHIP = new Ship([0, 0], Math.PI/2);
 world.push(PLAYER_SHIP);
 PLAYER_SHIP.world = world;
+
+let bs = new Battleship([100, -400], Math.PI/6);
+bs.world = world;
+world.push(bs);
 
 function respawn()
 {
@@ -243,7 +249,9 @@ function updateMouse()
         let dx = obj.pos[0] - MOUSEX;
         let dy = obj.pos[1] - MOUSEY;
         let dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist < min)
+        if (dist < min &&
+            !(obj instanceof Bullet) &&
+            !(obj instanceof Railgun))
         {
             min = dist;
             NEAREST_OBJECT = obj;
@@ -255,7 +263,6 @@ function collide(obj1, obj2)
 {
     if (obj1 === obj2) return false;
 
-    let default_radius = 3;
     let dx = obj2.pos[0] - obj1.pos[0];
     let dy = obj2.pos[1] - obj1.pos[1];
     let dist = Math.sqrt(dx*dx + dy*dy);
@@ -503,6 +510,52 @@ function handleCollision(obj1, obj2)
         obj2.explode();
         return;
     }
+    else if (objectsAre("Battleship", "Ship"))
+    {
+        obj2.explode();
+        obj1.damage(obj2.health);
+        return;
+    }
+    else if (objectsAre("Battleship", "Debris"))
+    {
+        if (obj2.radius > LARGE_DEBRIS)
+        {
+            obj2.vel = obj1.vel.slice();
+            obj2.explode();
+            obj1.damage(DEBRIS_DAMAGE);
+        }
+        return;
+    }
+    else if (objectsAre("Battleship", "Torpedo"))
+    {
+        obj2.vel = obj1.vel.slice();
+        obj2.explode();
+        obj1.damage(TORPEDO_DAMAGE);
+        return;
+    }
+    else if (objectsAre("Battleship", "Railgun"))
+    {
+        obj1.damage(RAILGUN_DAMAGE);
+        return;
+    }
+    else if (objectsAre("Battleship", "Bullet"))
+    {
+        if (obj2.origin != obj1)
+        {
+            obj2.vel = obj1.vel.slice();
+            obj2.explode();
+            obj1.damage(PDC_DAMAGE);
+        }
+        return;
+    }
+    else if (objectsAre("Battleship", "Destroyer"))
+    {
+        obj2.vel = obj1.vel.slice();
+        obj2.explode();
+        obj1.damage(obj2.health);
+        return;
+    }
+
     console.log("unhandled collision between " +
                 obj1.constructor.name + " and " +
                 obj2.constructor.name);
@@ -576,8 +629,7 @@ function physics(dt)
 
     if (enemy_count < MAX_ENEMIES && SPAWN_ENEMIES && !GAME_OVER)
     {
-        let donut = world.render_distance - Math.max(WIDTH, HEIGHT);
-        let r = world.render_distance - Math.random()*donut;
+        let r = world.render_distance*2;
         let rot = Math.random()*Math.PI*2;
         let pos = [Math.cos(rot)*r + PLAYER_SHIP.pos[0],
                    Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
@@ -724,6 +776,9 @@ function draw()
         ctx.textAlign = "center";
         ctx.fillText(NEAREST_OBJECT.constructor.name.toUpperCase(),
             0, -20*PIXELS);
+        if (typeof NEAREST_OBJECT.name != 'undefined')
+            ctx.fillText("\"" + NEAREST_OBJECT.name + "\"",
+                0, -20*PIXELS - 20);
         ctx.restore();
     }
     if (TARGET_OBJECT != null)
@@ -743,6 +798,9 @@ function draw()
             ctx.textAlign = "center";
             ctx.fillText(TARGET_OBJECT.constructor.name.toUpperCase(),
                 0, -20*PIXELS);
+            if (typeof TARGET_OBJECT.name != 'undefined')
+                ctx.fillText("\"" + TARGET_OBJECT.name + "\"",
+                    0, -20*PIXELS - 20);
         }
         else
         {

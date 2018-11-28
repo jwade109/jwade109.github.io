@@ -20,6 +20,7 @@ class Ship
         this.railgun_reload = RAILGUN_COOLDOWN;
         this.pdc_reload = 0.03;
         this.health = PLAYER_MAX_HEALTH;
+        this.name = NAMES[Math.floor(Math.random()*NAMES.length)];
 
         this.width = 11; // 40/1.5;
         this.length = 42; // 144/1.5;
@@ -46,6 +47,12 @@ class Ship
                           new Thruster([0, -this.length/2],
                                        -Math.PI/2, 9*thr, this.width)];
         for (let t of this.thrusters) t.drawbell = false;
+
+        let range = [-Math.PI/3, Math.PI/3];
+        this.pdcs =
+            [new PointDefenseCannon([this.length/2, 0], 0, this, range)];
+             // new PointDefenseCannon([this.length/8, -this.width/2], Math.PI/2, this, range),
+             // new PointDefenseCannon([this.length/8, this.width/2], -Math.PI/2, this, range)];
 
         this.world = null;
         this.gray = "#909090";
@@ -95,29 +102,11 @@ class Ship
 
     firePDC()
     {
-        updateMouse();
-        if (this.pdc_reload > 0) return;
-        this.pdc_reload = 0.05;
-
-        let theta = Math.atan2(MOUSEX - this.pos[0],
-                               MOUSEY - this.pos[1]) - Math.PI/2;
-
-        if (TARGET_OBJECT != null)
+        for (let pdc of this.pdcs)
         {
-            let sol = -interceptSolution(TARGET_OBJECT.pos,
-                TARGET_OBJECT.vel, this.pos, PDC_VELOCITY);
-            if (!isNaN(sol)) theta = sol;
+            if (TARGET_OBJECT == null) pdc.fireAt(MOUSEPOS);
+            else pdc.intercept(TARGET_OBJECT);
         }
-
-        theta += (Math.random()*2 - 1)*PDC_SPREAD;
-
-        let vel = rot2d([PDC_VELOCITY + Math.random()*10 - 5, 0], theta);
-        vel[0] += this.vel[0];
-        vel[1] += this.vel[1];
-        let b = new Bullet(this.pos.slice(), vel, theta, PDC_LENGTH);
-        b.world = this.world;
-        b.origin = this;
-        world.push(b);
     }
 
     draw(ctx)
@@ -234,6 +223,8 @@ class Ship
         ctx.restore();
 
         if (DRAW_HITBOX) this.box.draw(ctx);
+
+        for (let pdc of this.pdcs) pdc.draw(ctx);
     }
 
     step(dt)

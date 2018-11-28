@@ -104,7 +104,7 @@ class Torpedo
 
     explode()
     {
-        let num_debris = Math.round(Math.random()*6 + 8);
+        let num_debris = Math.round(Math.random()*3 + 5);
         if (this.pdc) num_debris = 0;
         for (let i = 0; i < num_debris; ++i)
         {

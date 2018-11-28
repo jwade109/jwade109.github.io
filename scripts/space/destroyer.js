@@ -18,6 +18,7 @@ class Destroyer
         this.side = true;
         this.health = 350;
         this.permanent = true;
+        this.name = NAMES[Math.floor(Math.random()*NAMES.length)];
 
         this.width = 9;
         this.length = 31;
