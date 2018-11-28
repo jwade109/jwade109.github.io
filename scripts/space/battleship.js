@@ -13,7 +13,7 @@ class Battleship
         this.radius = 1;
         this.health = BATTLESHIP_MAX_HEALTH;
         this.pdc_reload = 0;
-        this.name = NAMES[Math.floor(Math.random()*NAMES.length)];
+        this.name = "MCRN " + NAMES[Math.floor(Math.random()*NAMES.length)];
 
         this.box = new Hitbox([[this.width/6, this.length/2],
                                [-this.width/6, this.length/2],

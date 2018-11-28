@@ -15,6 +15,9 @@ class Debris
                                [-this.radius/2, this.radius/2]]);
         this.box.object = this;
 
+        this.name = Math.floor(Math.random()*10000000) + "-" +
+            DEBRIS_NAMES[Math.floor(Math.random()*DEBRIS_NAMES.length)]
+
         this.color = "darkgray";
         if (Math.random() < 0.4)
             this.color = "gray";
@@ -83,6 +86,7 @@ class Debris
                 this.omega + Math.random()*5 - 2.5, size);
             deb.world = this.world;
             deb.color = this.color;
+            deb.name = this.name;
             this.world.push(deb);
         }
         this.remove = true;

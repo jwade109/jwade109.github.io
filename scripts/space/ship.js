@@ -139,12 +139,16 @@ class Ship
 
         if (!firemode)
         {
+            ctx.save();
             ctx.globalAlpha = 0.2;
             ctx.strokeStyle = "red";
+            if (this.railgun_reload > 0)
+                ctx.setLineDash([10*PIXELS, 20*PIXELS]);
             ctx.beginPath();
             ctx.moveTo(0, 0);
             ctx.lineTo(1000*PIXELS, 0);
             ctx.stroke();
+            ctx.restore();
         }
 
         let off = this.width/2;
@@ -293,6 +297,7 @@ class Ship
                 this.theta,
                 this.omega + Math.random()*5 - 2.5, size);
             deb.world = this.world;
+            deb.name = this.name;
             deb.color = "#909090";
             if (Math.random() < 0.2)
                 deb.color = "#CCCCCC";

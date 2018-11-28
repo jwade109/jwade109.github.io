@@ -127,7 +127,8 @@ document.addEventListener('mousedown', function(event)
         case 0: leftClick = true;
                 break;
         case 2: rightClick = true;
-                if (TARGET_OBJECT != NEAREST_OBJECT)
+                if (TARGET_OBJECT != NEAREST_OBJECT &&
+                    NEAREST_OBJECT != PLAYER_SHIP)
                     TARGET_OBJECT = NEAREST_OBJECT;
                 else TARGET_OBJECT = null;
                 break;
@@ -245,7 +246,7 @@ function updateMouse()
     let min = Infinity;
     for (let obj of world)
     {
-        if (obj === PLAYER_SHIP) continue;
+        // if (obj === PLAYER_SHIP) continue;
         let dx = obj.pos[0] - MOUSEX;
         let dy = obj.pos[1] - MOUSEY;
         let dist = Math.sqrt(dx*dx + dy*dy);
@@ -776,9 +777,9 @@ function draw()
         ctx.textAlign = "center";
         ctx.fillText(NEAREST_OBJECT.constructor.name.toUpperCase(),
             0, -20*PIXELS);
+        ctx.font = "10px Helvetica";
         if (typeof NEAREST_OBJECT.name != 'undefined')
-            ctx.fillText("\"" + NEAREST_OBJECT.name + "\"",
-                0, -20*PIXELS - 20);
+            ctx.fillText(NEAREST_OBJECT.name, 0, -20*PIXELS - 15);
         ctx.restore();
     }
     if (TARGET_OBJECT != null)
@@ -798,9 +799,9 @@ function draw()
             ctx.textAlign = "center";
             ctx.fillText(TARGET_OBJECT.constructor.name.toUpperCase(),
                 0, -20*PIXELS);
+            ctx.font = "10px Helvetica";
             if (typeof TARGET_OBJECT.name != 'undefined')
-                ctx.fillText("\"" + TARGET_OBJECT.name + "\"",
-                    0, -20*PIXELS - 20);
+                ctx.fillText(TARGET_OBJECT.name, 0, -20*PIXELS - 15);
         }
         else
         {

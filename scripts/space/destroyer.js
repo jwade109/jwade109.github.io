@@ -18,7 +18,7 @@ class Destroyer
         this.side = true;
         this.health = 350;
         this.permanent = true;
-        this.name = NAMES[Math.floor(Math.random()*NAMES.length)];
+        this.name = "MCRN " + NAMES[Math.floor(Math.random()*NAMES.length)];
 
         this.width = 9;
         this.length = 31;
@@ -247,6 +247,7 @@ class Destroyer
                 this.theta,
                 this.omega + Math.random()*5 - 2.5, size);
             deb.world = this.world;
+            deb.name = this.name;
             deb.color = this.gray;
             if (Math.random() < 0.4) deb.color = this.orange;
             this.world.push(deb);
