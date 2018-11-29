@@ -1,7 +1,10 @@
 var PI = Math.PI;
+var RAD2DEG = 180/Math.PI;
 
 var DRAW_HITBOX = false;
 var DRAW_TRACE = false;
+var DRAW_PDC_FIRING_ARC = false;
+
 var LOCK_CAMERA = false;
 var MATCH_VELOCITY = false;
 var SPAWN_ENEMIES = true;
@@ -14,7 +17,7 @@ var PLAYER_INVINCIBLE = false;
 var INFINITE_FUEL = true;
 var PLAYER_MAX_HEALTH = 2000;
 var PASSIVE_REGEN = 0; // PLAYER_MAX_HEALTH/(60*3);
-var PDC_LENGTH = 4;
+var PDC_LENGTH = 2.5;
 var PDC_SPREAD = 1.5*PI/180;
 var PDC_VELOCITY = 800;
 var PDC_COOLDOWN = 1/50;
@@ -24,6 +27,7 @@ var INFINITE_AMMO = false;
 var PLAYER_MAX_MISSILES = 30;
 var PLAYER_MAX_RAILGUN = 40;
 var GAME_OVER = false;
+var SPAWN_TIMER = 10;
 
 var TORPEDO_DAMAGE = 200;
 var RAILGUN_DAMAGE = 500;
@@ -35,7 +39,7 @@ var ENEMY_NO = 0;
 let SPAWN_DEBRIS = true;
 let LARGE_DEBRIS = 25;
 let SMALL_DEBRIS = 6;
-var TORPEDO_THRUST = 700;
+var TORPEDO_THRUST = 1700;
 var RESPAWN_TIMER = 0;
 
 var FPS = 60;
@@ -867,10 +871,12 @@ function draw()
     else
         ctx.fillText("PRESS [ESC] TO PAUSE", 500, HEIGHT - 10);
     if (TARGET_OBJECT != null)
+    {
         ctx.fillText("TARGET LOCKED: " +
         TARGET_OBJECT.constructor.name.toUpperCase() + " (" +
         Math.round(distance(PLAYER_SHIP.pos, TARGET_OBJECT.pos)) + " M)",
         800, HEIGHT - 10);
+    }
     ctx.textAlign = "right";
     let ftime = (Math.round(TIME*100)/100).toLocaleString("en",
         {useGrouping: false,minimumFractionDigits: 2});

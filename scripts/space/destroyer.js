@@ -33,6 +33,13 @@ class Destroyer
             this.mass, this.width);
         this.engine.drawbell = false;
 
+        let range = [-Math.PI/2.2, Math.PI/2.2];
+        this.pdcs =
+            [new PointDefenseCannon(
+                [-this.length/6, -this.width*0.5], Math.PI/2.5, this, range),
+             new PointDefenseCannon(
+                [-this.length/6, this.width*0.5], -Math.PI/2.5, this, range)];
+
         this.world = null;
         this.is_enemy = true;
 
@@ -57,28 +64,12 @@ class Destroyer
         this.world.push(torp);
     }
 
-    firePDC()
+    firePDC(target)
     {
-        if (this.pdc_reload > 0) return;
-        this.pdc_reload = 0.03;
-        let theta = Math.atan2(PLAYER_SHIP.pos[0] - this.pos[0],
-            PLAYER_SHIP.pos[1] - this.pos[1]) - Math.PI/2;
-
-        let rvel = [PLAYER_SHIP.vel[0] - this.vel[0],
-                    PLAYER_SHIP.vel[1] - this.vel[1]];
-
-        let sol = -interceptSolution(PLAYER_SHIP.pos,
-            rvel, this.pos, PDC_VELOCITY);
-        if (!isNaN(sol)) theta = sol;
-        theta += (Math.random()*2 - 1)*PDC_SPREAD;
-
-        let vel = rot2d([PDC_VELOCITY + Math.random()*10 - 5, 0], theta);
-        vel[0] += this.vel[0];
-        vel[1] += this.vel[1];
-        let b = new Bullet(this.pos.slice(), vel, theta, PDC_LENGTH);
-        b.world = this.world;
-        b.origin = this;
-        world.push(b);
+        for (let pdc of this.pdcs)
+        {
+            pdc.intercept(target);
+        }
     }
 
     draw(ctx)
@@ -170,6 +161,7 @@ class Destroyer
         this.engine.draw(ctx);
         ctx.restore();
         if (DRAW_HITBOX) this.box.draw(ctx);
+        for (let pdc of this.pdcs) pdc.draw(ctx);
     }
 
     step(dt)
@@ -193,21 +185,37 @@ class Destroyer
             return;
         }
 
+        let closest = null, min = 250;
+        for (let obj of this.world)
+        {
+            if (obj instanceof Torpedo && obj.target == this)
+            {
+                let dist = distance(this.pos, obj.pos);
+                if (dist < min)
+                {
+                    min = dist;
+                    closest = obj;
+                }
+            }
+        }
+
         let dist = distance(PLAYER_SHIP.pos, this.pos);
         if (this.torpedo_reload > 0) this.torpedo_reload -= dt;
-        else if (250 < dist && dist < 700)
+        else if (250 < dist && dist < 1500)
         {
             this.launchTorpedo();
-            this.torpedo_reload = Math.random()*7;
+            this.torpedo_reload = Math.random()*4 + 2;
         }
 
         if (this.pdc_reload > 0) this.pdc_reload -= dt;
+        else if (closest != null)
+            this.firePDC(closest);
         else if (Math.random() < 0.5 && dist < 250)
-            this.firePDC();
+            this.firePDC(PLAYER_SHIP);
 
         let dx = PLAYER_SHIP.pos[0] - this.pos[0];
         let dy = PLAYER_SHIP.pos[1] - this.pos[1];
-        let bodyacc = [-(300 - dist)/10, 0];
+        let bodyacc = [-(900 - dist)/10, 0];
         if (bodyacc[0] > 4) this.engine.firing = true;
         else this.engine.firing = false;
         this.acc = this.b2g(bodyacc);

@@ -42,24 +42,29 @@ class Torpedo
         }
 
         ctx.save();
-        if (this.target === PLAYER_SHIP.pos && this.tracking)
+        if (this.target === PLAYER_SHIP && this.tracking)
         {
-            ctx.strokeStyle = "red";
-            ctx.fillStyle = "red";
+            ctx.fillStyle = "blue";
             ctx.globalAlpha = 0.5;
             ctx.beginPath();
-            let theta = Math.PI - angle2d(this.pos, this.target);
-            ctx.arc(this.target[0]*PIXELS, this.target[1]*PIXELS,
+            let theta = Math.PI - angle2d(this.pos, this.target.pos);
+            ctx.arc(this.target.pos[0]*PIXELS, this.target.pos[1]*PIXELS,
                 47*PIXELS, theta - 0.2, theta + 0.2, false);
-            ctx.arc(this.target[0]*PIXELS, this.target[1]*PIXELS,
+            ctx.arc(this.target.pos[0]*PIXELS, this.target.pos[1]*PIXELS,
                 50*PIXELS, theta + 0.2, theta - 0.2, true);
             ctx.fill();
         }
+        ctx.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+        ctx.save();
+        ctx.rotate(Math.PI/4);
+        ctx.strokeStyle = "blue";
+        ctx.globalAlpha = 0.4;
+        ctx.strokeRect(-5*PIXELS, -5*PIXELS, 10*PIXELS, 10*PIXELS);
+        ctx.restore();
+        ctx.rotate(-this.theta - Math.PI/2);
         ctx.strokeStyle = "black";
         ctx.fillStyle = "black";
         ctx.globalAlpha = 1;
-        ctx.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
-        ctx.rotate(-this.theta - Math.PI/2);
         ctx.fillRect(-this.width/2*PIXELS, -this.length/2*PIXELS,
                      this.width*PIXELS, this.length*PIXELS);
         this.thruster.draw(ctx);
@@ -69,13 +74,14 @@ class Torpedo
 
     step(dt)
     {
+        if (this.target.remove) this.tracking = false;
         this.time += dt;
-        // let theta = angle2d(this.pos, this.target) - this.theta;
 
-        this.theta = -torpedoGuidance(this.pos.slice(),
-                                      this.vel.slice(),
-                                      this.target.pos.slice(),
-                                      this.target.vel.slice());
+        if (this.tracking)
+            this.theta = -torpedoGuidance(this.pos.slice(),
+                                          this.vel.slice(),
+                                          this.target.pos.slice(),
+                                          this.target.vel.slice());
 
         let bodyacc = [0, 0];
         if (this.time > this.drifttimer)
@@ -89,23 +95,11 @@ class Torpedo
         }
         let acc = this.b2g(bodyacc);
 
-        // while (theta > Math.PI) theta -= Math.PI*2;
-        // while (theta < -Math.PI) theta += Math.PI*2;
-        //
-        // if (Math.abs(theta) > Math.PI/3 && this.time > this.drifttimer)
-        //     this.tracking = false;
-        //
-        // let alpha = 600*theta - 40*this.omega;
-        // if (this.time > this.drifttimer) alpha = 50*theta - 20*this.omega;
-        // if (!this.tracking) alpha = this.omega = 0;
-
         this.pos_prev = this.pos.slice();
         this.vel[0] += acc[0]*dt;
         this.vel[1] += acc[1]*dt;
         this.pos[0] += this.vel[0]*dt;
         this.pos[1] += this.vel[1]*dt;
-        // this.theta += this.omega*dt;
-        // this.omega += alpha*dt;
     }
 
     explode()

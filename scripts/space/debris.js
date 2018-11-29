@@ -21,6 +21,7 @@ class Debris
         this.color = "darkgray";
         if (Math.random() < 0.4)
             this.color = "gray";
+        this.opacity = 1;
         this.world = null;
     }
 
@@ -33,6 +34,9 @@ class Debris
 
         this.box.pos = this.pos.slice();
         this.box.theta = this.theta;
+
+        if (this.radius < SMALL_DEBRIS) this.opacity -= dt*Math.random();
+        if (this.opacity <= 0) this.remove = true;
     }
 
     draw(ctx)
@@ -53,7 +57,7 @@ class Debris
         ctx.rotate(-this.theta);
         ctx.strokeStyle = "black";
         ctx.fillStyle = this.color;
-        ctx.globalAlpha = 1;
+        ctx.globalAlpha = Math.max(this.opacity, 0);
         ctx.fillRect(-this.radius/2*PIXELS, -this.radius/2*PIXELS,
                      this.radius*PIXELS, this.radius*PIXELS);
         ctx.strokeRect(-this.radius/2*PIXELS, -this.radius/2*PIXELS,

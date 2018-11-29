@@ -50,11 +50,16 @@ class Ship
                 -Math.PI/2, main_thrust, this.width)];
         for (let t of this.thrusters) t.drawbell = false;
 
-        let range = [-Math.PI/3, Math.PI/3];
+        let range = [-Math.PI/2.2, Math.PI/2.2];
         this.pdcs =
-            [new PointDefenseCannon([this.length/2, 0], 0, this, range)];
-             // new PointDefenseCannon([this.length/8, -this.width/2], Math.PI/2, this, range),
-             // new PointDefenseCannon([this.length/8, this.width/2], -Math.PI/2, this, range)];
+            [new PointDefenseCannon(
+                [this.length/4, this.width*0.36], -Math.PI/2.4, this, range),
+             new PointDefenseCannon(
+                [this.length/4, -this.width*0.36], Math.PI/2.4, this, range),
+             new PointDefenseCannon(
+                [-this.length/6, -this.width*0.44], Math.PI/2, this, range),
+             new PointDefenseCannon(
+                [-this.length/6, this.width*0.44], -Math.PI/2, this, range)];
 
         this.world = null;
         this.gray = "#909090";
