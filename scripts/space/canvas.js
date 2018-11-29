@@ -13,7 +13,7 @@ var LAST_EVENT = null;
 var PLAYER_INVINCIBLE = false;
 var INFINITE_FUEL = true;
 var PLAYER_MAX_HEALTH = 2000;
-var PASSIVE_REGEN = PLAYER_MAX_HEALTH/(60*3);
+var PASSIVE_REGEN = 0; // PLAYER_MAX_HEALTH/(60*3);
 var PDC_LENGTH = 4;
 var PDC_SPREAD = 1.5*PI/180;
 var PDC_VELOCITY = 800;
@@ -829,25 +829,30 @@ function draw()
         let fh = PLAYER_SHIP.fuel/PLAYER_SHIP.maxfuel*(HEIGHT - 2*border);
         let hh = Math.max(0, PLAYER_SHIP.health)/
             PLAYER_MAX_HEALTH*(HEIGHT - 2*border);
+        let rh = (HEIGHT - 2*border) - Math.max(0, PLAYER_SHIP.railgun_reload)/
+            RAILGUN_COOLDOWN*(HEIGHT - 2*border);
 
         ctx.globalAlpha = 0.3;
         ctx.fillStyle = "black";
         ctx.fillRect(border, (HEIGHT - border) - fh, cw, fh);
         ctx.fillStyle = "green";
         ctx.fillRect(border + cw + spacing, (HEIGHT - border) - hh, cw, hh);
-        // ctx.fillStyle = "red";
-        // ctx.fillRect(border + 2*(cw + spacing), (height - border) - ch, cw, ch);
+        ctx.fillStyle = "gray";
+        ctx.fillRect(border + 2*(cw + spacing), (HEIGHT - border) - rh, cw, rh);
 
         ctx.textAlign = "left";
-        ctx.font = "15px Helvetica";
+        ctx.font = "15px Consolas";
         ctx.fillStyle = "white";
         ctx.globalAlpha = 1;
         ctx.save();
         ctx.translate(border + cw, HEIGHT - border);
         ctx.rotate(-Math.PI/2);
-        ctx.fillText("FUEL", 0, -2);
-        ctx.fillText("HULL", 0, cw + spacing - 2);
-        // ctx.fillText("ENEMY #" + ENEMY_NO, 0, 2*(cw + spacing) - 2);
+        ctx.fillText("FUEL", 0, -3);
+        let percent = Math.round(PLAYER_SHIP.health/PLAYER_MAX_HEALTH*100);
+        ctx.fillText("HULL (" + percent + "%)", 0, cw + spacing - 3);
+        let railgun_status = "(READY TO FIRE)";
+        if (PLAYER_SHIP.railgun_reload > 0) railgun_status = "(CHARGING)";
+        ctx.fillText("RAILGUN " + railgun_status, 0, 2*(cw + spacing) - 3);
         ctx.restore();
     }
 

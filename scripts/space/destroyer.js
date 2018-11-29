@@ -52,7 +52,7 @@ class Destroyer
         tvel[1] += voff[1];
         let torp = new Torpedo(tpos, tvel, this.theta, TORPEDO_THRUST, 7);
         torp.origin = this;
-        torp.target = PLAYER_SHIP.pos;
+        torp.target = PLAYER_SHIP;
         torp.world = this.world;
         this.world.push(torp);
     }

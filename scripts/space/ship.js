@@ -34,18 +34,20 @@ class Ship
         let tx = this.width*0.45;
         let ty = this.width*0.7;
 
-        let thr = 20;
-        let th_width = 3;
-        this.thrusters = [new Thruster([tx, ty], 0, thr, th_width),
-                          new Thruster([tx, ty], Math.PI/2, thr, th_width),
-                          new Thruster([-tx, ty], Math.PI/2, thr, th_width),
-                          new Thruster([-tx, ty], Math.PI, thr, th_width),
-                          new Thruster([-tx, -ty], Math.PI, thr, th_width),
-                          new Thruster([-tx, -ty], 3*Math.PI/2, thr, th_width),
-                          new Thruster([tx, -ty], 3*Math.PI/2, thr, th_width),
-                          new Thruster([tx, -ty], 0, thr, th_width),
-                          new Thruster([0, -this.length/2],
-                                       -Math.PI/2, 9*thr, this.width)];
+        let small_thrust = 30;
+        let main_thrust = 200;
+        let small_width = 3;
+        this.thrusters = [
+            new Thruster([tx, ty], 0, small_thrust, small_width),
+            new Thruster([tx, ty], Math.PI/2, small_thrust, small_width),
+            new Thruster([-tx, ty], Math.PI/2, small_thrust, small_width),
+            new Thruster([-tx, ty], Math.PI, small_thrust, small_width),
+            new Thruster([-tx, -ty], Math.PI, small_thrust, small_width),
+            new Thruster([-tx, -ty], 3*Math.PI/2, small_thrust, small_width),
+            new Thruster([tx, -ty], 3*Math.PI/2, small_thrust, small_width),
+            new Thruster([tx, -ty], 0, small_thrust, small_width),
+            new Thruster([0, -this.length/2],
+                -Math.PI/2, main_thrust, this.width)];
         for (let t of this.thrusters) t.drawbell = false;
 
         let range = [-Math.PI/3, Math.PI/3];
@@ -78,7 +80,7 @@ class Ship
         tvel[1] += voff[1];
         let torp = new Torpedo(tpos, tvel, this.theta,
             TORPEDO_THRUST, 7);
-        torp.target = TARGET_OBJECT.pos;
+        torp.target = TARGET_OBJECT;
         torp.origin = this;
         torp.world = this.world;
         this.world.push(torp);

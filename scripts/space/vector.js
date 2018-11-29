@@ -92,6 +92,13 @@ function angle2d(u, v)
     return Math.atan2(v[0] - u[0], v[1] - u[1]) - Math.PI/2;
 }
 
+function anglebtwn(u, v)
+{
+    let dot = dot2d(unit2d(u), unit2d(v));
+    let det = det2d(unit2d(u), unit2d(v));
+    return Math.atan2(det, dot);
+}
+
 function interceptSolution(tpos, tvel, ipos, ivel)
 {
     // tpos: position of target
