@@ -39,7 +39,7 @@ var ENEMY_NO = 0;
 let SPAWN_DEBRIS = true;
 let LARGE_DEBRIS = 25;
 let SMALL_DEBRIS = 6;
-var TORPEDO_THRUST = 1700;
+var TORPEDO_THRUST = 1100;
 var RESPAWN_TIMER = 0;
 
 var FPS = 60;
@@ -73,14 +73,13 @@ var world = [];
 world.render_distance = 2500;
 
 world.push(new Station([1300, -2100], 0));
-// TARGET_OBJECT = world[0];
 var PLAYER_SHIP = new Ship([0, 0], Math.PI/2);
 world.push(PLAYER_SHIP);
 PLAYER_SHIP.world = world;
 
-let bs = new Battleship([100, -400], Math.PI/6);
-bs.world = world;
-world.push(bs);
+// let bs = new Battleship([100, -400], Math.PI/6);
+// bs.world = world;
+// world.push(bs);
 
 function respawn()
 {
@@ -694,6 +693,10 @@ function physics(dt)
         {
             PLAYER_SHIP.firePDC();
         }
+        if (MATCH_VELOCITY)
+        {
+            PLAYER_SHIP.matchVelocity(TARGET_OBJECT);
+        }
 
         TIME += dt;
     }
@@ -788,9 +791,9 @@ function draw()
     }
     if (TARGET_OBJECT != null)
     {
-        ctx.save();
         if (!isOffScreen(TARGET_OBJECT.pos))
         {
+            ctx.save();
             ctx.strokeStyle = "red";
             ctx.fillStyle = "red";
             ctx.translate(TARGET_OBJECT.pos[0]*PIXELS,
@@ -806,9 +809,11 @@ function draw()
             ctx.font = "10px Helvetica";
             if (typeof TARGET_OBJECT.name != 'undefined')
                 ctx.fillText(TARGET_OBJECT.name, 0, -20*PIXELS - 15);
+            ctx.restore();
         }
         else
         {
+            ctx.save();
             let angle = -angle2d(PLAYER_SHIP.pos,
                                  TARGET_OBJECT.pos) + Math.PI/2;
             ctx.rotate(angle);
@@ -820,9 +825,23 @@ function draw()
             ctx.lineTo(0, -55*PIXELS);
             ctx.lineTo(10*PIXELS, -45*PIXELS);
             ctx.stroke();
+            ctx.restore();
         }
 
-        ctx.restore();
+
+        // ctx.save();
+        // let rvel = sub2d(TARGET_OBJECT.vel, PLAYER_SHIP.vel);
+        // let angle = angle2d([1, 0], rvel) + Math.PI/2;
+        // ctx.rotate(-angle);
+        // ctx.globalAlpha = 0.4;
+        // ctx.strokeStyle = "green";
+        // ctx.lineWidth = 3*PIXELS;
+        // ctx.beginPath();
+        // ctx.moveTo(-10*PIXELS, -45*PIXELS);
+        // ctx.lineTo(0, -55*PIXELS);
+        // ctx.lineTo(10*PIXELS, -45*PIXELS);
+        // ctx.stroke();
+        // ctx.restore();
     }
 
     ctx.restore();
@@ -830,19 +849,16 @@ function draw()
         let cw = 15;
         let border = 10;
         let spacing = 5;
-        let fh = PLAYER_SHIP.fuel/PLAYER_SHIP.maxfuel*(HEIGHT - 2*border);
         let hh = Math.max(0, PLAYER_SHIP.health)/
             PLAYER_MAX_HEALTH*(HEIGHT - 2*border);
         let rh = (HEIGHT - 2*border) - Math.max(0, PLAYER_SHIP.railgun_reload)/
             RAILGUN_COOLDOWN*(HEIGHT - 2*border);
 
         ctx.globalAlpha = 0.3;
-        ctx.fillStyle = "black";
-        ctx.fillRect(border, (HEIGHT - border) - fh, cw, fh);
         ctx.fillStyle = "green";
-        ctx.fillRect(border + cw + spacing, (HEIGHT - border) - hh, cw, hh);
+        ctx.fillRect(border, (HEIGHT - border) - hh, cw, hh);
         ctx.fillStyle = "gray";
-        ctx.fillRect(border + 2*(cw + spacing), (HEIGHT - border) - rh, cw, rh);
+        ctx.fillRect(border + cw + spacing, (HEIGHT - border) - rh, cw, rh);
 
         ctx.textAlign = "left";
         ctx.font = "15px Consolas";
@@ -851,12 +867,11 @@ function draw()
         ctx.save();
         ctx.translate(border + cw, HEIGHT - border);
         ctx.rotate(-Math.PI/2);
-        ctx.fillText("FUEL", 0, -3);
         let percent = Math.round(PLAYER_SHIP.health/PLAYER_MAX_HEALTH*100);
-        ctx.fillText("HULL (" + percent + "%)", 0, cw + spacing - 3);
+        ctx.fillText("HULL (" + percent + "%)", 0, -3);
         let railgun_status = "(READY TO FIRE)";
         if (PLAYER_SHIP.railgun_reload > 0) railgun_status = "(CHARGING)";
-        ctx.fillText("RAILGUN " + railgun_status, 0, 2*(cw + spacing) - 3);
+        ctx.fillText("RAILGUN " + railgun_status, 0, cw + spacing - 3);
         ctx.restore();
     }
 
@@ -872,10 +887,12 @@ function draw()
         ctx.fillText("PRESS [ESC] TO PAUSE", 500, HEIGHT - 10);
     if (TARGET_OBJECT != null)
     {
+        let dist = Math.round(distance(PLAYER_SHIP.pos, TARGET_OBJECT.pos));
+        let rvel = Math.round(norm2d(
+            sub2d(TARGET_OBJECT.vel, PLAYER_SHIP.vel)));
         ctx.fillText("TARGET LOCKED: " +
-        TARGET_OBJECT.constructor.name.toUpperCase() + " (" +
-        Math.round(distance(PLAYER_SHIP.pos, TARGET_OBJECT.pos)) + " M)",
-        800, HEIGHT - 10);
+            TARGET_OBJECT.constructor.name.toUpperCase() + " (" +
+            dist + " M, " + rvel + " M/S)", 800, HEIGHT - 10);
     }
     ctx.textAlign = "right";
     let ftime = (Math.round(TIME*100)/100).toLocaleString("en",

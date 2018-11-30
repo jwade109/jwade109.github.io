@@ -13,12 +13,8 @@ class Ship
 
         this.mass = 1;
         this.j = 300;
-        this.maxfuel = 800000;
-        this.fuel = this.maxfuel;
-        this.side = true;
         this.torpedo_reload = 0;
         this.railgun_reload = RAILGUN_COOLDOWN;
-        this.pdc_reload = 0.03;
         this.health = PLAYER_MAX_HEALTH;
         this.name = NAMES[Math.floor(Math.random()*NAMES.length)];
 
@@ -71,12 +67,10 @@ class Ship
         if (this.torpedo_reload > 0) return;
         this.torpedo_reload = 0.12;
         this.side = !this.side;
-        let poff = rot2d([this.width/3, 0], this.theta + Math.PI/2);
-        if (!this.side)
-            poff = rot2d([-this.width/3, 0], this.theta + Math.PI/2);
-        let voff = rot2d([40, 0], this.theta + Math.PI/2);
-        if (!this.side)
-            voff = rot2d([40, 0], this.theta - Math.PI/2);
+
+        let poff = rot2d([0, this.length/2], this.theta + Math.PI/2);
+        let voff = rot2d([0, 100], this.theta + Math.PI/2);
+
         let tpos = this.pos.slice();
         let tvel = this.vel.slice();
         tpos[0] += poff[0];
@@ -114,6 +108,34 @@ class Ship
             if (TARGET_OBJECT == null) pdc.fireAt(MOUSEPOS);
             else pdc.intercept(TARGET_OBJECT);
         }
+    }
+
+    matchVelocity(target)
+    {
+        let norm = 0;
+        let desired_angle = this.theta;
+        if (target != null)
+        {
+            let rvel = sub2d(target.vel, PLAYER_SHIP.vel);
+            norm = norm2d(rvel);
+            desired_angle = angle2d([1, 0], rvel);
+            if (norm < 2) desired_angle = this.theta;
+        }
+        let error = desired_angle - this.theta;
+        while (error > Math.PI) error -= Math.PI*2;
+        while (error < -Math.PI) error += Math.PI*2;
+        this.alpha = 10*error - 5*this.omega;
+        if (Math.abs(error) < 5/180*Math.PI &&
+            Math.abs(this.omega) < 5/180*Math.PI)
+        {
+            if (norm > 50) this.thrusters[8].firing = true;
+            else if (norm > 5)
+            {
+                this.thrusters[5].firing = true;
+                this.thrusters[6].firing = true;
+            }
+        }
+
     }
 
     draw(ctx)
@@ -264,7 +286,7 @@ class Ship
         }
 
         this.acc = this.b2g(bodyacc);
-        this.alpha = moment/this.j;
+        this.alpha += moment/this.j;
 
         this.vel[0] += this.acc[0]*dt;
         this.vel[1] += this.acc[1]*dt;

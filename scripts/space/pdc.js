@@ -53,7 +53,7 @@ class PointDefenseCannon
 
         let gpos = this.globalPos();
         let noisy = theta + (Math.random()*2 - 1)*PDC_SPREAD;
-        let vel = rot2d([PDC_VELOCITY + Math.random()*10 - 5, 0], theta);
+        let vel = rot2d([PDC_VELOCITY + Math.random()*10 - 5, 0], noisy);
         vel[0] += this.object.vel[0];
         vel[1] += this.object.vel[1];
         let b = new Bullet(gpos, vel, noisy, PDC_LENGTH);

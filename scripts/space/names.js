@@ -52,7 +52,17 @@ var NAMES = [
     "Friedrich Engel",
     "Acclamator",
     "Venator",
-    "Providence"
+    "Providence",
+    "Ambedkar",
+    "Avalanche",
+    "Damascus",
+    "Iceni",
+    "Kittur Chennamma",
+    "Morrigan",
+    "Shandian",
+    "Iniquity",
+    "Conviction",
+    "Transgression"
 ];
 
 var DEBRIS_NAMES = [

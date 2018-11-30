@@ -14,7 +14,6 @@ class Destroyer
         this.mass = 1;
         this.j = 500;
         this.torpedo_reload = 0;
-        this.pdc_reload = 0;
         this.side = true;
         this.health = 350;
         this.permanent = true;
@@ -49,8 +48,8 @@ class Destroyer
 
     launchTorpedo()
     {
-        let poff = rot2d([this.width/2, 0], this.theta + Math.PI/2);
-        let voff = rot2d([40, 0], this.theta + Math.PI/2);
+        let poff = rot2d([0, this.length/2], this.theta + Math.PI/2);
+        let voff = rot2d([0, 100], this.theta + Math.PI/2);
         let tpos = this.pos.slice();
         let tvel = this.vel.slice();
         tpos[0] += poff[0];
@@ -252,8 +251,7 @@ class Destroyer
             vel[1] += Math.random()*200 - 100;
             let size = Math.random()*this.width/2 + this.width/2;
             let deb = new Debris(pos, vel,
-                this.theta,
-                this.omega + Math.random()*5 - 2.5, size);
+                this.theta, this.omega + Math.random()*5 - 2.5, size);
             deb.world = this.world;
             deb.name = this.name;
             deb.color = this.gray;

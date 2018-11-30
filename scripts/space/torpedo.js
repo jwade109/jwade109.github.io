@@ -12,7 +12,7 @@ class Torpedo
         this.width = this.length/5;
         this.mass = 1;
         this.time = 0;
-        this.drifttimer = 0.5;
+        this.drifttimer = 0.4;
         this.tracking = true;
         this.box = new Hitbox([[this.width/2, this.length/2],
                                [this.width/2, -this.length/2],
@@ -77,11 +77,17 @@ class Torpedo
         if (this.target.remove) this.tracking = false;
         this.time += dt;
 
-        if (this.tracking)
-            this.theta = -torpedoGuidance(this.pos.slice(),
-                                          this.vel.slice(),
-                                          this.target.pos.slice(),
-                                          this.target.vel.slice());
+        let theta = -torpedoGuidance(this.pos.slice(),
+                                     this.vel.slice(),
+                                     this.target.pos.slice(),
+                                     this.target.vel.slice());
+
+        while (theta < this.theta - Math.PI) theta += Math.PI*2;
+        while (theta > this.theta + Math.PI) theta -= Math.PI*2;
+        if (this.tracking && this.time > this.drifttimer)
+            this.theta = theta;
+        else if (this.tracking)
+            this.theta += (theta - this.theta)*0.1;
 
         let bodyacc = [0, 0];
         if (this.time > this.drifttimer)
@@ -117,6 +123,7 @@ class Torpedo
                 Math.random()*40 - 20,
                 Math.random()*3 + 2);
             deb.world = this.world;
+            deb.name = "Exploded Torpedo";
             this.world.push(deb);
         }
         this.remove = true;
