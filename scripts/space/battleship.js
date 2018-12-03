@@ -21,6 +21,16 @@ class Battleship
                                [-this.width/2, -this.length/2],
                                [this.width/2, -this.length/2],
                                [this.width/6, 0]]);
+        let range = [-Math.PI/2.2, Math.PI/2.2];
+        this.pdcs =
+            [new PointDefenseCannon(
+                [this.length/4, this.width*0.36], -Math.PI/2.4, this, range),
+             new PointDefenseCannon(
+                [this.length/4, -this.width*0.36], Math.PI/2.4, this, range),
+             new PointDefenseCannon(
+                [-this.length/6, -this.width*0.44], Math.PI/2, this, range),
+             new PointDefenseCannon(
+                [-this.length/6, this.width*0.44], -Math.PI/2, this, range)];
         this.box.object = this;
         this.world = null;
         this.permanent = true;
@@ -28,33 +38,8 @@ class Battleship
 
     firePDC()
     {
-        if (this.pdc_reload > 0) return;
-        this.pdc_reload = 0.03;
-
-        let turret_pos = [[0, 0], [this.length/2, 0], [-this.length/2, 0],
-                          [0, this.width/4], [0, -this.width/4]];
-        for (let pos of turret_pos)
-        {
-            pos = rot2d(pos, this.theta);
-            pos[0] += this.pos[0];
-            pos[1] += this.pos[1];
-
-            let theta = Math.atan2(PLAYER_SHIP.pos[0] - pos[0],
-                PLAYER_SHIP.pos[1] - pos[1]) - Math.PI/2;
-            let rvel = [PLAYER_SHIP.vel[0] - this.vel[0],
-                        PLAYER_SHIP.vel[1] - this.vel[1]];
-            let sol = -interceptSolution(PLAYER_SHIP.pos,
-                rvel, pos, PDC_VELOCITY);
-            if (!isNaN(sol)) theta = sol;
-            theta += (Math.random()*2 - 1)*PDC_SPREAD;
-            let vel = rot2d([PDC_VELOCITY /* + Math.random()*10 - 5*/, 0], theta);
-            vel[0] += this.vel[0];
-            vel[1] += this.vel[1];
-            let b = new Bullet(pos, vel, theta, PDC_LENGTH);
-            b.world = this.world;
-            b.origin = this;
-            world.push(b);
-        }
+        if (distance(PLAYER_SHIP.pos, this.pos) < PDC_MAX_RANGE*2)
+            for (let pdc of this.pdcs) pdc.intercept(PLAYER_SHIP);
     }
 
     step(dt)
@@ -96,6 +81,8 @@ class Battleship
 
         ctx.restore();
         if (DRAW_HITBOX) this.box.draw(ctx);
+
+        for (let pdc of this.pdcs) pdc.draw(ctx);
     }
 
         explode()

@@ -62,7 +62,10 @@ var NAMES = [
     "Shandian",
     "Iniquity",
     "Conviction",
-    "Transgression"
+    "Transgression",
+    "Dulcinea",
+    "Sancho",
+    "Babylon"
 ];
 
 var DEBRIS_NAMES = [

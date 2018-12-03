@@ -1,6 +1,6 @@
 class PointDefenseCannon
 {
-    constructor(pos, theta, object, range)
+    constructor(pos, theta, object, range, radius)
     {
         this.pos = pos.slice();
         this.theta = theta;
@@ -9,6 +9,7 @@ class PointDefenseCannon
         this.cooldown = PDC_COOLDOWN;
         this.last_fired = -Infinity;
         this.range = range;
+        this.radius = Math.min(radius, PDC_MAX_RANGE);
         this.color = "gray";
     }
 
@@ -31,9 +32,13 @@ class PointDefenseCannon
 
     intercept(target)
     {
+        if (distance(target.pos, this.globalPos()) > this.radius)
+            return NaN;
+
         let gpos = this.globalPos();
+        let rvel = sub2d(target.vel, this.object.vel);
         let theta = -interceptSolution(target.pos,
-            target.vel, gpos, PDC_VELOCITY);
+            rvel, gpos, PDC_VELOCITY);
         if (isNaN(theta)) return;
         this.fireBullet(theta);
     }
@@ -71,18 +76,18 @@ class PointDefenseCannon
         ctx.translate(gpos[0]*PIXELS, gpos[1]*PIXELS);
         ctx.rotate(-this.object.theta - this.theta);
 
-        if (DRAW_PDC_FIRING_ARC)
+        if (DRAW_FIRING_ARC)
         {
-            let radius = 100;
             ctx.fillStyle = "orange";
             ctx.globalAlpha = 0.2;
             ctx.save();
             ctx.rotate(this.range[0]);
             ctx.beginPath();
             ctx.moveTo(0, 0);
-            ctx.lineTo(radius*PIXELS, 0);
+            ctx.lineTo(PDC_MAX_RANGE*PIXELS, 0);
 
-            ctx.arc(0, 0, radius*PIXELS, 0, this.range[1] - this.range[0]);
+            ctx.arc(0, 0, this.radius*PIXELS, 0,
+                this.range[1] - this.range[0]);
             ctx.lineTo(0, 0);
             ctx.fill();
             ctx.restore();

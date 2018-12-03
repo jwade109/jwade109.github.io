@@ -35,9 +35,9 @@ class Destroyer
         let range = [-Math.PI/2.2, Math.PI/2.2];
         this.pdcs =
             [new PointDefenseCannon(
-                [-this.length/6, -this.width*0.5], Math.PI/2.5, this, range),
+                [-this.length/6, -this.width*0.5], Math.PI/2.5, this, range, 350),
              new PointDefenseCannon(
-                [-this.length/6, this.width*0.5], -Math.PI/2.5, this, range)];
+                [-this.length/6, this.width*0.5], -Math.PI/2.5, this, range, 350)];
 
         this.world = null;
         this.is_enemy = true;
@@ -184,7 +184,7 @@ class Destroyer
             return;
         }
 
-        let closest = null, min = 250;
+        let closest = null, min = Infinity;
         for (let obj of this.world)
         {
             if (obj instanceof Torpedo && obj.target == this)
@@ -200,7 +200,7 @@ class Destroyer
 
         let dist = distance(PLAYER_SHIP.pos, this.pos);
         if (this.torpedo_reload > 0) this.torpedo_reload -= dt;
-        else if (250 < dist && dist < 1500)
+        else if (TORPEDO_MIN_RANGE < dist && dist < world.render_distance)
         {
             this.launchTorpedo();
             this.torpedo_reload = Math.random()*4 + 2;
@@ -209,12 +209,12 @@ class Destroyer
         if (this.pdc_reload > 0) this.pdc_reload -= dt;
         else if (closest != null)
             this.firePDC(closest);
-        else if (Math.random() < 0.5 && dist < 250)
+        else if (Math.random() < 0.5)
             this.firePDC(PLAYER_SHIP);
 
         let dx = PLAYER_SHIP.pos[0] - this.pos[0];
         let dy = PLAYER_SHIP.pos[1] - this.pos[1];
-        let bodyacc = [-(900 - dist)/10, 0];
+        let bodyacc = [-(TORPEDO_MIN_RANGE + 100 - dist)/10, 0];
         if (bodyacc[0] > 4) this.engine.firing = true;
         else this.engine.firing = false;
         this.acc = this.b2g(bodyacc);

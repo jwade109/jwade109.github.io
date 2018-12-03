@@ -3,7 +3,7 @@ var RAD2DEG = 180/Math.PI;
 
 var DRAW_HITBOX = false;
 var DRAW_TRACE = false;
-var DRAW_PDC_FIRING_ARC = false;
+var DRAW_FIRING_ARC = true;
 
 var LOCK_CAMERA = false;
 var MATCH_VELOCITY = false;
@@ -13,7 +13,7 @@ var GAME_PAUSED = true;
 var SLOW_TIME = false;
 var SHOW_HELP = false;
 var LAST_EVENT = null;
-var PLAYER_INVINCIBLE = false;
+var PLAYER_INVINCIBLE = true;
 var INFINITE_FUEL = true;
 var PLAYER_MAX_HEALTH = 2000;
 var PASSIVE_REGEN = 0; // PLAYER_MAX_HEALTH/(60*3);
@@ -28,10 +28,11 @@ var PLAYER_MAX_MISSILES = 30;
 var PLAYER_MAX_RAILGUN = 40;
 var GAME_OVER = false;
 var SPAWN_TIMER = 10;
+var PLAYER_SCORE = 0;
 
-var TORPEDO_DAMAGE = 200;
 var RAILGUN_DAMAGE = 500;
 var PDC_DAMAGE = 1;
+var PDC_MAX_RANGE = 500;
 var DEBRIS_DAMAGE = 50;
 var BATTLESHIP_MAX_HEALTH = 10000;
 
@@ -39,7 +40,9 @@ var ENEMY_NO = 0;
 let SPAWN_DEBRIS = true;
 let LARGE_DEBRIS = 25;
 let SMALL_DEBRIS = 6;
-var TORPEDO_THRUST = 1100;
+var TORPEDO_THRUST = 1000;
+var TORPEDO_DAMAGE = 200;
+var TORPEDO_MIN_RANGE = 1000;
 var RESPAWN_TIMER = 0;
 
 var FPS = 60;
@@ -77,9 +80,9 @@ var PLAYER_SHIP = new Ship([0, 0], Math.PI/2);
 world.push(PLAYER_SHIP);
 PLAYER_SHIP.world = world;
 
-// let bs = new Battleship([100, -400], Math.PI/6);
-// bs.world = world;
-// world.push(bs);
+let bs = new Battleship([100, -400], Math.PI/6);
+bs.world = world;
+world.push(bs);
 
 function respawn()
 {
@@ -107,7 +110,8 @@ for (let i = 0; i < 20 && SPAWN_DEBRIS; ++i)
     world.push(deb);
 }
 
-canvas.oncontextmenu = function (e) {
+canvas.oncontextmenu = function(e)
+{
     e.preventDefault();
 };
 

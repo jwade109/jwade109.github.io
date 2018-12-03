@@ -49,13 +49,13 @@ class Ship
         let range = [-Math.PI/2.2, Math.PI/2.2];
         this.pdcs =
             [new PointDefenseCannon(
-                [this.length/4, this.width*0.36], -Math.PI/2.4, this, range),
+                [this.length/4, this.width*0.36], -Math.PI/2.4, this, range, 500),
              new PointDefenseCannon(
-                [this.length/4, -this.width*0.36], Math.PI/2.4, this, range),
+                [this.length/4, -this.width*0.36], Math.PI/2.4, this, range, 500),
              new PointDefenseCannon(
-                [-this.length/6, -this.width*0.44], Math.PI/2, this, range),
+                [-this.length/6, -this.width*0.44], Math.PI/2, this, range, 500),
              new PointDefenseCannon(
-                [-this.length/6, this.width*0.44], -Math.PI/2, this, range)];
+                [-this.length/6, this.width*0.44], -Math.PI/2, this, range, 500)];
 
         this.world = null;
         this.gray = "#909090";
@@ -152,6 +152,20 @@ class Ship
 
         ctx.save(); // save global reference frame
         ctx.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+
+        if (DRAW_FIRING_ARC)
+        {
+            ctx.globalAlpha = 0.3;
+            ctx.strokeStyle = "red";
+            ctx.beginPath();
+            ctx.arc(0, 0, TORPEDO_MIN_RANGE*PIXELS, 0, Math.PI*2);
+            ctx.stroke();
+            ctx.globalAlpha = 0.3;
+            ctx.strokeStyle = "black";
+            ctx.beginPath();
+            ctx.arc(0, 0, PDC_MAX_RANGE*PIXELS, 0, Math.PI*2);
+            ctx.stroke();
+        }
 
         ctx.rotate(-this.theta - Math.PI/2)
         // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE FRAME
