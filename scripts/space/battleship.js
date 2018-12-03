@@ -1,3 +1,7 @@
+// battleship.js
+
+var BATTLESHIP_MAX_HEALTH = 10000;
+
 class Battleship
 {
     constructor(pos, theta)

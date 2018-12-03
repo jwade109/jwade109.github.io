@@ -1,15 +1,22 @@
+// railgun.js
+
+const RAILGUN_VEL = 20000;
+const RAILGUN_COOLDOWN = 5;
+const RAILGUN_DAMAGE = 500;
+const RAILGUN_LENGTH = 4;
+const RAILGUN_MASS = 1;
+
 class Railgun
 {
-    constructor(pos, vel, theta, length)
+    constructor(pos, vel, theta)
     {
         this.pos = pos;
         this.pos_prev = pos;
         this.vel = vel;
         this.theta = theta;
-        this.length = length;
+        this.length = RAILGUN_LENGTH;
         this.width = this.length/5;
-        this.mass = 1;
-        this.radius = length*2;
+        this.mass = RAILGUN_MASS;
 
         this.world = null;
     }

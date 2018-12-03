@@ -1,3 +1,7 @@
+// hitbox.js
+
+var DRAW_HITBOX = false;
+
 class Hitbox
 {
     constructor(points)

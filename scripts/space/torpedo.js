@@ -1,6 +1,13 @@
+// torpedo.js
+
+const TORPEDO_THRUST = 1000;
+const TORPEDO_DAMAGE = 200;
+const TORPEDO_MIN_RANGE = 1000;
+const TORPEDO_LENGTH = 7;
+
 class Torpedo
 {
-    constructor(pos, vel, theta, thrust, length)
+    constructor(pos, vel, theta, thrust)
     {
         this.pos = pos;
         this.pos_prev = pos;
@@ -8,7 +15,7 @@ class Torpedo
         this.theta = theta;
         this.omega = 0;
         this.thrust = thrust;
-        this.length = length;
+        this.length = TORPEDO_LENGTH;
         this.width = this.length/5;
         this.mass = 1;
         this.time = 0;

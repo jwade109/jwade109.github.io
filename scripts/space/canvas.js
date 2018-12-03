@@ -1,10 +1,9 @@
-var PI = Math.PI;
-var RAD2DEG = 180/Math.PI;
+// canvas.js
 
-var DRAW_HITBOX = false;
+const PI = Math.PI;
+const RAD2DEG = 180/Math.PI;
+
 var DRAW_TRACE = false;
-var DRAW_FIRING_ARC = true;
-
 var LOCK_CAMERA = false;
 var MATCH_VELOCITY = false;
 var SPAWN_ENEMIES = true;
@@ -13,36 +12,15 @@ var GAME_PAUSED = true;
 var SLOW_TIME = false;
 var SHOW_HELP = false;
 var LAST_EVENT = null;
-var PLAYER_INVINCIBLE = true;
-var INFINITE_FUEL = true;
-var PLAYER_MAX_HEALTH = 2000;
-var PASSIVE_REGEN = 0; // PLAYER_MAX_HEALTH/(60*3);
-var PDC_LENGTH = 2.5;
-var PDC_SPREAD = 1.5*PI/180;
-var PDC_VELOCITY = 800;
-var PDC_COOLDOWN = 1/50;
-var RAILGUN_VEL = 20000;
-var RAILGUN_COOLDOWN = 5;
-var INFINITE_AMMO = false;
-var PLAYER_MAX_MISSILES = 30;
-var PLAYER_MAX_RAILGUN = 40;
 var GAME_OVER = false;
 var SPAWN_TIMER = 10;
 var PLAYER_SCORE = 0;
 
-var RAILGUN_DAMAGE = 500;
-var PDC_DAMAGE = 1;
-var PDC_MAX_RANGE = 500;
-var DEBRIS_DAMAGE = 50;
-var BATTLESHIP_MAX_HEALTH = 10000;
+var PLAYER_POS = [0, 0];
+var PLAYER_VEL = [0, 0];
 
 var ENEMY_NO = 0;
-let SPAWN_DEBRIS = true;
-let LARGE_DEBRIS = 25;
-let SMALL_DEBRIS = 6;
-var TORPEDO_THRUST = 1000;
-var TORPEDO_DAMAGE = 200;
-var TORPEDO_MIN_RANGE = 1000;
+var SPAWN_DEBRIS = true;
 var RESPAWN_TIMER = 0;
 
 var FPS = 60;
@@ -50,7 +28,7 @@ var NOMINAL_DT = 1/FPS;
 var SLOW_DT = NOMINAL_DT/8;
 var TIME = 0;
 
-let CANVAS = document.getElementById("canvas");
+var CANVAS = document.getElementById("canvas");
 let ctx = CANVAS.getContext("2d");
 
 var left = false, right = false, up = false, down = false, space = false,
@@ -707,6 +685,10 @@ function physics(dt)
 
     let pos = PLAYER_SHIP.pos.slice();
     let vel = PLAYER_SHIP.vel.slice();
+
+    PLAYER_POS = sub2d(PLAYER_POS, pos);
+    PLAYER_VEL = sub2d(PLAYER_VEL, pos);
+
     for (let obj of world)
     {
         obj.pos[0] -= pos[0];

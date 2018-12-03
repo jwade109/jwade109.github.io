@@ -1,3 +1,13 @@
+// pdc.js
+
+var PDC_LENGTH = 2.5;
+var PDC_SPREAD = 1.5*Math.PI/180;
+var PDC_VELOCITY = 800;
+var PDC_COOLDOWN = 1/50;
+var PDC_DAMAGE = 1;
+var PDC_MAX_RANGE = 500;
+var DRAW_FIRING_ARC = false;
+
 class PointDefenseCannon
 {
     constructor(pos, theta, object, range, radius)

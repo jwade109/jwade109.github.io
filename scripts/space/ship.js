@@ -1,3 +1,15 @@
+// ship.js
+
+const PLAYER_INVINCIBLE = true;
+const PLAYER_MAX_HEALTH = 2000;
+const PASSIVE_REGEN = 0; // PLAYER_MAX_HEALTH/(60*3);
+const INFINITE_FUEL = true;
+const INFINITE_AMMO = false;
+const PLAYER_MAX_MISSILES = 30;
+const PLAYER_MAX_RAILGUN = 40;
+const PLAYER_SHIP_MASS = 1;
+const PLAYER_SHIP_MOMENT_INERTIA = 350;
+
 class Ship
 {
     constructor(pos, theta)
@@ -78,7 +90,7 @@ class Ship
         tvel[0] += voff[0];
         tvel[1] += voff[1];
         let torp = new Torpedo(tpos, tvel, this.theta,
-            TORPEDO_THRUST, 7);
+            TORPEDO_THRUST);
         torp.target = TARGET_OBJECT;
         torp.origin = this;
         torp.world = this.world;

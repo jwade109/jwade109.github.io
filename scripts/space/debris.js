@@ -1,3 +1,9 @@
+// debris.js
+
+const DEBRIS_DAMAGE = 50;
+const LARGE_DEBRIS = 25;
+const SMALL_DEBRIS = 6
+
 class Debris
 {
     constructor(pos, vel, theta, omega, radius)

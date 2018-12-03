@@ -1,3 +1,9 @@
+// destroyer.js
+
+const DESTROYER_MAX_HEALTH = 350;
+const DESTROYER_MASS = 1;
+const DESTROYER_MOMENT_INERTIA = 500;
+
 class Destroyer
 {
     constructor(pos, theta)
@@ -11,11 +17,11 @@ class Destroyer
         this.omega = 0;
         this.alpha = 0;
 
-        this.mass = 1;
-        this.j = 500;
+        this.mass = DESTROYER_MASS;
+        this.j = DESTROYER_MOMENT_INERTIA;
         this.torpedo_reload = 0;
         this.side = true;
-        this.health = 350;
+        this.health = DESTROYER_MAX_HEALTH;
         this.permanent = true;
         this.name = "MCRN " + NAMES[Math.floor(Math.random()*NAMES.length)];
 
