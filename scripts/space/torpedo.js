@@ -4,6 +4,7 @@ const TORPEDO_THRUST = 1000;
 const TORPEDO_DAMAGE = 200;
 const TORPEDO_MIN_RANGE = 1000;
 const TORPEDO_LENGTH = 7;
+const TORPEDO_EXPLOSION_RADIUS = 30;
 
 class Torpedo
 {
@@ -133,6 +134,8 @@ class Torpedo
             deb.name = "Exploded Torpedo";
             this.world.push(deb);
         }
+        world.push(new Explosion(this.pos.slice(), this.vel.slice(),
+            TORPEDO_EXPLOSION_RADIUS));
         this.remove = true;
     }
 

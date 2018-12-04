@@ -3,6 +3,7 @@
 const DESTROYER_MAX_HEALTH = 350;
 const DESTROYER_MASS = 1;
 const DESTROYER_MOMENT_INERTIA = 500;
+const DESTROYER_EXPLOSION_RADIUS = 120;
 
 class Destroyer
 {
@@ -267,6 +268,8 @@ class Destroyer
             this.world.push(deb);
         }
         this.remove = true;
+        world.push(new Explosion(this.pos.slice(), this.vel.slice(),
+            DESTROYER_EXPLOSION_RADIUS));
         throwAlert(this.name + " (" + this.constructor.name +
             ") was destroyed.", ALERT_DISPLAY_TIME);
     }

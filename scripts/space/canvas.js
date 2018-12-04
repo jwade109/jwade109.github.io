@@ -228,6 +228,8 @@ document.addEventListener('keyup', function(event)
 
 function throwAlert(msg, time)
 {
+    for (let m of ALERTS)
+    if (m[0] == msg) return;
     ALERTS.push([msg, time]);
 }
 
@@ -281,7 +283,7 @@ function updateMouse()
 function collide(obj1, obj2)
 {
     if (obj1 === obj2) return false;
-
+    if (obj1.nocollide || obj2.nocollide) return false;
     let dx = obj2.pos[0] - obj1.pos[0];
     let dy = obj2.pos[1] - obj1.pos[1];
     let dist = Math.sqrt(dx*dx + dy*dy);
@@ -706,6 +708,7 @@ function physics(dt)
         {
             if (firemode) PLAYER_SHIP.launchTorpedo();
             else PLAYER_SHIP.fireRailgun();
+            space = false;
         }
         if (leftClick)
         {

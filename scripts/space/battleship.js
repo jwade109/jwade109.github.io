@@ -1,6 +1,7 @@
 // battleship.js
 
-var BATTLESHIP_MAX_HEALTH = 10000;
+const BATTLESHIP_MAX_HEALTH = 10000;
+const BATTLESHIP_EXPLOSION_RADIUS = 600;
 
 class Battleship
 {
@@ -114,6 +115,8 @@ class Battleship
                 this.world.push(deb);
             }
             this.remove = true;
+            world.push(new Explosion(this.pos.slice(), this.vel.slice(),
+                BATTLESHIP_EXPLOSION_RADIUS));
             throwAlert(this.name + " (" + this.constructor.name +
                 ") was destroyed.", ALERT_DISPLAY_TIME);
         }

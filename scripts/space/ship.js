@@ -9,6 +9,7 @@ const PLAYER_MAX_MISSILES = 30;
 const PLAYER_MAX_RAILGUN = 40;
 const PLAYER_SHIP_MASS = 1;
 const PLAYER_SHIP_MOMENT_INERTIA = 350;
+const PLAYER_EXPLOSION_RADIUS = 180;
 
 class Ship
 {
@@ -113,8 +114,8 @@ class Ship
     {
         if (this.railgun_reload > 0)
         {
-            // throwAlert("Cannot fire railgun -- still charging",
-            //     ALERT_DISPLAY_TIME);
+            throwAlert("Cannot fire railgun -- still charging.",
+                ALERT_DISPLAY_TIME);
             return;
         }
         this.railgun_reload = RAILGUN_COOLDOWN;
@@ -421,6 +422,8 @@ class Ship
                 deb.color = "#CCCCCC";
             this.world.push(deb);
         }
+        world.push(new Explosion(this.pos.slice(), this.vel.slice(),
+            PLAYER_EXPLOSION_RADIUS));
         this.acc = [0, 0];
         this.alpha = 0;
         this.omega = 0;

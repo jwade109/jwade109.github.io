@@ -43,13 +43,23 @@ class PointDefenseCannon
     intercept(target)
     {
         if (distance(target.pos, this.globalPos()) > this.radius)
+        {
+            if (this.object === PLAYER_SHIP)
+            throwAlert("Cannot fire PDC -- target exceeds tracking range.",
+                ALERT_DISPLAY_TIME);
             return NaN;
+        }
 
         let gpos = this.globalPos();
         let rvel = sub2d(target.vel, this.object.vel);
         let theta = -interceptSolution(target.pos,
             rvel, gpos, PDC_VELOCITY);
-        if (isNaN(theta)) return;
+        if (isNaN(theta))
+        {
+            throwAlert("Cannot fire PDC -- intercept solution not found.",
+                ALERT_DISPLAY_TIME);
+            return NaN;
+        }
         this.fireBullet(theta);
     }
 

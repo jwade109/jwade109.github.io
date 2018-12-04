@@ -41,6 +41,7 @@ class Hitbox
 
     draw(ctx)
     {
+        ctx.save();
         ctx.strokeStyle = "green";
         ctx.globalAlpha = 1;
         ctx.beginPath();
@@ -52,6 +53,7 @@ class Hitbox
             ctx.lineTo(p[0]*PIXELS, p[1]*PIXELS);
         }
         ctx.stroke();
+        ctx.restore();
     }
 
     get_global()
