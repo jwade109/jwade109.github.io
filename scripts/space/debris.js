@@ -28,7 +28,6 @@ class Debris
         if (Math.random() < 0.4)
             this.color = "gray";
         this.opacity = 1;
-        this.world = null;
     }
 
     step(dt)
@@ -90,12 +89,11 @@ class Debris
                 let deb = new Debris(pos, vel,
                     this.theta,
                     this.omega + Math.random()*5 - 2.5, size);
-                deb.world = this.world;
                 deb.name = this.name;
                 deb.color = "#909090";
                 if (Math.random() < 0.2)
                     deb.color = "#CCCCCC";
-                this.world.push(deb);
+                WORLD.push(deb);
             }
         }
     }
@@ -116,10 +114,9 @@ class Debris
             let deb = new Debris(pos, vel,
                 this.theta,
                 this.omega + Math.random()*5 - 2.5, size);
-            deb.world = this.world;
             deb.color = this.color;
             deb.name = this.name;
-            this.world.push(deb);
+            WORLD.push(deb);
         }
         this.remove = true;
     }

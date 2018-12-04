@@ -47,7 +47,6 @@ class Destroyer
              new PointDefenseCannon(
                 [-this.length/6, this.width*0.5], -Math.PI/2.5, this, range, 350)];
 
-        this.world = null;
         this.is_enemy = true;
 
         this.gray = "#606060";
@@ -67,8 +66,7 @@ class Destroyer
         let torp = new Torpedo(tpos, tvel, this.theta, TORPEDO_THRUST, 7);
         torp.origin = this;
         torp.target = PLAYER_SHIP;
-        torp.world = this.world;
-        this.world.push(torp);
+        WORLD.push(torp);
     }
 
     firePDC(target)
@@ -193,7 +191,7 @@ class Destroyer
         }
 
         let closest = null, min = Infinity;
-        for (let obj of this.world)
+        for (let obj of WORLD)
         {
             if (obj instanceof Torpedo && obj.target == this)
             {
@@ -208,7 +206,7 @@ class Destroyer
 
         let dist = distance(PLAYER_SHIP.pos, this.pos);
         if (this.torpedo_reload > 0) this.torpedo_reload -= dt;
-        else if (TORPEDO_MIN_RANGE < dist && dist < world.render_distance)
+        else if (TORPEDO_MIN_RANGE < dist && dist < WORLD.render_distance)
         {
             this.launchTorpedo();
             this.torpedo_reload = Math.random()*4 + 2;
@@ -261,14 +259,13 @@ class Destroyer
             let size = Math.random()*this.width/2 + this.width/2;
             let deb = new Debris(pos, vel,
                 this.theta, this.omega + Math.random()*5 - 2.5, size);
-            deb.world = this.world;
             deb.name = this.name;
             deb.color = this.gray;
             if (Math.random() < 0.4) deb.color = this.orange;
-            this.world.push(deb);
+            WORLD.push(deb);
         }
         this.remove = true;
-        world.push(new Explosion(this.pos.slice(), this.vel.slice(),
+        WORLD.push(new Explosion(this.pos.slice(), this.vel.slice(),
             DESTROYER_EXPLOSION_RADIUS));
         throwAlert(this.name + " (" + this.constructor.name +
             ") was destroyed.", ALERT_DISPLAY_TIME);
@@ -291,12 +288,11 @@ class Destroyer
                 let deb = new Debris(pos, vel,
                     this.theta,
                     this.omega + Math.random()*5 - 2.5, size);
-                deb.world = this.world;
                 deb.name = this.name;
                 deb.color = "#909090";
                 if (Math.random() < 0.2)
                     deb.color = "#CCCCCC";
-                this.world.push(deb);
+                WORLD.push(deb);
             }
         }
     }

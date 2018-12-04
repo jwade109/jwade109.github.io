@@ -55,23 +55,20 @@ var OFFSET = [0, 0]; // delayed camera offset
 var NEAREST_OBJECT = null;
 var TARGET_OBJECT = null;
 
-var world = [];
-world.render_distance = 2500;
+var WORLD = [];
+WORLD.render_distance = 2500;
 
-world.push(new Station([1300, -2100], 0));
+WORLD.push(new Station([1300, -2100], 0));
 var PLAYER_SHIP = new Ship([0, 0], Math.PI/2);
-world.push(PLAYER_SHIP);
-PLAYER_SHIP.world = world;
+WORLD.push(PLAYER_SHIP);
 
 let bs = new Battleship([100, -400], Math.PI/6);
-bs.world = world;
-world.push(bs);
+WORLD.push(bs);
 
 function respawn()
 {
     PLAYER_SHIP = new Ship([0, 0], Math.PI/2);
-    PLAYER_SHIP.world = world;
-    world.push(PLAYER_SHIP);
+    WORLD.push(PLAYER_SHIP);
     GAME_OVER = false;
 }
 
@@ -79,7 +76,7 @@ let current = new Date().getTime(), last = current, dt = 0;
 
 for (let i = 0; i < 20 && SPAWN_DEBRIS; ++i)
 {
-    let r = Math.random()*world.render_distance/2 + 200;
+    let r = Math.random()*WORLD.render_distance/2 + 200;
     let rot = Math.random()*Math.PI*2;
     let pos = [Math.cos(rot)*r + PLAYER_SHIP.pos[0],
                Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
@@ -89,8 +86,7 @@ for (let i = 0; i < 20 && SPAWN_DEBRIS; ++i)
     let omega = Math.random()*10 - 5;
     let size = Math.random()*25 + 10;
     let deb = new Debris(pos, vel, theta, omega, size);
-    deb.world = world;
-    world.push(deb);
+    WORLD.push(deb);
 }
 
 canvas.oncontextmenu = function(e)
@@ -142,7 +138,7 @@ document.addEventListener('keydown', function(event)
     switch (event.keyCode)
     {
         case 9: event.preventDefault();
-                TARGET_OBJECT = world[0];
+                TARGET_OBJECT = WORLD[0];
                 break;
         case 16: shift = true; break;
         case 27: GAME_PAUSED = !GAME_PAUSED;
@@ -264,7 +260,7 @@ function updateMouse()
     MOUSEPOS[1] = MOUSEY;
 
     let min = Infinity;
-    for (let obj of world)
+    for (let obj of WORLD)
     {
         // if (obj === PLAYER_SHIP) continue;
         let dx = obj.pos[0] - MOUSEX;
@@ -607,37 +603,35 @@ function physics(dt)
         NEAREST_OBJECT = null;
 
     let exploded = [];
-    for (let obj1 of world)
+    for (let obj1 of WORLD)
     {
         if (obj1 instanceof Debris) continue;
-        for (let obj2 of world)
+        for (let obj2 of WORLD)
             if (collide(obj1, obj2)) exploded.push([obj1, obj2]);
     }
     for (let obj of exploded) handleCollision(obj[0], obj[1]);
 
-    for (let i = 0; i < world.length; ++i)
+    for (let i = 0; i < WORLD.length; ++i)
     {
-        let dx = world[i].pos[0] - PLAYER_SHIP.pos[0];
-        let dy = world[i].pos[1] - PLAYER_SHIP.pos[1];
+        let dx = WORLD[i].pos[0] - PLAYER_SHIP.pos[0];
+        let dy = WORLD[i].pos[1] - PLAYER_SHIP.pos[1];
         let dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist > world.render_distance &&
-            (typeof world[i].permanent === 'undefined'))
-                world[i].remove = true;
-        if (world[i].remove == true) world.splice(i, 1);
+        if (dist > WORLD.render_distance &&
+            (typeof WORLD[i].permanent === 'undefined'))
+                WORLD[i].remove = true;
+        if (WORLD[i].remove == true) WORLD.splice(i, 1);
     }
 
     let enemy_count = 0;
-    for (let obj of world)
+    for (let obj of WORLD)
     {
         if (obj.is_enemy) ++enemy_count;
         obj.step(dt);
     }
 
-    while (world.length < 100 && SPAWN_DEBRIS)
+    while (WORLD.length < 100 && SPAWN_DEBRIS)
     {
-        let r = world.render_distance - 100;
-            // Math.max(WIDTH, HEIGHT) +
-            // Math.random()*(world.render_distance - Math.max(WIDTH, HEIGHT));
+        let r = WORLD.render_distance - 100;
         let rot = Math.random()*Math.PI*2;
         let pos = [Math.cos(rot)*r + PLAYER_SHIP.pos[0],
                    Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
@@ -647,21 +641,19 @@ function physics(dt)
         let omega = Math.random()*10 - 5;
         let size = Math.random()*20 + 10;
         let deb = new Debris(pos, vel, theta, omega, size);
-        deb.world = world;
-        world.push(deb);
+        WORLD.push(deb);
     }
 
     if (enemy_count < MAX_ENEMIES && SPAWN_ENEMIES && !GAME_OVER)
     {
-        let r = world.render_distance*2;
+        let r = WORLD.render_distance*2;
         let rot = Math.random()*Math.PI*2;
         let pos = [Math.cos(rot)*r + PLAYER_SHIP.pos[0],
                    Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
         let vel = [PLAYER_SHIP.vel[0], PLAYER_SHIP.vel[1]];
         let destroyer = new Destroyer(pos, Math.random()*Math.PI*2);
-        destroyer.world = world;
         destroyer.vel = vel;
-        world.push(destroyer);
+        WORLD.push(destroyer);
     }
 
     if (!GAME_OVER)
@@ -724,7 +716,7 @@ function physics(dt)
 
     let pos = PLAYER_SHIP.pos.slice();
     let vel = PLAYER_SHIP.vel.slice();
-    for (let obj of world)
+    for (let obj of WORLD)
     {
         obj.pos[0] -= pos[0];
         obj.pos[1] -= pos[1];
@@ -741,9 +733,9 @@ function physics(dt)
     let rc = 0.7;
     let alpha = dt/(rc + dt);
     PLAYER_VEL = add2d(mult2d(PLAYER_VEL, 1 - alpha),
-                       mult2d(sub2d(PLAYER_SHIP.vel, world[0].vel), alpha));
+                       mult2d(sub2d(PLAYER_SHIP.vel, WORLD[0].vel), alpha));
     OFFSET = mult2d(sub2d(
-        sub2d(PLAYER_SHIP.vel, world[0].vel), PLAYER_VEL), 1/CAMERA_INERTIA);
+        sub2d(PLAYER_SHIP.vel, WORLD[0].vel), PLAYER_VEL), 1/CAMERA_INERTIA);
 }
 
 function draw()
@@ -808,12 +800,12 @@ function draw()
 
     ctx.beginPath();
     ctx.arc(PLAYER_SHIP.pos[0]*PIXELS, PLAYER_SHIP.pos[1]*PIXELS,
-            world.render_distance*PIXELS, 0, Math.PI*2);
+            WORLD.render_distance*PIXELS, 0, Math.PI*2);
     ctx.globalAlpha = 0.2;
     ctx.strokeStyle = "black";
     ctx.stroke();
 
-    for (let obj of world) obj.draw(ctx);
+    for (let obj of WORLD) obj.draw(ctx);
     ctx.globalAlpha = 1;
     ctx.beginPath();
     ctx.arc(MOUSEX*PIXELS, MOUSEY*PIXELS, 1, 0, Math.PI*2);

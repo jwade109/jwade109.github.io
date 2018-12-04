@@ -17,8 +17,6 @@ class Railgun
         this.length = RAILGUN_LENGTH;
         this.width = this.length/5;
         this.mass = RAILGUN_MASS;
-
-        this.world = null;
     }
 
     draw(ctx)

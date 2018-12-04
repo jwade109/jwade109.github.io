@@ -28,7 +28,6 @@ class Torpedo
                                [-this.width/2, this.length/2]]);
         this.box.object = this;
 
-        this.world = null;
         this.target = null;
 
         this.thruster = new Thruster(
@@ -130,11 +129,10 @@ class Torpedo
                 Math.random()*Math.PI*2,
                 Math.random()*40 - 20,
                 Math.random()*3 + 2);
-            deb.world = this.world;
             deb.name = "Exploded Torpedo";
-            this.world.push(deb);
+            WORLD.push(deb);
         }
-        world.push(new Explosion(this.pos.slice(), this.vel.slice(),
+        WORLD.push(new Explosion(this.pos.slice(), this.vel.slice(),
             TORPEDO_EXPLOSION_RADIUS));
         this.remove = true;
     }

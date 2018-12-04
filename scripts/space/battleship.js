@@ -38,7 +38,6 @@ class Battleship
              new PointDefenseCannon(
                 [-this.length/6, this.width*0.44], -Math.PI/2, this, range)];
         this.box.object = this;
-        this.world = null;
         this.permanent = true;
     }
 
@@ -110,12 +109,11 @@ class Battleship
                 let deb = new Debris(pos, vel,
                     this.theta,
                     this.omega + Math.random()*5 - 2.5, size);
-                deb.world = this.world;
                 deb.color = "gray";
-                this.world.push(deb);
+                WORLD.push(deb);
             }
             this.remove = true;
-            world.push(new Explosion(this.pos.slice(), this.vel.slice(),
+            WORLD.push(new Explosion(this.pos.slice(), this.vel.slice(),
                 BATTLESHIP_EXPLOSION_RADIUS));
             throwAlert(this.name + " (" + this.constructor.name +
                 ") was destroyed.", ALERT_DISPLAY_TIME);
@@ -138,12 +136,11 @@ class Battleship
                 let deb = new Debris(pos, vel,
                     this.theta,
                     this.omega + Math.random()*5 - 2.5, size);
-                deb.world = this.world;
                 deb.name = this.name;
                 deb.color = "#909090";
                 if (Math.random() < 0.2)
                     deb.color = "#CCCCCC";
-                this.world.push(deb);
+                WORLD.push(deb);
             }
         }
     }

@@ -82,9 +82,8 @@ class PointDefenseCannon
         vel[0] += this.object.vel[0];
         vel[1] += this.object.vel[1];
         let b = new Bullet(gpos, vel, noisy, PDC_LENGTH);
-        b.world = this.world;
         b.origin = this.object;
-        world.push(b);
+        WORLD.push(b);
 
         this.gamma = theta - this.theta - this.object.theta;
     }

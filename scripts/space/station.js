@@ -7,14 +7,13 @@ class Station
         this.theta = theta;
         this.vel = [0, 0];
         this.size = 500;
+        this.permanent = true;
 
         this.box = new Hitbox([[this.size/4, this.size/4],
                                [this.size/4, -this.size/4],
                                [-this.size/4, -this.size/4],
                                [-this.size/4, this.size/4]]);
         this.box.object = this;
-
-        this.permanent = true;
     }
 
     step(dt)

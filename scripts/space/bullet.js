@@ -9,7 +9,6 @@ class Bullet
         this.length = length;
         this.width = this.length/5;
         this.mass = 1;
-        this.world = null;
     }
 
     draw(ctx)
@@ -32,7 +31,6 @@ class Bullet
         ctx.fillRect(-this.width/2*PIXELS, -this.length/2*PIXELS,
                      this.width*PIXELS, this.length*PIXELS);
         ctx.restore();
-        // if (DRAW_HITBOX) this.box.draw(ctx);
     }
 
     step(dt)

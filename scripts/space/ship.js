@@ -70,7 +70,6 @@ class Ship
              new PointDefenseCannon(
                 [-this.length/6, this.width*0.44], -Math.PI/2, this, range, 500)];
 
-        this.world = null;
         this.gray = "#909090";
     }
 
@@ -106,8 +105,7 @@ class Ship
             TORPEDO_THRUST);
         torp.target = TARGET_OBJECT;
         torp.origin = this;
-        torp.world = this.world;
-        this.world.push(torp);
+        WORLD.push(torp);
     }
 
     fireRailgun()
@@ -124,9 +122,8 @@ class Ship
         vel[0] += this.vel[0];
         vel[1] += this.vel[1];
         let r = new Railgun(this.pos.slice(), vel, this.theta, 12);
-        r.world = this.world;
         r.origin = this;
-        world.push(r);
+        WORLD.push(r);
         this.vel[0] += dv[0];
         this.vel[1] += dv[1];
     }
@@ -217,7 +214,6 @@ class Ship
         for (let t of this.thrusters)
         {
             if (this.fuel <= t.thrust) t.firing = false;
-            t.world = this.world;
             t.draw(ctx);
         }
 
@@ -392,12 +388,11 @@ class Ship
                 let deb = new Debris(pos, vel,
                     this.theta,
                     this.omega + Math.random()*5 - 2.5, size);
-                deb.world = this.world;
                 deb.name = this.name;
                 deb.color = "#909090";
                 if (Math.random() < 0.2)
                     deb.color = "#CCCCCC";
-                this.world.push(deb);
+                WORLD.push(deb);
             }
         }
     }
@@ -415,14 +410,13 @@ class Ship
             let deb = new Debris(pos, vel,
                 this.theta,
                 this.omega + Math.random()*5 - 2.5, size);
-            deb.world = this.world;
             deb.name = this.name;
             deb.color = "#909090";
             if (Math.random() < 0.2)
                 deb.color = "#CCCCCC";
-            this.world.push(deb);
+            WORLD.push(deb);
         }
-        world.push(new Explosion(this.pos.slice(), this.vel.slice(),
+        WORLD.push(new Explosion(this.pos.slice(), this.vel.slice(),
             PLAYER_EXPLOSION_RADIUS));
         this.acc = [0, 0];
         this.alpha = 0;
