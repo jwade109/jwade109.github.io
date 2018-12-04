@@ -1,6 +1,6 @@
 // ship.js
 
-const PLAYER_INVINCIBLE = true;
+const PLAYER_INVINCIBLE = false;
 const PLAYER_MAX_HEALTH = 2000;
 const PASSIVE_REGEN = 0; // PLAYER_MAX_HEALTH/(60*3);
 const INFINITE_FUEL = true;
@@ -28,7 +28,7 @@ class Ship
         this.torpedo_reload = 0;
         this.railgun_reload = RAILGUN_COOLDOWN;
         this.health = PLAYER_MAX_HEALTH;
-        this.name = NAMES[Math.floor(Math.random()*NAMES.length)];
+        this.name = "\"Rocinante\"";
 
         this.width = 11; // 40/1.5;
         this.length = 42; // 144/1.5;
@@ -75,10 +75,22 @@ class Ship
 
     launchTorpedo()
     {
-        if (TARGET_OBJECT == null) return;
+        if (TARGET_OBJECT == null)
+        {
+            throwAlert("Torpedoes require target lock.", ALERT_DISPLAY_TIME);
+            return;
+        }
         if (this.torpedo_reload > 0) return;
         this.torpedo_reload = 0.12;
         this.side = !this.side;
+
+        if (distance(TARGET_OBJECT.pos, PLAYER_SHIP.pos) < TORPEDO_MIN_RANGE)
+        {
+            throwAlert("Cannot fire torpedo -- " +
+                "Target closer than minimum tracking radius.",
+                ALERT_DISPLAY_TIME);
+            return;
+        }
 
         let poff = rot2d([0, this.length/2], this.theta + Math.PI/2);
         let voff = rot2d([0, 100], this.theta + Math.PI/2);
@@ -99,7 +111,12 @@ class Ship
 
     fireRailgun()
     {
-        if (this.railgun_reload > 0) return;
+        if (this.railgun_reload > 0)
+        {
+            // throwAlert("Cannot fire railgun -- still charging",
+            //     ALERT_DISPLAY_TIME);
+            return;
+        }
         this.railgun_reload = RAILGUN_COOLDOWN;
         let vel = rot2d([RAILGUN_VEL, 0], this.theta);
         let dv = rot2d([-60, 0], this.theta);
@@ -136,7 +153,21 @@ class Ship
         let error = desired_angle - this.theta;
         while (error > Math.PI) error -= Math.PI*2;
         while (error < -Math.PI) error += Math.PI*2;
-        this.alpha = 10*error - 5*this.omega;
+        let alpha = 10*error - 5*this.omega;
+        if (alpha > 0.05)
+        {
+            PLAYER_SHIP.thrusters[2].firing = true;
+            PLAYER_SHIP.thrusters[6].firing = true;
+            PLAYER_SHIP.thrusters[0].firing = true;
+            PLAYER_SHIP.thrusters[4].firing = true;
+        }
+        else if (alpha < -0.05)
+        {
+            PLAYER_SHIP.thrusters[1].firing = true;
+            PLAYER_SHIP.thrusters[5].firing = true;
+            PLAYER_SHIP.thrusters[3].firing = true;
+            PLAYER_SHIP.thrusters[7].firing = true;
+        }
         if (Math.abs(error) < 5/180*Math.PI &&
             Math.abs(this.omega) < 5/180*Math.PI)
         {
@@ -335,7 +366,39 @@ class Ship
     {
         if (PLAYER_INVINCIBLE) return;
         this.health -= d;
-        if (this.health < 1) this.explode();
+
+        function transition(x, health)
+        {
+            return health/PLAYER_MAX_HEALTH <= x &&
+                (health + d)/PLAYER_MAX_HEALTH > x && health > 0;
+        }
+
+        if (transition(0.3, this.health) || transition(0.1, this.health))
+            throwAlert("Warning: hull integrity at " +
+                Math.round(100*this.health/PLAYER_MAX_HEALTH) + "%",
+                ALERT_DISPLAY_TIME);
+        if (this.health < 0) this.explode();
+        else if (Math.random() < 0.05*d)
+        {
+            let num_debris = 3 + Math.random()*3;
+            for (let i = 0; i < num_debris; ++i)
+            {
+                let pos = this.pos.slice();
+                let vel = this.vel.slice();
+                vel[0] += Math.random()*200 - 100;
+                vel[1] += Math.random()*200 - 100;
+                let size = Math.random()*4;
+                let deb = new Debris(pos, vel,
+                    this.theta,
+                    this.omega + Math.random()*5 - 2.5, size);
+                deb.world = this.world;
+                deb.name = this.name;
+                deb.color = "#909090";
+                if (Math.random() < 0.2)
+                    deb.color = "#CCCCCC";
+                this.world.push(deb);
+            }
+        }
     }
 
     explode()
@@ -365,6 +428,7 @@ class Ship
         this.remove = true;
         for (let t of this.thrusters) t.firing = false;
         GAME_OVER = true;
+        throwAlert(this.name + " was lost with all hands.", Infinity);
     }
 
     b2g(v)

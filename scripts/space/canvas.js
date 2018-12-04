@@ -5,6 +5,8 @@ const RAD2DEG = 180/Math.PI;
 
 var DRAW_TRACE = false;
 var LOCK_CAMERA = false;
+var INERTIAL_CAMERA = false;
+var CAMERA_INERTIA = 1;
 var MATCH_VELOCITY = false;
 var SPAWN_ENEMIES = true;
 var MAX_ENEMIES = 2;
@@ -38,6 +40,8 @@ var left = false, right = false, up = false, down = false, space = false,
 
 var ONE_KEY = false, TWO_KEY = false;
 
+var ALERTS = [];
+var ALERT_DISPLAY_TIME = 3;
 var firemode = true;
 
 var WIDTH = document.body.clientWidth;
@@ -46,6 +50,7 @@ var MOUSEX = 0, MOUSEY = 0, MOUSEPOS = [MOUSEX, MOUSEY];
 
 var VIEW_RADIUS = 500;
 var PIXELS = WIDTH/(2*VIEW_RADIUS); //  pixels per meter
+var OFFSET = [0, 0]; // delayed camera offset
 
 var NEAREST_OBJECT = null;
 var TARGET_OBJECT = null;
@@ -133,6 +138,7 @@ document.addEventListener('mouseup', function(event)
 
 document.addEventListener('keydown', function(event)
 {
+    let str = "";
     switch (event.keyCode)
     {
         case 9: event.preventDefault();
@@ -152,8 +158,19 @@ document.addEventListener('keydown', function(event)
         case 49: ONE_KEY = true; break
         case 50: TWO_KEY = true; break;
         case 65: akey = true; break;
+        case 66: INERTIAL_CAMERA = !INERTIAL_CAMERA;
+                 str = INERTIAL_CAMERA ?
+                     "Inertial camera enabled." :
+                     "Inertial camera disabled";
+                 throwAlert(str, ALERT_DISPLAY_TIME);
+                 break;
         case 69: ekey = true; break;
-        case 70: fkey = true; firemode = !firemode; break;
+        case 70: firemode = !firemode;
+                 str = firemode ?
+                     "Switched active weapon to torpedoes." :
+                     "Switched active weapon to railgun.";
+                 throwAlert(str, ALERT_DISPLAY_TIME);
+                 break;
         case 72: SHOW_HELP = !SHOW_HELP;
                  if (SHOW_HELP) GAME_PAUSED = true;
                  break;
@@ -163,7 +180,12 @@ document.addEventListener('keydown', function(event)
                  break;
         case 81: qkey = true; break;
         case 82: SLOW_TIME = !SLOW_TIME; break;
-        case 86: LOCK_CAMERA = !LOCK_CAMERA; break;
+        case 86: LOCK_CAMERA = !LOCK_CAMERA;
+                 str = LOCK_CAMERA ?
+                     "Locked camera enabled." :
+                     "Locked camera disabled";
+                 throwAlert(str, ALERT_DISPLAY_TIME);
+                 break;
         case 87: wkey = true; break;
         case 68: dkey = true; break;
         case 83: skey = true; break;
@@ -187,6 +209,7 @@ document.addEventListener('keyup', function(event)
         case 49: ONE_KEY = false; break
         case 50: TWO_KEY = false; break;
         case 65: akey = false; break;
+        case 66: /* BKEY */ break;
         case 69: ekey = false; break;
         case 70: fkey = false; break;
         case 72: /* HKEY */ break;
@@ -202,6 +225,11 @@ document.addEventListener('keyup', function(event)
             console.log('unhandled keycode: ' + event.keyCode);
     }
 });
+
+function throwAlert(msg, time)
+{
+    ALERTS.push([msg, time]);
+}
 
 function zoom(radius)
 {
@@ -224,6 +252,11 @@ function updateMouse()
                        PLAYER_SHIP.theta - Math.PI/2);
         MOUSEX = (PLAYER_SHIP.pos[0] + mp[0]);
         MOUSEY = (PLAYER_SHIP.pos[1] + mp[1]);
+    }
+    if (INERTIAL_CAMERA)
+    {
+        MOUSEX -= OFFSET[0]/PIXELS;
+        MOUSEY -= OFFSET[1]/PIXELS;
     }
     MOUSEPOS[0] = MOUSEX;
     MOUSEPOS[1] = MOUSEY;
@@ -290,6 +323,7 @@ function handleCollision(obj1, obj2)
     }
 
     if (obj1 === obj2) return;
+    if (obj1.remove || obj2.remove) return false;
     if (obj1.constructor.name == obj2.constructor.name) return;
     if (objectsAre("Ship", "Destroyer"))
     {
@@ -327,6 +361,8 @@ function handleCollision(obj1, obj2)
         }
         if (torpedo.origin !== ship)
         {
+            let domega = Math.random()*3 - 1.5;
+            ship.omega += domega;
             torpedo.vel = ship.vel.slice();
             torpedo.explode();
             ship.damage(TORPEDO_DAMAGE);
@@ -685,10 +721,6 @@ function physics(dt)
 
     let pos = PLAYER_SHIP.pos.slice();
     let vel = PLAYER_SHIP.vel.slice();
-
-    PLAYER_POS = sub2d(PLAYER_POS, pos);
-    PLAYER_VEL = sub2d(PLAYER_VEL, pos);
-
     for (let obj of world)
     {
         obj.pos[0] -= pos[0];
@@ -696,6 +728,19 @@ function physics(dt)
         obj.vel[0] -= vel[0];
         obj.vel[1] -= vel[1];
     }
+
+    for (let i in ALERTS)
+    {
+        ALERTS[i][1] -= dt;
+        if (ALERTS[i][1] < 0) ALERTS.splice(i, 1);
+    }
+
+    let rc = 0.7;
+    let alpha = dt/(rc + dt);
+    PLAYER_VEL = add2d(mult2d(PLAYER_VEL, 1 - alpha),
+                       mult2d(sub2d(PLAYER_SHIP.vel, world[0].vel), alpha));
+    OFFSET = mult2d(sub2d(
+        sub2d(PLAYER_SHIP.vel, world[0].vel), PLAYER_VEL), 1/CAMERA_INERTIA);
 }
 
 function draw()
@@ -712,6 +757,7 @@ function draw()
     if (LOCK_CAMERA) ctx.rotate(PLAYER_SHIP.theta - Math.PI/2);
     ctx.translate(-PLAYER_SHIP.pos[0]*PIXELS,
                   -PLAYER_SHIP.pos[1]*PIXELS);
+    if (INERTIAL_CAMERA) ctx.translate(OFFSET[0], OFFSET[1]);
 
     ctx.strokeStyle = "black";
     ctx.fillStyle = "black";
@@ -728,6 +774,23 @@ function draw()
             (PLAYER_SHIP.pos[0] + interval*(i + 1))*PIXELS + 3,
             PLAYER_SHIP.pos[1]*PIXELS - 3);
     }
+
+    ctx.save();
+    ctx.globalAlpha = 0.4;
+    ctx.moveTo(PLAYER_SHIP.pos[0]*PIXELS, PLAYER_SHIP.pos[1]*PIXELS);
+    ctx.textAlign = "center";
+    ctx.beginPath();
+    ctx.strokeStyle = ctx.fillStyle = "orange";
+    ctx.setLineDash([20, 30]);
+    ctx.arc(0, 0, PDC_MAX_RANGE*PIXELS, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.fillText("PDC MAX RANGE", 0, -PDC_MAX_RANGE*PIXELS - 2);
+    ctx.beginPath();
+    ctx.strokeStyle = ctx.fillStyle = "red";
+    ctx.arc(0, 0, TORPEDO_MIN_RANGE*PIXELS, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.fillText("TORPEDO MIN RANGE", 0, -TORPEDO_MIN_RANGE*PIXELS - 2);
+    ctx.restore();
 
     ctx.globalAlpha = 0.06;
     ctx.moveTo(PLAYER_SHIP.pos[0]*PIXELS,
@@ -882,9 +945,18 @@ function draw()
     }
     ctx.textAlign = "right";
     let ftime = (Math.round(TIME*100)/100).toLocaleString("en",
-        {useGrouping: false,minimumFractionDigits: 2});
+        {useGrouping: false, minimumFractionDigits: 2});
     ctx.fillText(ftime, WIDTH - 10, HEIGHT - 10);
     ctx.textAlign = "left";
+
+    ctx.fillStyle = "black";
+    for (let i in ALERTS)
+    {
+        let opacity = Math.min(2/3, 1);
+        ctx.globalAlpha = 1;
+        ctx.fillText(ALERTS[i][0].toUpperCase(),
+            70, 30 + 20*(ALERTS.length - i - 1));
+    }
 
     if (GAME_PAUSED && SHOW_HELP)
     {

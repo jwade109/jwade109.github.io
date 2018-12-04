@@ -17,7 +17,8 @@ class Battleship
         this.radius = 1;
         this.health = BATTLESHIP_MAX_HEALTH;
         this.pdc_reload = 0;
-        this.name = "MCRN " + NAMES[Math.floor(Math.random()*NAMES.length)];
+        this.name = "MCRN \"" +
+            NAMES[Math.floor(Math.random()*NAMES.length)] + "\"";
 
         this.box = new Hitbox([[this.width/6, this.length/2],
                                [-this.width/6, this.length/2],
@@ -91,6 +92,7 @@ class Battleship
 
         explode()
         {
+            if (this.remove) return;
             let num_debris = 25 + Math.random()*9;
             for (let i = 0; i < num_debris; ++i)
             {
@@ -112,11 +114,34 @@ class Battleship
                 this.world.push(deb);
             }
             this.remove = true;
+            throwAlert(this.name + " (" + this.constructor.name +
+                ") was destroyed.", ALERT_DISPLAY_TIME);
         }
 
     damage(d)
     {
         this.health -= d;
         if (this.health <= 0) this.explode();
+        else if (Math.random() < 0.05*d)
+        {
+            let num_debris = 3 + Math.random()*3;
+            for (let i = 0; i < num_debris; ++i)
+            {
+                let pos = this.pos.slice();
+                let vel = this.vel.slice();
+                vel[0] += Math.random()*200 - 100;
+                vel[1] += Math.random()*200 - 100;
+                let size = Math.random()*4;
+                let deb = new Debris(pos, vel,
+                    this.theta,
+                    this.omega + Math.random()*5 - 2.5, size);
+                deb.world = this.world;
+                deb.name = this.name;
+                deb.color = "#909090";
+                if (Math.random() < 0.2)
+                    deb.color = "#CCCCCC";
+                this.world.push(deb);
+            }
+        }
     }
 }

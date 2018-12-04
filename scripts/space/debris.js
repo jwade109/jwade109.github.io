@@ -77,10 +77,32 @@ class Debris
     {
         this.health -= d;
         if (this.health <= 0) this.explode();
+        else if (Math.random() < 0.05*d)
+        {
+            let num_debris = 3 + Math.random()*3;
+            for (let i = 0; i < num_debris; ++i)
+            {
+                let pos = this.pos.slice();
+                let vel = this.vel.slice();
+                vel[0] += Math.random()*200 - 100;
+                vel[1] += Math.random()*200 - 100;
+                let size = Math.random()*4;
+                let deb = new Debris(pos, vel,
+                    this.theta,
+                    this.omega + Math.random()*5 - 2.5, size);
+                deb.world = this.world;
+                deb.name = this.name;
+                deb.color = "#909090";
+                if (Math.random() < 0.2)
+                    deb.color = "#CCCCCC";
+                this.world.push(deb);
+            }
+        }
     }
 
     explode()
     {
+        if (this.remove) return;
         let num_debris = 4;
         if (this.radius < 4) num_debris = 0;
         for (let i = 0; i < num_debris; ++i)

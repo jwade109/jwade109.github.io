@@ -43,7 +43,6 @@ var NAMES = [
     "Anubis",
     "Hammurabi",
     "Scirocco",
-    "Rocinante",
     "Eggs Over Easy",
     "Jiminez",
     "Deep Impact",
