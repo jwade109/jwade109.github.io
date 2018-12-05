@@ -105,8 +105,7 @@ class Debris
         if (this.radius < 4) num_debris = 0;
         for (let i = 0; i < num_debris; ++i)
         {
-
-            let pos = this.pos.slice();
+            let pos = this.box.getRandom();
             let vel = this.vel.slice();
             vel[0] += Math.random()*60 - 40;
             vel[1] += Math.random()*80 - 40;

@@ -1,11 +1,11 @@
 // pdc.js
 
-var PDC_LENGTH = 2.5;
-var PDC_SPREAD = 1.5*Math.PI/180;
-var PDC_VELOCITY = 800;
-var PDC_COOLDOWN = 1/50;
-var PDC_DAMAGE = 1;
-var PDC_MAX_RANGE = 500;
+const PDC_LENGTH = 2.5;
+const PDC_SPREAD = 1.5*Math.PI/180;
+const PDC_VELOCITY = 800;
+const PDC_COOLDOWN = 1/50;
+const PDC_DAMAGE = 1;
+const PDC_MAX_RANGE = 500;
 var DRAW_FIRING_ARC = false;
 
 class PointDefenseCannon
@@ -21,6 +21,7 @@ class PointDefenseCannon
         this.range = range;
         this.radius = Math.min(radius, PDC_MAX_RANGE);
         this.color = "gray";
+        this.nodraw = false;
     }
 
     globalPos()
@@ -95,7 +96,7 @@ class PointDefenseCannon
         ctx.translate(gpos[0]*PIXELS, gpos[1]*PIXELS);
         ctx.rotate(-this.object.theta - this.theta);
 
-        if (DRAW_FIRING_ARC)
+        if (DRAW_FIRING_ARC && this.object instanceof Anubis)
         {
             ctx.fillStyle = "orange";
             ctx.globalAlpha = 0.2;
@@ -112,23 +113,24 @@ class PointDefenseCannon
             ctx.restore();
         }
 
-        ctx.rotate(-this.gamma);
+        if (!this.nodraw)
+        {
+            ctx.rotate(-this.gamma);
 
-        ctx.strokeStyle = "black";
-        ctx.fillStyle = this.color;
-        ctx.globalAlpha = 1;
-        ctx.beginPath();
-        ctx.arc(0, 0, 0.9*PIXELS, 0, Math.PI*2);
-        ctx.fill();
-        ctx.stroke();
+            ctx.strokeStyle = "black";
+            ctx.fillStyle = this.color;
+            ctx.globalAlpha = 1;
+            ctx.beginPath();
+            ctx.arc(0, 0, 0.9*PIXELS, 0, Math.PI*2);
+            ctx.fill();
+            ctx.stroke();
 
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        // ctx.lineTo(1*PIXELS, 0);
-        ctx.rect(0.5*PIXELS, -0.1*PIXELS, 1.2*PIXELS, 0.2*PIXELS);
-        ctx.fill();
-        ctx.stroke();
-
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.rect(0.5*PIXELS, -0.1*PIXELS, 1.2*PIXELS, 0.2*PIXELS);
+            ctx.fill();
+            ctx.stroke();
+        }
         ctx.restore();
     }
 }

@@ -12,16 +12,16 @@ class Hitbox
 
     contains(point)
     {
-        return isInside(this.get_global(), point);
+        return isInside(this.getGlobal(), point);
     }
 
     intersects(hitbox)
     {
-        for (let op of hitbox.get_global())
+        for (let op of hitbox.getGlobal())
         {
             if (this.contains(op)) return true;
         }
-        for (let p of this.get_global())
+        for (let p of this.getGlobal())
         {
             if (hitbox.contains(p)) return true;
         }
@@ -30,7 +30,7 @@ class Hitbox
 
     trace_intersect(p1, q1)
     {
-        let glob = this.get_global();
+        let glob = this.getGlobal();
         for (let i = 0; i < glob.length - 1; ++i)
         {
             let x = glob[i], y = glob[i+1];
@@ -45,7 +45,7 @@ class Hitbox
         ctx.strokeStyle = "green";
         ctx.globalAlpha = 1;
         ctx.beginPath();
-        let pts = this.get_global();
+        let pts = this.getGlobal();
         ctx.moveTo(pts[pts.length - 1][0]*PIXELS,
                    pts[pts.length - 1][1]*PIXELS);
         for (let p of pts)
@@ -56,7 +56,7 @@ class Hitbox
         ctx.restore();
     }
 
-    get_global()
+    getGlobal()
     {
         let global_points = [];
         for (let p of this.points)
@@ -67,6 +67,56 @@ class Hitbox
         }
 
         return global_points;
+    }
+
+    getCentroid()
+    {
+        let sum = [0, 0];
+        for (let gp of this.getGlobal())
+        {
+            sum[0] += gp[0];
+            sum[1] += gp[1];
+        }
+        sum[0] /= this.points.length;
+        sum[1] /= this.points.length;
+        return sum;
+    }
+
+    getWidth()
+    {
+        let min = Infinity, max = -Infinity;
+        for (let gp of this.getGlobal())
+        {
+            if (gp[0] < min) min = gp[0];
+            if (gp[0] > max) max = gp[0];
+        }
+        return max - min;
+    }
+
+    getHeight()
+    {
+        let min = Infinity, max = -Infinity;
+        for (let gp of this.getGlobal())
+        {
+            if (gp[1] < min) min = gp[0];
+            if (gp[1] > max) max = gp[0];
+        }
+        return max - min;
+    }
+
+    getRandom()
+    {
+        let centroid = this.getCentroid();
+        let w = this.getWidth();
+        let h = this.getHeight();
+        let rand = [0, 0];
+        do
+        {
+            rand[0] = centroid[0] + (Math.random() - 0.5)*w;
+            rand[1] = centroid[1] + (Math.random() - 0.5)*h;
+        }
+        while (!this.contains(rand));
+        return rand;
     }
 }
 

@@ -126,14 +126,14 @@ class Battleship
         else if (Math.random() < 0.05*d)
         {
             let num_debris = 3 + Math.random()*3;
+            let pos = this.box.getRandom();
             for (let i = 0; i < num_debris; ++i)
             {
-                let pos = this.pos.slice();
                 let vel = this.vel.slice();
                 vel[0] += Math.random()*200 - 100;
                 vel[1] += Math.random()*200 - 100;
                 let size = Math.random()*4;
-                let deb = new Debris(pos, vel,
+                let deb = new Debris(pos.slice(), vel,
                     this.theta,
                     this.omega + Math.random()*5 - 2.5, size);
                 deb.name = this.name;

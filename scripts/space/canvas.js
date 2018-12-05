@@ -9,21 +9,21 @@ var INERTIAL_CAMERA = false;
 var CAMERA_INERTIA = 1;
 var MATCH_VELOCITY = false;
 var SPAWN_ENEMIES = true;
-var MAX_ENEMIES = 2;
+var MAX_ENEMIES = 3;
 var GAME_PAUSED = true;
 var SLOW_TIME = false;
 var SHOW_HELP = false;
 var LAST_EVENT = null;
 var GAME_OVER = false;
-var SPAWN_TIMER = 10;
 var PLAYER_SCORE = 0;
 
-var PLAYER_POS = [0, 0];
 var PLAYER_VEL = [0, 0];
 
-var ENEMY_NO = 0;
 var SPAWN_DEBRIS = true;
 var RESPAWN_TIMER = 0;
+var RESPAWN_DELAY = 5;
+
+var PAN = [0, 0];
 
 var FPS = 60;
 var NOMINAL_DT = 1/FPS;
@@ -36,7 +36,7 @@ let ctx = CANVAS.getContext("2d");
 var left = false, right = false, up = false, down = false, space = false,
     akey = false, wkey = false, dkey = false, skey = false, xkey = false,
     fkey = false, qkey = false, ekey = false, leftClick = false,
-    rightClick = false, shift = false;
+    rightClick = false, shift = false, MOUSEBUTTON_DOWN = false;
 
 var ONE_KEY = false, TWO_KEY = false;
 
@@ -56,14 +56,14 @@ var NEAREST_OBJECT = null;
 var TARGET_OBJECT = null;
 
 var WORLD = [];
-WORLD.render_distance = 2500;
+const WORLD_RENDER_DISTANCE = 2500;
 
 WORLD.push(new Station([1300, -2100], 0));
 var PLAYER_SHIP = new Ship([0, 0], Math.PI/2);
 WORLD.push(PLAYER_SHIP);
 
-let bs = new Battleship([100, -400], Math.PI/6);
-WORLD.push(bs);
+// let bs = new Battleship([100, -400], Math.PI/6);
+// WORLD.push(bs);
 
 function respawn()
 {
@@ -76,7 +76,7 @@ let current = new Date().getTime(), last = current, dt = 0;
 
 for (let i = 0; i < 20 && SPAWN_DEBRIS; ++i)
 {
-    let r = Math.random()*WORLD.render_distance/2 + 200;
+    let r = Math.random()*WORLD_RENDER_DISTANCE/2 + 200;
     let rot = Math.random()*Math.PI*2;
     let pos = [Math.cos(rot)*r + PLAYER_SHIP.pos[0],
                Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
@@ -118,7 +118,7 @@ document.addEventListener('mousedown', function(event)
                     TARGET_OBJECT = NEAREST_OBJECT;
                 else TARGET_OBJECT = null;
                 break;
-        case 1: console.log("middle click down");
+        case 1: MOUSEBUTTON_DOWN = true; break;
     }
 });
 
@@ -128,7 +128,7 @@ document.addEventListener('mouseup', function(event)
     {
         case 0: leftClick = false; break;
         case 2: rightClick = false; break;
-        case 1: console.log("middle click up");
+        case 1: MOUSEBUTTON_DOWN = false; break;
     }
 });
 
@@ -231,7 +231,7 @@ function throwAlert(msg, time)
 
 function zoom(radius)
 {
-    VIEW_RADIUS = radius;
+    VIEW_RADIUS = Math.max(100, Math.min(radius, 2000));
     PIXELS = WIDTH/(2*VIEW_RADIUS); //  pixels per meter
 }
 
@@ -323,7 +323,8 @@ function handleCollision(obj1, obj2)
     if (obj1 === obj2) return;
     if (obj1.remove || obj2.remove) return false;
     if (obj1.constructor.name == obj2.constructor.name) return;
-    if (objectsAre("Ship", "Destroyer"))
+    if (objectsAre("Ship", "Destroyer") ||
+        objectsAre("Ship", "Anubis"))
     {
         obj1.damage(obj1.health);
         obj2.damage(obj2.health);
@@ -435,7 +436,8 @@ function handleCollision(obj1, obj2)
     {
         return;
     }
-    else if (objectsAre("Railgun", "Destroyer"))
+    else if (objectsAre("Railgun", "Destroyer") ||
+             objectsAre("Railgun", "Anubis"))
     {
         let destroyer = obj1;
         if (!(destroyer instanceof Destroyer))
@@ -445,7 +447,8 @@ function handleCollision(obj1, obj2)
         destroyer.damage(200);
         return;
     }
-    else if (objectsAre("Debris", "Destroyer"))
+    else if (objectsAre("Debris", "Destroyer") ||
+             objectsAre("Debris", "Anubis"))
     {
         let debris = obj1, destroyer = obj2;
         if (!(debris instanceof Debris))
@@ -460,7 +463,8 @@ function handleCollision(obj1, obj2)
         }
         return;
     }
-    else if (objectsAre("Bullet", "Destroyer"))
+    else if (objectsAre("Bullet", "Destroyer") ||
+             objectsAre("Bullet", "Anubis"))
     {
         let destroyer = obj1, bullet = obj2;
         if (!(destroyer instanceof Destroyer))
@@ -475,7 +479,8 @@ function handleCollision(obj1, obj2)
         }
         return;
     }
-    else if (objectsAre("Torpedo", "Destroyer"))
+    else if (objectsAre("Torpedo", "Destroyer") ||
+             objectsAre("Torpedo", "Anubis"))
     {
         let destroyer = obj1, torpedo = obj2;
         if (!(destroyer instanceof Destroyer))
@@ -524,7 +529,8 @@ function handleCollision(obj1, obj2)
         obj2.explode();
         return;
     }
-    else if (objectsAre("Station", "Destroyer"))
+    else if (objectsAre("Station", "Destroyer") ||
+             objectsAre("Station", "Anubis"))
     {
         obj2.vel = obj1.vel.slice();
         obj2.explode();
@@ -576,9 +582,9 @@ function handleCollision(obj1, obj2)
         return;
     }
 
-    console.log("unhandled collision between " +
-                obj1.constructor.name + " and " +
-                obj2.constructor.name);
+    // console.log("unhandled collision between " +
+    //             obj1.constructor.name + " and " +
+    //             obj2.constructor.name);
 }
 
 function isOffScreen(coords)
@@ -616,7 +622,7 @@ function physics(dt)
         let dx = WORLD[i].pos[0] - PLAYER_SHIP.pos[0];
         let dy = WORLD[i].pos[1] - PLAYER_SHIP.pos[1];
         let dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist > WORLD.render_distance &&
+        if (dist > WORLD_RENDER_DISTANCE &&
             (typeof WORLD[i].permanent === 'undefined'))
                 WORLD[i].remove = true;
         if (WORLD[i].remove == true) WORLD.splice(i, 1);
@@ -631,7 +637,7 @@ function physics(dt)
 
     while (WORLD.length < 100 && SPAWN_DEBRIS)
     {
-        let r = WORLD.render_distance - 100;
+        let r = WORLD_RENDER_DISTANCE - 100;
         let rot = Math.random()*Math.PI*2;
         let pos = [Math.cos(rot)*r + PLAYER_SHIP.pos[0],
                    Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
@@ -640,22 +646,40 @@ function physics(dt)
         let theta = Math.random()*Math.PI*2;
         let omega = Math.random()*10 - 5;
         let size = Math.random()*20 + 10;
+        if (Math.random() < 0.01)
+        {
+            size *= 5;
+            omega /= 10;
+        }
         let deb = new Debris(pos, vel, theta, omega, size);
         WORLD.push(deb);
     }
 
-    if (enemy_count < MAX_ENEMIES && SPAWN_ENEMIES && !GAME_OVER)
+    if (enemy_count == 0 && SPAWN_ENEMIES && !GAME_OVER && RESPAWN_TIMER < 0)
     {
-        let r = WORLD.render_distance*2;
-        let rot = Math.random()*Math.PI*2;
-        let pos = [Math.cos(rot)*r + PLAYER_SHIP.pos[0],
-                   Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
-        let vel = [PLAYER_SHIP.vel[0], PLAYER_SHIP.vel[1]];
-        let destroyer = new Destroyer(pos, Math.random()*Math.PI*2);
-        destroyer.vel = vel;
-        WORLD.push(destroyer);
+        throwAlert("ENEMY VESSELS INCOMING.", ALERT_DISPLAY_TIME*3);
+        for (let i = 0; i < MAX_ENEMIES; ++i)
+        {
+            let r = WORLD_RENDER_DISTANCE*2;
+            let rot = Math.random()*Math.PI*2;
+            let pos = [Math.cos(rot)*r + PLAYER_SHIP.pos[0],
+                       Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
+            let vel = [PLAYER_SHIP.vel[0], PLAYER_SHIP.vel[1]];
+            let enemy = new Destroyer(pos, 0);
+            if (Math.random() < 0.2) enemy = new Anubis(pos, 0);
+            enemy.vel = vel;
+            WORLD.push(enemy);
+        }
+        RESPAWN_TIMER = RESPAWN_DELAY;
+        ++PLAYER_SCORE;
     }
-
+    else if (enemy_count == 0)
+    {
+        if (RESPAWN_TIMER == RESPAWN_DELAY)
+            throwAlert("Enemy vessels inbound in " + RESPAWN_DELAY +
+                " seconds.", RESPAWN_DELAY);
+        RESPAWN_TIMER -= dt;
+    }
     if (!GAME_OVER)
     {
         if (wkey)
@@ -800,7 +824,7 @@ function draw()
 
     ctx.beginPath();
     ctx.arc(PLAYER_SHIP.pos[0]*PIXELS, PLAYER_SHIP.pos[1]*PIXELS,
-            WORLD.render_distance*PIXELS, 0, Math.PI*2);
+            WORLD_RENDER_DISTANCE*PIXELS, 0, Math.PI*2);
     ctx.globalAlpha = 0.2;
     ctx.strokeStyle = "black";
     ctx.stroke();
@@ -1021,6 +1045,10 @@ function draw()
         ctx.fillStyle = "darkgray";
         ctx.fillText("TARGET", WIDTH/2 + 20, HEIGHT/2 - 20);
     }
+    ctx.font = "30px Helvetica";
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = "darkgray";
+    ctx.fillText("WAVE " + PLAYER_SCORE, WIDTH - 200, HEIGHT - 10);
 }
 
 function start()

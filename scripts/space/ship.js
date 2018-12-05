@@ -1,6 +1,6 @@
 // ship.js
 
-const PLAYER_INVINCIBLE = false;
+const PLAYER_INVINCIBLE = true;
 const PLAYER_MAX_HEALTH = 2000;
 const PASSIVE_REGEN = 0; // PLAYER_MAX_HEALTH/(60*3);
 const INFINITE_FUEL = true;
@@ -10,6 +10,9 @@ const PLAYER_MAX_RAILGUN = 40;
 const PLAYER_SHIP_MASS = 1;
 const PLAYER_SHIP_MOMENT_INERTIA = 350;
 const PLAYER_EXPLOSION_RADIUS = 180;
+
+const ROCINANTE_LENGTH = 42;
+const ROCINANTE_WIDTH = 11;
 
 class Ship
 {
@@ -31,9 +34,8 @@ class Ship
         this.health = PLAYER_MAX_HEALTH;
         this.name = "\"Rocinante\"";
 
-        this.width = 11; // 40/1.5;
-        this.length = 42; // 144/1.5;
-        this.radius = this.width/2;
+        this.width = ROCINANTE_WIDTH;
+        this.length = ROCINANTE_LENGTH;
         this.box = new Hitbox([[this.width/3, this.length/2],
                                [this.width/2, -this.length/2],
                                [-this.width/2, -this.length/2],
@@ -374,18 +376,19 @@ class Ship
             throwAlert("Warning: hull integrity at " +
                 Math.round(100*this.health/PLAYER_MAX_HEALTH) + "%",
                 ALERT_DISPLAY_TIME);
-        if (this.health < 0) this.explode();
+        if (this.health <= 0) this.explode();
         else if (Math.random() < 0.05*d)
         {
             let num_debris = 3 + Math.random()*3;
+            let pos = this.box.getRandom();
             for (let i = 0; i < num_debris; ++i)
             {
-                let pos = this.pos.slice();
                 let vel = this.vel.slice();
                 vel[0] += Math.random()*200 - 100;
                 vel[1] += Math.random()*200 - 100;
                 let size = Math.random()*4;
-                let deb = new Debris(pos, vel,
+                console.log(vel);
+                let deb = new Debris(pos.slice(), vel,
                     this.theta,
                     this.omega + Math.random()*5 - 2.5, size);
                 deb.name = this.name;
@@ -402,7 +405,7 @@ class Ship
         let num_debris = 15 + Math.random()*7;
         for (let i = 0; i < num_debris; ++i)
         {
-            let pos = this.pos.slice();
+            let pos = this.box.getRandom();
             let vel = this.vel.slice();
             vel[0] += Math.random()*200 - 100;
             vel[1] += Math.random()*200 - 100;
