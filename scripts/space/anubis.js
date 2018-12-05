@@ -166,7 +166,7 @@ class Anubis
         let dx = PLAYER_SHIP.pos[0] - this.pos[0];
         let dy = PLAYER_SHIP.pos[1] - this.pos[1];
         let bodyacc =
-            [-((TORPEDO_MIN_RANGE + WORLD_RENDER_DISTANCE)/2 - dist)/10, 0];
+            [-(1800 - dist)/10, 0];
         this.acc = this.b2g(bodyacc);
         this.acc[0] += (PLAYER_SHIP.vel[0] - this.vel[0])/3;
         this.acc[1] += (PLAYER_SHIP.vel[1] - this.vel[1])/3;

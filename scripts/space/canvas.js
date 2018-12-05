@@ -20,8 +20,8 @@ var PLAYER_SCORE = 0;
 var PLAYER_VEL = [0, 0];
 
 var SPAWN_DEBRIS = true;
-var RESPAWN_TIMER = 0;
-var RESPAWN_DELAY = 5;
+var RESPAWN_DELAY = 10;
+var RESPAWN_TIMER = RESPAWN_DELAY;
 
 var PAN = [0, 0];
 
@@ -56,7 +56,7 @@ var NEAREST_OBJECT = null;
 var TARGET_OBJECT = null;
 
 var WORLD = [];
-const WORLD_RENDER_DISTANCE = 2500;
+const WORLD_RENDER_DISTANCE = 4000;
 
 WORLD.push(new Station([1300, -2100], 0));
 var PLAYER_SHIP = new Ship([0, 0], Math.PI/2);
@@ -231,7 +231,7 @@ function throwAlert(msg, time)
 
 function zoom(radius)
 {
-    VIEW_RADIUS = Math.max(100, Math.min(radius, 2000));
+    VIEW_RADIUS = Math.max(100, Math.min(radius, 3000));
     PIXELS = WIDTH/(2*VIEW_RADIUS); //  pixels per meter
 }
 
@@ -666,7 +666,7 @@ function physics(dt)
                        Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
             let vel = [PLAYER_SHIP.vel[0], PLAYER_SHIP.vel[1]];
             let enemy = new Destroyer(pos, 0);
-            if (Math.random() < 0.2) enemy = new Anubis(pos, 0);
+            if (Math.random() < 0.33) enemy = new Anubis(pos, 0);
             enemy.vel = vel;
             WORLD.push(enemy);
         }
@@ -679,6 +679,12 @@ function physics(dt)
             throwAlert("Enemy vessels inbound in " + RESPAWN_DELAY +
                 " seconds.", RESPAWN_DELAY);
         RESPAWN_TIMER -= dt;
+        if (RESPAWN_TIMER > 0)
+        {
+            PLAYER_SHIP.health += PASSIVE_REGEN*dt;
+            PLAYER_SHIP.health =
+                Math.min(PLAYER_SHIP.health, PLAYER_MAX_HEALTH);
+        }
     }
     if (!GAME_OVER)
     {
@@ -958,9 +964,21 @@ function draw()
         let dist = Math.round(distance(PLAYER_SHIP.pos, TARGET_OBJECT.pos));
         let rvel = Math.round(norm2d(
             sub2d(TARGET_OBJECT.vel, PLAYER_SHIP.vel)));
+
+        let dstr = Math.round(dist).toLocaleString("en",
+            {useGrouping: false, minimumFractionDigits: 0}) + " M";
+        if (dist >= 1000)
+            dstr = (Math.round(dist/100)/10).toLocaleString("en",
+                {useGrouping: false, minimumFractionDigits: 1}) + " KM";
+        let vstr = Math.round(rvel).toLocaleString("en",
+            {useGrouping: false, minimumFractionDigits: 0}) + " M/S";
+        if (rvel >= 1000)
+            vstr = (Math.round(rvel/100)/10).toLocaleString("en",
+                {useGrouping: false, minimumFractionDigits: 1}) + " KM/S";
+
         ctx.fillText("TARGET LOCKED: " +
             TARGET_OBJECT.constructor.name.toUpperCase() + " (" +
-            dist + " M, " + rvel + " M/S)", 800, HEIGHT - 10);
+            dstr + ", " + vstr + ")", 800, HEIGHT - 10);
     }
     ctx.textAlign = "right";
     let ftime = (Math.round(TIME*100)/100).toLocaleString("en",
@@ -1044,6 +1062,15 @@ function draw()
         ctx.globalAlpha = 0.4;
         ctx.fillStyle = "darkgray";
         ctx.fillText("TARGET", WIDTH/2 + 20, HEIGHT/2 - 20);
+    }
+    else if (RESPAWN_TIMER > 0 && RESPAWN_TIMER < RESPAWN_DELAY)
+    {
+        ctx.font = "30px Helvetica";
+        ctx.globalAlpha = 0.4;
+        ctx.fillStyle = "darkgray";
+        let rtime = (Math.round(RESPAWN_TIMER*100)/100).toLocaleString("en",
+            {useGrouping: false, minimumFractionDigits: 2});
+        ctx.fillText(rtime, WIDTH/2 + 20, HEIGHT/2 - 20);
     }
     ctx.font = "30px Helvetica";
     ctx.globalAlpha = 0.4;

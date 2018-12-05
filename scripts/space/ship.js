@@ -1,8 +1,8 @@
 // ship.js
 
-const PLAYER_INVINCIBLE = true;
+const PLAYER_INVINCIBLE = false;
 const PLAYER_MAX_HEALTH = 2000;
-const PASSIVE_REGEN = 0; // PLAYER_MAX_HEALTH/(60*3);
+const PASSIVE_REGEN = 2*PLAYER_MAX_HEALTH/100;
 const INFINITE_FUEL = true;
 const INFINITE_AMMO = false;
 const PLAYER_MAX_MISSILES = 30;
@@ -357,8 +357,8 @@ class Ship
         this.box.pos = this.pos.slice();
         this.box.theta = this.theta;
 
-        if (this.health < PLAYER_MAX_HEALTH)
-            this.health += PASSIVE_REGEN*dt;
+        // if (this.health < PLAYER_MAX_HEALTH)
+        //     this.health += PASSIVE_REGEN*dt;
     }
 
     damage(d)
@@ -387,7 +387,6 @@ class Ship
                 vel[0] += Math.random()*200 - 100;
                 vel[1] += Math.random()*200 - 100;
                 let size = Math.random()*4;
-                console.log(vel);
                 let deb = new Debris(pos.slice(), vel,
                     this.theta,
                     this.omega + Math.random()*5 - 2.5, size);
