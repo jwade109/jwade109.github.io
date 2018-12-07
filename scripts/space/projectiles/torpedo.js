@@ -2,9 +2,12 @@
 
 const TORPEDO_THRUST = 1000;
 const TORPEDO_DAMAGE = 200;
-const TORPEDO_MIN_RANGE = 1000;
+const TORPEDO_MIN_RANGE = 0;
 const TORPEDO_LENGTH = 7;
 const TORPEDO_EXPLOSION_RADIUS = 30;
+const TORPEDO_DRIFT_TIME = 0.4;
+const TORPEDO_FUEL_TIME = 2;
+const DRAW_TORPEDO_PATH = true;
 
 class Torpedo
 {
@@ -12,6 +15,7 @@ class Torpedo
     {
         this.pos = pos;
         this.pos_prev = pos;
+        this.pos_history = [pos];
         this.vel = vel;
         this.theta = theta;
         this.omega = 0;
@@ -20,7 +24,8 @@ class Torpedo
         this.width = this.length/5;
         this.mass = 1;
         this.time = 0;
-        this.drifttimer = 0.4;
+        this.drifttimer = TORPEDO_DRIFT_TIME;
+        this.fueltimer = TORPEDO_FUEL_TIME;
         this.tracking = true;
         this.box = new Hitbox([[this.width/2, this.length/2],
                                [this.width/2, -this.length/2],
@@ -48,10 +53,26 @@ class Torpedo
             ctx.stroke();
         }
 
+        if (DRAW_TORPEDO_PATH && this.tracking)
+        {
+            ctx.save();
+            ctx.globalAlpha = 0.2;
+            ctx.strokeStyle = "black";
+            ctx.setLineDash([20*PIXELS, 30*PIXELS]);
+            ctx.beginPath();
+            for (let i = 1; i < this.pos_history.length; ++i)
+            {
+                ctx.lineTo(this.pos_history[i][0]*PIXELS,
+                           this.pos_history[i][1]*PIXELS);
+            }
+            ctx.stroke();
+            ctx.restore();
+        }
+
         ctx.save();
         if (this.target === PLAYER_SHIP && this.tracking)
         {
-            ctx.fillStyle = "blue";
+            ctx.fillStyle = "red";
             ctx.globalAlpha = 0.5;
             ctx.beginPath();
             let theta = Math.PI - angle2d(this.pos, this.target.pos);
@@ -62,12 +83,15 @@ class Torpedo
             ctx.fill();
         }
         ctx.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
-        ctx.save();
-        ctx.rotate(Math.PI/4);
-        ctx.strokeStyle = "blue";
-        ctx.globalAlpha = 0.4;
-        ctx.strokeRect(-5*PIXELS, -5*PIXELS, 10*PIXELS, 10*PIXELS);
-        ctx.restore();
+        if (this.tracking)
+        {
+            ctx.save();
+            ctx.rotate(Math.PI/4);
+            ctx.strokeStyle = "blue";
+            ctx.globalAlpha = 0.4;
+            ctx.strokeRect(-5*PIXELS, -5*PIXELS, 10*PIXELS, 10*PIXELS);
+            ctx.restore();
+        }
         ctx.rotate(-this.theta - Math.PI/2);
         ctx.strokeStyle = "black";
         ctx.fillStyle = "black";
@@ -108,11 +132,19 @@ class Torpedo
         }
         let acc = this.b2g(bodyacc);
 
+        if (this.time > TORPEDO_DRIFT_TIME + TORPEDO_FUEL_TIME)
+        {
+            acc = [0, 0];
+            this.thruster.firing = false;
+            this.tracking = false;
+        }
+
         this.pos_prev = this.pos.slice();
         this.vel[0] += acc[0]*dt;
         this.vel[1] += acc[1]*dt;
         this.pos[0] += this.vel[0]*dt;
         this.pos[1] += this.vel[1]*dt;
+        this.pos_history.push(this.pos.slice());
     }
 
     explode()

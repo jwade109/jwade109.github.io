@@ -31,7 +31,7 @@ var SLOW_DT = NOMINAL_DT/8;
 var TIME = 0;
 
 var CANVAS = document.getElementById("canvas");
-let ctx = CANVAS.getContext("2d");
+var CTX = CANVAS.getContext("2d");
 
 var left = false, right = false, up = false, down = false, space = false,
     akey = false, wkey = false, dkey = false, skey = false, xkey = false,
@@ -46,9 +46,9 @@ var firemode = true;
 
 var WIDTH = document.body.clientWidth;
 var HEIGHT = document.body.scrollHeight;
-var MOUSEX = 0, MOUSEY = 0, MOUSEPOS = [MOUSEX, MOUSEY];
+var MOUSEX = 0, MOUSEY = 0;
 
-var VIEW_RADIUS = 500;
+var VIEW_RADIUS = 800;
 var PIXELS = WIDTH/(2*VIEW_RADIUS); //  pixels per meter
 var OFFSET = [0, 0]; // delayed camera offset
 
@@ -59,18 +59,11 @@ var WORLD = [];
 const WORLD_RENDER_DISTANCE = 4000;
 
 WORLD.push(new Station([1300, -2100], 0));
-var PLAYER_SHIP = new Ship([0, 0], Math.PI/2);
+var PLAYER_SHIP = new Corvette([0, 0], Math.PI/2);
 WORLD.push(PLAYER_SHIP);
 
-// let bs = new Battleship([100, -400], Math.PI/6);
-// WORLD.push(bs);
-
-function respawn()
-{
-    PLAYER_SHIP = new Ship([0, 0], Math.PI/2);
-    WORLD.push(PLAYER_SHIP);
-    GAME_OVER = false;
-}
+let bs = new Donnager([100, -400], Math.PI/6);
+WORLD.push(bs);
 
 let current = new Date().getTime(), last = current, dt = 0;
 
@@ -98,7 +91,8 @@ document.addEventListener('mousewheel', function(event)
 {
     if (event.deltaY > 0 && VIEW_RADIUS < 3000) zoom(VIEW_RADIUS*1.3);
     if (event.deltaY < 0 && VIEW_RADIUS > 50) zoom(VIEW_RADIUS/1.3);
-});
+},
+{ capture: true, passive: true});
 
 document.addEventListener('mousemove', function(event)
 {
@@ -174,6 +168,10 @@ document.addEventListener('keydown', function(event)
                  break;
         case 75: if (GAME_PAUSED) physics(SLOW_DT);
                  break;
+        case 77: DRAW_TRACE = !DRAW_TRACE;
+                 break;
+        case 78: DRAW_HITBOX = !DRAW_HITBOX;
+                 break;
         case 81: qkey = true; break;
         case 82: SLOW_TIME = !SLOW_TIME; break;
         case 86: LOCK_CAMERA = !LOCK_CAMERA;
@@ -211,6 +209,8 @@ document.addEventListener('keyup', function(event)
         case 72: /* HKEY */ break;
         case 74: /* JKEY */ break;
         case 75: /* KKEY */ break;
+        case 77: /* MKEY */ break;
+        case 78: /* NKEY */ break;
         case 81: qkey = false; break;
         case 86: /* VKEY */ break;
         case 87: wkey = false; break;
@@ -256,8 +256,6 @@ function updateMouse()
         MOUSEX -= OFFSET[0]/PIXELS;
         MOUSEY -= OFFSET[1]/PIXELS;
     }
-    MOUSEPOS[0] = MOUSEX;
-    MOUSEPOS[1] = MOUSEY;
 
     let min = Infinity;
     for (let obj of WORLD)
@@ -323,14 +321,14 @@ function handleCollision(obj1, obj2)
     if (obj1 === obj2) return;
     if (obj1.remove || obj2.remove) return false;
     if (obj1.constructor.name == obj2.constructor.name) return;
-    if (objectsAre("Ship", "Destroyer") ||
-        objectsAre("Ship", "Anubis"))
+    if (objectsAre("Corvette", "Morrigan") ||
+        objectsAre("Corvette", "Amun_Ra"))
     {
         obj1.damage(obj1.health);
         obj2.damage(obj2.health);
         return;
     }
-    if (objectsAre("Ship", "Debris"))
+    if (objectsAre("Corvette", "Debris"))
     {
         let debris = obj1;
         if (!(debris instanceof Debris))
@@ -350,10 +348,10 @@ function handleCollision(obj1, obj2)
         }
         return;
     }
-    if (objectsAre("Ship", "Torpedo"))
+    if (objectsAre("Corvette", "Torpedo"))
     {
         let ship = obj1, torpedo = obj2;
-        if (!(ship instanceof Ship))
+        if (!(ship instanceof Corvette))
         {
             ship = obj2;
             torpedo = obj1;
@@ -368,7 +366,7 @@ function handleCollision(obj1, obj2)
         }
         return;
     }
-    if (objectsAre("Ship", "Bullet"))
+    if (objectsAre("Corvette", "Bullet"))
     {
         if (obj2.origin !== obj1)
         {
@@ -432,23 +430,23 @@ function handleCollision(obj1, obj2)
         if (Math.random() < 0.2) torpedo.explode();
         return;
     }
-    else if (objectsAre("Railgun", "Ship"))
+    else if (objectsAre("Railgun", "Corvette"))
     {
         return;
     }
-    else if (objectsAre("Railgun", "Destroyer") ||
-             objectsAre("Railgun", "Anubis"))
+    else if (objectsAre("Railgun", "Morrigan") ||
+             objectsAre("Railgun", "Amun_Ra"))
     {
         let destroyer = obj1;
-        if (!(destroyer instanceof Destroyer))
+        if (!(destroyer instanceof Morrigan))
         {
             destroyer = obj2;
         }
         destroyer.damage(200);
         return;
     }
-    else if (objectsAre("Debris", "Destroyer") ||
-             objectsAre("Debris", "Anubis"))
+    else if (objectsAre("Debris", "Morrigan") ||
+             objectsAre("Debris", "Amun_Ra"))
     {
         let debris = obj1, destroyer = obj2;
         if (!(debris instanceof Debris))
@@ -463,11 +461,11 @@ function handleCollision(obj1, obj2)
         }
         return;
     }
-    else if (objectsAre("Bullet", "Destroyer") ||
-             objectsAre("Bullet", "Anubis"))
+    else if (objectsAre("Bullet", "Morrigan") ||
+             objectsAre("Bullet", "Amun_Ra"))
     {
         let destroyer = obj1, bullet = obj2;
-        if (!(destroyer instanceof Destroyer))
+        if (!(destroyer instanceof Morrigan))
         {
             destroyer = obj2;
             bullet = obj1;
@@ -479,11 +477,11 @@ function handleCollision(obj1, obj2)
         }
         return;
     }
-    else if (objectsAre("Torpedo", "Destroyer") ||
-             objectsAre("Torpedo", "Anubis"))
+    else if (objectsAre("Torpedo", "Morrigan") ||
+             objectsAre("Torpedo", "Amun_Ra"))
     {
         let destroyer = obj1, torpedo = obj2;
-        if (!(destroyer instanceof Destroyer))
+        if (!(destroyer instanceof Morrigan))
         {
             destroyer = obj2;
             torpedo = obj1;
@@ -511,7 +509,7 @@ function handleCollision(obj1, obj2)
         obj2.explode();
         return;
     }
-    else if (objectsAre("Station", "Ship"))
+    else if (objectsAre("Station", "Corvette"))
     {
         // obj2.vel = obj1.vel.slice();
         obj2.damage(obj2.health);
@@ -529,20 +527,20 @@ function handleCollision(obj1, obj2)
         obj2.explode();
         return;
     }
-    else if (objectsAre("Station", "Destroyer") ||
-             objectsAre("Station", "Anubis"))
+    else if (objectsAre("Station", "Morrigan") ||
+             objectsAre("Station", "Amun_Ra"))
     {
         obj2.vel = obj1.vel.slice();
         obj2.explode();
         return;
     }
-    else if (objectsAre("Battleship", "Ship"))
+    else if (objectsAre("Donnager", "Corvette"))
     {
-        obj2.explode();
+        obj2.damage(obj2.health);
         obj1.damage(obj2.health);
         return;
     }
-    else if (objectsAre("Battleship", "Debris"))
+    else if (objectsAre("Donnager", "Debris"))
     {
         if (obj2.radius > LARGE_DEBRIS)
         {
@@ -552,19 +550,19 @@ function handleCollision(obj1, obj2)
         }
         return;
     }
-    else if (objectsAre("Battleship", "Torpedo"))
+    else if (objectsAre("Donnager", "Torpedo"))
     {
         obj2.vel = obj1.vel.slice();
         obj2.explode();
         obj1.damage(TORPEDO_DAMAGE);
         return;
     }
-    else if (objectsAre("Battleship", "Railgun"))
+    else if (objectsAre("Donnager", "Railgun"))
     {
         obj1.damage(RAILGUN_DAMAGE);
         return;
     }
-    else if (objectsAre("Battleship", "Bullet"))
+    else if (objectsAre("Donnager", "Bullet"))
     {
         if (obj2.origin != obj1)
         {
@@ -574,7 +572,7 @@ function handleCollision(obj1, obj2)
         }
         return;
     }
-    else if (objectsAre("Battleship", "Destroyer"))
+    else if (objectsAre("Donnager", "Morrigan"))
     {
         obj2.vel = obj1.vel.slice();
         obj2.explode();
@@ -589,15 +587,21 @@ function handleCollision(obj1, obj2)
 
 function isOffScreen(coords)
 {
-    let corners = [[-WIDTH/(2*PIXELS), -HEIGHT/(2*PIXELS)],
-                   [ WIDTH/(2*PIXELS), -HEIGHT/(2*PIXELS)],
-                   [ WIDTH/(2*PIXELS),  HEIGHT/(2*PIXELS)],
-                   [-WIDTH/(2*PIXELS),  HEIGHT/(2*PIXELS)]];
+    let corners = [[-WIDTH/(2*PIXELS) + 5, -HEIGHT/(2*PIXELS) + 5],
+                   [ WIDTH/(2*PIXELS) - 5, -HEIGHT/(2*PIXELS) + 5],
+                   [ WIDTH/(2*PIXELS) - 5,  HEIGHT/(2*PIXELS) - 5],
+                   [-WIDTH/(2*PIXELS) + 5,  HEIGHT/(2*PIXELS) - 5]];
     let hitbox = new Hitbox(corners);
     hitbox.object = [];
     hitbox.object.pos = PLAYER_SHIP.pos.slice();
-    hitbox.object.theta = -Math.PI/2;
-    if (LOCK_CAMERA) hitbox.object.theta = PLAYER_SHIP.theta;
+    hitbox.object.theta = 0;
+    if (LOCK_CAMERA) hitbox.object.theta = PLAYER_SHIP.theta + Math.PI/2;
+    if (INERTIAL_CAMERA)
+    {
+        hitbox.object.pos[0] -= OFFSET[0]/PIXELS;
+        hitbox.object.pos[1] -= OFFSET[1]/PIXELS;
+    }
+    if (DRAW_HITBOX) hitbox.draw(CTX);
     return !hitbox.contains(coords);
 }
 
@@ -657,7 +661,7 @@ function physics(dt)
 
     if (enemy_count == 0 && SPAWN_ENEMIES && !GAME_OVER && RESPAWN_TIMER < 0)
     {
-        throwAlert("ENEMY VESSELS INCOMING.", ALERT_DISPLAY_TIME*3);
+        throwAlert("Enemy vessels incoming.", ALERT_DISPLAY_TIME*3);
         for (let i = 0; i < MAX_ENEMIES; ++i)
         {
             let r = WORLD_RENDER_DISTANCE*2;
@@ -665,8 +669,8 @@ function physics(dt)
             let pos = [Math.cos(rot)*r + PLAYER_SHIP.pos[0],
                        Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
             let vel = [PLAYER_SHIP.vel[0], PLAYER_SHIP.vel[1]];
-            let enemy = new Destroyer(pos, 0);
-            if (Math.random() < 0.33) enemy = new Anubis(pos, 0);
+            let enemy = new Morrigan(pos, 0);
+            if (Math.random() < 0.33) enemy = new Amun_Ra(pos, 0);
             enemy.vel = vel;
             WORLD.push(enemy);
         }
@@ -770,155 +774,157 @@ function physics(dt)
 
 function draw()
 {
-    ctx.clearRect(0, 0, CANVAS.width, CANVAS.height);
-    ctx.canvas.width = document.body.clientWidth;
-    ctx.canvas.height = document.body.scrollHeight;
-    WIDTH = ctx.canvas.width;
-    HEIGHT = ctx.canvas.height;
+    CTX.clearRect(0, 0, CANVAS.width, CANVAS.height);
+    CTX.canvas.width = document.body.clientWidth;
+    CTX.canvas.height = document.body.scrollHeight;
+    WIDTH = CTX.canvas.width;
+    HEIGHT = CTX.canvas.height;
     updateMouse();
 
-    ctx.save();
-    ctx.translate(WIDTH/2, HEIGHT/2);
-    if (LOCK_CAMERA) ctx.rotate(PLAYER_SHIP.theta - Math.PI/2);
-    ctx.translate(-PLAYER_SHIP.pos[0]*PIXELS,
+    CTX.save();
+    CTX.translate(WIDTH/2, HEIGHT/2);
+    if (LOCK_CAMERA) CTX.rotate(PLAYER_SHIP.theta - Math.PI/2);
+    CTX.translate(-PLAYER_SHIP.pos[0]*PIXELS,
                   -PLAYER_SHIP.pos[1]*PIXELS);
-    if (INERTIAL_CAMERA) ctx.translate(OFFSET[0], OFFSET[1]);
+    if (INERTIAL_CAMERA) CTX.translate(OFFSET[0], OFFSET[1]);
 
-    ctx.strokeStyle = "black";
-    ctx.fillStyle = "black";
+    CTX.strokeStyle = "black";
+    CTX.fillStyle = "black";
     let interval = 500;
     for (let i = 0; interval*(i + 1)*PIXELS < Math.max(WIDTH, HEIGHT); ++i)
     {
-        ctx.beginPath();
-        ctx.arc(PLAYER_SHIP.pos[0]*PIXELS, PLAYER_SHIP.pos[1]*PIXELS,
+        CTX.beginPath();
+        CTX.arc(PLAYER_SHIP.pos[0]*PIXELS, PLAYER_SHIP.pos[1]*PIXELS,
                 interval*(i + 1)*PIXELS, 0, Math.PI*2);
-        ctx.globalAlpha = 0.06;
-        ctx.stroke();
-        ctx.globalAlpha = 0.2;
-        ctx.fillText(interval*(i + 1) + " m",
+        CTX.globalAlpha = 0.06;
+        CTX.stroke();
+        CTX.globalAlpha = 0.2;
+        CTX.fillText(interval*(i + 1) + " m",
             (PLAYER_SHIP.pos[0] + interval*(i + 1))*PIXELS + 3,
             PLAYER_SHIP.pos[1]*PIXELS - 3);
     }
 
-    ctx.save();
-    ctx.globalAlpha = 0.4;
-    ctx.moveTo(PLAYER_SHIP.pos[0]*PIXELS, PLAYER_SHIP.pos[1]*PIXELS);
-    ctx.textAlign = "center";
-    ctx.beginPath();
-    ctx.strokeStyle = ctx.fillStyle = "orange";
-    ctx.setLineDash([20, 30]);
-    ctx.arc(0, 0, PDC_MAX_RANGE*PIXELS, 0, Math.PI*2);
-    ctx.stroke();
-    ctx.fillText("PDC MAX RANGE", 0, -PDC_MAX_RANGE*PIXELS - 2);
-    ctx.beginPath();
-    ctx.strokeStyle = ctx.fillStyle = "red";
-    ctx.arc(0, 0, TORPEDO_MIN_RANGE*PIXELS, 0, Math.PI*2);
-    ctx.stroke();
-    ctx.fillText("TORPEDO MIN RANGE", 0, -TORPEDO_MIN_RANGE*PIXELS - 2);
-    ctx.restore();
+    CTX.save();
+    CTX.globalAlpha = 0.4;
+    CTX.moveTo(PLAYER_SHIP.pos[0]*PIXELS, PLAYER_SHIP.pos[1]*PIXELS);
+    CTX.textAlign = "center";
+    CTX.beginPath();
+    CTX.strokeStyle = CTX.fillStyle = "orange";
+    CTX.setLineDash([20*PIXELS, 30*PIXELS]);
+    CTX.arc(0, 0, PDC_MAX_RANGE*PIXELS, 0, Math.PI*2);
+    CTX.stroke();
+    CTX.fillText("PDC MAX RANGE", 0, -PDC_MAX_RANGE*PIXELS - 2);
+    CTX.restore();
 
-    ctx.globalAlpha = 0.06;
-    ctx.moveTo(PLAYER_SHIP.pos[0]*PIXELS,
+    CTX.globalAlpha = 0.06;
+    CTX.moveTo(PLAYER_SHIP.pos[0]*PIXELS,
                PLAYER_SHIP.pos[1]*PIXELS - Math.max(WIDTH, HEIGHT));
-    ctx.lineTo(PLAYER_SHIP.pos[0]*PIXELS,
+    CTX.lineTo(PLAYER_SHIP.pos[0]*PIXELS,
                PLAYER_SHIP.pos[1]*PIXELS + Math.max(WIDTH, HEIGHT));
-    ctx.moveTo(PLAYER_SHIP.pos[0]*PIXELS - Math.max(WIDTH, HEIGHT),
+    CTX.moveTo(PLAYER_SHIP.pos[0]*PIXELS - Math.max(WIDTH, HEIGHT),
                PLAYER_SHIP.pos[1]*PIXELS);
-    ctx.lineTo(PLAYER_SHIP.pos[0]*PIXELS + Math.max(WIDTH, HEIGHT),
+    CTX.lineTo(PLAYER_SHIP.pos[0]*PIXELS + Math.max(WIDTH, HEIGHT),
                PLAYER_SHIP.pos[1]*PIXELS);
-    ctx.stroke();
+    CTX.stroke();
 
-    ctx.beginPath();
-    ctx.arc(PLAYER_SHIP.pos[0]*PIXELS, PLAYER_SHIP.pos[1]*PIXELS,
+    CTX.beginPath();
+    CTX.arc(PLAYER_SHIP.pos[0]*PIXELS, PLAYER_SHIP.pos[1]*PIXELS,
             WORLD_RENDER_DISTANCE*PIXELS, 0, Math.PI*2);
-    ctx.globalAlpha = 0.2;
-    ctx.strokeStyle = "black";
-    ctx.stroke();
+    CTX.globalAlpha = 0.2;
+    CTX.strokeStyle = "black";
+    CTX.stroke();
 
-    for (let obj of WORLD) obj.draw(ctx);
-    ctx.globalAlpha = 1;
-    ctx.beginPath();
-    ctx.arc(MOUSEX*PIXELS, MOUSEY*PIXELS, 1, 0, Math.PI*2);
-    ctx.fill();
+    for (let obj of WORLD) obj.draw(CTX);
+    CTX.globalAlpha = 1;
+    CTX.beginPath();
+    CTX.arc(MOUSEX*PIXELS, MOUSEY*PIXELS, 1, 0, Math.PI*2);
+    CTX.fill();
 
     if (NEAREST_OBJECT != null && (SLOW_TIME || GAME_PAUSED))
     {
-        ctx.save();
-        ctx.translate(NEAREST_OBJECT.pos[0]*PIXELS,
+        CTX.save();
+        CTX.translate(NEAREST_OBJECT.pos[0]*PIXELS,
                       NEAREST_OBJECT.pos[1]*PIXELS);
-        if (LOCK_CAMERA) ctx.rotate(-PLAYER_SHIP.theta + Math.PI/2);
-        ctx.strokeStyle = "black";
-        ctx.fillStyle = "black";
-        ctx.beginPath();
-        ctx.globalAlpha = 0.6;
-        ctx.arc(0, 0, 10*PIXELS, 0, Math.PI*2);
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-        ctx.font = "15px Helvetica";
-        ctx.textAlign = "center";
-        ctx.fillText(NEAREST_OBJECT.constructor.name.toUpperCase(),
-            0, -20*PIXELS);
-        ctx.font = "10px Helvetica";
+        if (LOCK_CAMERA) CTX.rotate(-PLAYER_SHIP.theta + Math.PI/2);
+        CTX.strokeStyle = "black";
+        CTX.fillStyle = "black";
+        CTX.beginPath();
+        CTX.globalAlpha = 0.6;
+        CTX.arc(0, 0, 10*PIXELS, 0, Math.PI*2);
+        CTX.stroke();
+        CTX.globalAlpha = 1;
+        CTX.font = "15px Helvetica";
+        CTX.textAlign = "center";
+        if (typeof NEAREST_OBJECT.type != "undefined")
+            CTX.fillText(NEAREST_OBJECT.type.toUpperCase(),
+                0, -20*PIXELS);
+        else
+            CTX.fillText(NEAREST_OBJECT.constructor.name.toUpperCase(),
+                0, -20*PIXELS);
+        CTX.font = "10px Helvetica";
         if (typeof NEAREST_OBJECT.name != 'undefined')
-            ctx.fillText(NEAREST_OBJECT.name, 0, -20*PIXELS - 15);
-        ctx.restore();
+            CTX.fillText(NEAREST_OBJECT.name, 0, -20*PIXELS - 15);
+        CTX.restore();
     }
     if (TARGET_OBJECT != null)
     {
         if (!isOffScreen(TARGET_OBJECT.pos))
         {
-            ctx.save();
-            ctx.strokeStyle = "red";
-            ctx.fillStyle = "red";
-            ctx.translate(TARGET_OBJECT.pos[0]*PIXELS,
+            CTX.save();
+            CTX.strokeStyle = "red";
+            CTX.fillStyle = "red";
+            CTX.translate(TARGET_OBJECT.pos[0]*PIXELS,
                           TARGET_OBJECT.pos[1]*PIXELS);
-            if (LOCK_CAMERA) ctx.rotate(-PLAYER_SHIP.theta + Math.PI/2);
-            ctx.globalAlpha = 0.6;
-            ctx.strokeRect(-10*PIXELS, -10*PIXELS, 20*PIXELS, 20*PIXELS);
-            ctx.globalAlpha = 1;
-            ctx.font = "15px Helvetica";
-            ctx.textAlign = "center";
-            ctx.fillText(TARGET_OBJECT.constructor.name.toUpperCase(),
-                0, -20*PIXELS);
-            ctx.font = "10px Helvetica";
+            if (LOCK_CAMERA) CTX.rotate(-PLAYER_SHIP.theta + Math.PI/2);
+            CTX.globalAlpha = 0.6;
+            CTX.strokeRect(-10*PIXELS, -10*PIXELS, 20*PIXELS, 20*PIXELS);
+            CTX.globalAlpha = 1;
+            CTX.font = "15px Helvetica";
+            CTX.textAlign = "center";
+            if (typeof TARGET_OBJECT.type != "undefined")
+                CTX.fillText(TARGET_OBJECT.type.toUpperCase(), 0, -20*PIXELS);
+            else
+                CTX.fillText(NEAREST_OBJECT.constructor.name.toUpperCase(),
+                    0, -20*PIXELS);
+            CTX.font = "10px Helvetica";
             if (typeof TARGET_OBJECT.name != 'undefined')
-                ctx.fillText(TARGET_OBJECT.name, 0, -20*PIXELS - 15);
-            ctx.restore();
+                CTX.fillText(TARGET_OBJECT.name, 0, -20*PIXELS - 15);
+            CTX.restore();
         }
         else
         {
-            ctx.save();
+            CTX.save();
             let angle = -angle2d(PLAYER_SHIP.pos,
                                  TARGET_OBJECT.pos) + Math.PI/2;
-            ctx.rotate(angle);
-            ctx.globalAlpha = 0.4;
-            ctx.strokeStyle = "red";
-            ctx.lineWidth = 3*PIXELS;
-            ctx.beginPath();
-            ctx.moveTo(-10*PIXELS, -45*PIXELS);
-            ctx.lineTo(0, -55*PIXELS);
-            ctx.lineTo(10*PIXELS, -45*PIXELS);
-            ctx.stroke();
-            ctx.restore();
+            CTX.rotate(angle);
+            CTX.globalAlpha = 0.4;
+            CTX.strokeStyle = "red";
+            CTX.lineWidth = 3*PIXELS;
+            CTX.beginPath();
+            CTX.moveTo(-10*PIXELS, -45*PIXELS);
+            CTX.lineTo(0, -55*PIXELS);
+            CTX.lineTo(10*PIXELS, -45*PIXELS);
+            CTX.stroke();
+            CTX.restore();
         }
 
 
-        // ctx.save();
+        // CTX.save();
         // let rvel = sub2d(TARGET_OBJECT.vel, PLAYER_SHIP.vel);
         // let angle = angle2d([1, 0], rvel) + Math.PI/2;
-        // ctx.rotate(-angle);
-        // ctx.globalAlpha = 0.4;
-        // ctx.strokeStyle = "green";
-        // ctx.lineWidth = 3*PIXELS;
-        // ctx.beginPath();
-        // ctx.moveTo(-10*PIXELS, -45*PIXELS);
-        // ctx.lineTo(0, -55*PIXELS);
-        // ctx.lineTo(10*PIXELS, -45*PIXELS);
-        // ctx.stroke();
-        // ctx.restore();
+        // CTX.rotate(-angle);
+        // CTX.globalAlpha = 0.4;
+        // CTX.strokeStyle = "green";
+        // CTX.lineWidth = 3*PIXELS;
+        // CTX.beginPath();
+        // CTX.moveTo(-10*PIXELS, -45*PIXELS);
+        // CTX.lineTo(0, -55*PIXELS);
+        // CTX.lineTo(10*PIXELS, -45*PIXELS);
+        // CTX.stroke();
+        // CTX.restore();
     }
 
-    ctx.restore();
+    CTX.restore();
     {
         let cw = 15;
         let border = 10;
@@ -928,37 +934,37 @@ function draw()
         let rh = (HEIGHT - 2*border) - Math.max(0, PLAYER_SHIP.railgun_reload)/
             RAILGUN_COOLDOWN*(HEIGHT - 2*border);
 
-        ctx.globalAlpha = 0.3;
-        ctx.fillStyle = "green";
-        ctx.fillRect(border, (HEIGHT - border) - hh, cw, hh);
-        ctx.fillStyle = "gray";
-        ctx.fillRect(border + cw + spacing, (HEIGHT - border) - rh, cw, rh);
+        CTX.globalAlpha = 0.3;
+        CTX.fillStyle = "green";
+        CTX.fillRect(border, (HEIGHT - border) - hh, cw, hh);
+        CTX.fillStyle = "gray";
+        CTX.fillRect(border + cw + spacing, (HEIGHT - border) - rh, cw, rh);
 
-        ctx.textAlign = "left";
-        ctx.font = "15px Consolas";
-        ctx.fillStyle = "white";
-        ctx.globalAlpha = 1;
-        ctx.save();
-        ctx.translate(border + cw, HEIGHT - border);
-        ctx.rotate(-Math.PI/2);
+        CTX.textAlign = "left";
+        CTX.font = "15px Consolas";
+        CTX.fillStyle = "white";
+        CTX.globalAlpha = 1;
+        CTX.save();
+        CTX.translate(border + cw, HEIGHT - border);
+        CTX.rotate(-Math.PI/2);
         let percent = Math.round(PLAYER_SHIP.health/PLAYER_MAX_HEALTH*100);
-        ctx.fillText("HULL (" + percent + "%)", 0, -3);
+        CTX.fillText("HULL (" + percent + "%)", 0, -3);
         let railgun_status = "(READY TO FIRE)";
         if (PLAYER_SHIP.railgun_reload > 0) railgun_status = "(CHARGING)";
-        ctx.fillText("RAILGUN " + railgun_status, 0, cw + spacing - 3);
-        ctx.restore();
+        CTX.fillText("RAILGUN " + railgun_status, 0, cw + spacing - 3);
+        CTX.restore();
     }
 
-    ctx.fillStyle = "gray";
-    ctx.font = "12px Helvetica";
+    CTX.fillStyle = "gray";
+    CTX.font = "12px Helvetica";
     let weapon = firemode ? "TORPEDOES" : "RAILGUN";
-    ctx.fillText("FIRING MODE: " + weapon, 70, HEIGHT - 10);
-    ctx.fillText("RADAR RANGE: " + Math.round(VIEW_RADIUS) + " METERS",
+    CTX.fillText("FIRING MODE: " + weapon, 70, HEIGHT - 10);
+    CTX.fillText("RADAR RANGE: " + Math.round(VIEW_RADIUS) + " METERS",
         270, HEIGHT - 10);
     if (GAME_PAUSED)
-        ctx.fillText("PRESS [ESC] TO UNPAUSE", 500, HEIGHT - 10);
+        CTX.fillText("PRESS [ESC] TO UNPAUSE", 500, HEIGHT - 10);
     else
-        ctx.fillText("PRESS [ESC] TO PAUSE", 500, HEIGHT - 10);
+        CTX.fillText("PRESS [ESC] TO PAUSE", 500, HEIGHT - 10);
     if (TARGET_OBJECT != null)
     {
         let dist = Math.round(distance(PLAYER_SHIP.pos, TARGET_OBJECT.pos));
@@ -976,106 +982,111 @@ function draw()
             vstr = (Math.round(rvel/100)/10).toLocaleString("en",
                 {useGrouping: false, minimumFractionDigits: 1}) + " KM/S";
 
-        ctx.fillText("TARGET LOCKED: " +
-            TARGET_OBJECT.constructor.name.toUpperCase() + " (" +
-            dstr + ", " + vstr + ")", 800, HEIGHT - 10);
+        if (typeof TARGET_OBJECT.type != "undefined")
+            CTX.fillText("TARGET LOCKED: " +
+                TARGET_OBJECT.type.toUpperCase() + " (" +
+                dstr + ", " + vstr + ")", 800, HEIGHT - 10);
+        else
+            CTX.fillText("TARGET LOCKED: " +
+                TARGET_OBJECT.constructor.name.toUpperCase() + " (" +
+                dstr + ", " + vstr + ")", 800, HEIGHT - 10);
     }
-    ctx.textAlign = "right";
+    CTX.textAlign = "right";
     let ftime = (Math.round(TIME*100)/100).toLocaleString("en",
         {useGrouping: false, minimumFractionDigits: 2});
-    ctx.fillText(ftime, WIDTH - 10, HEIGHT - 10);
-    ctx.textAlign = "left";
+    CTX.fillText(ftime, WIDTH - 10, HEIGHT - 10);
+    CTX.textAlign = "left";
 
-    ctx.fillStyle = "black";
+    CTX.fillStyle = "black";
     for (let i in ALERTS)
     {
         let opacity = Math.min(2/3, 1);
-        ctx.globalAlpha = 1;
-        ctx.fillText(ALERTS[i][0].toUpperCase(),
+        CTX.globalAlpha = 1;
+        CTX.fillText(ALERTS[i][0].toUpperCase(),
             70, 30 + 20*(ALERTS.length - i - 1));
     }
 
     if (GAME_PAUSED && SHOW_HELP)
     {
-        ctx.globalAlpha = 0.9;
-        ctx.fillStyle = "white";
-        // ctx.fillRect(0, 0, width, height);
-        ctx.font = "24px Helvetica";
-        ctx.globalAlpha = 0.6;
-        ctx.beginPath();
+        CTX.globalAlpha = 0.9;
+        CTX.fillStyle = "white";
+        // CTX.fillRect(0, 0, width, height);
+        CTX.font = "24px Helvetica";
+        CTX.globalAlpha = 0.6;
+        CTX.beginPath();
         let border = 40, line = 30;
-        ctx.rect(0, 0, WIDTH, HEIGHT);
-        ctx.fill();
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = "black";
-        ctx.fillText("You are the captain of a stolen Martian corvette.",
+        CTX.rect(0, 0, WIDTH, HEIGHT);
+        CTX.fill();
+        CTX.globalAlpha = 1;
+        CTX.fillStyle = "black";
+        CTX.fillText("You are the captain of a stolen Martian corvette.",
             1.3*border, 1.5*border);
-        ctx.fillText("(\"It's legitimate salvage!\", you insist " +
+        CTX.fillText("(\"It's legitimate salvage!\", you insist " +
             "every chance you get.)", 1.3*border, 1.5*border + line);
-        ctx.fillText("Destroy all the destroyers before " +
+        CTX.fillText("Destroy all the destroyers before " +
             "they destroy you.", 1.3*border, 1.5*border + 3*line);
-        ctx.fillText("You can zoom out and in with keys [1] and [2].",
+        CTX.fillText("You can zoom out and in with keys [1] and [2].",
             1.3*border, 1.5*border + 4*line);
-        ctx.fillText("To fire the MAIN ENGINE, just press the [SHIFT] key;",
+        CTX.fillText("To fire the MAIN ENGINE, just press the [SHIFT] key;",
             1.3*border, 1.5*border + 6*line);
-        ctx.fillText("Fire MANEUVERING THRUSTERS with " +
+        CTX.fillText("Fire MANEUVERING THRUSTERS with " +
             "[W], [A], [S], [D], [Q], and [E].",
             1.3*border, 1.5*border + 7*line);
-        ctx.fillText("Hit [SPACE] to fire your PRIMARY WEAPON;",
+        CTX.fillText("Hit [SPACE] to fire your PRIMARY WEAPON;",
             1.3*border, 1.5*border + 9*line);
-        ctx.fillText("Use [F] to switch between TORPEDOES and RAILGUN.",
+        CTX.fillText("Use [F] to switch between TORPEDOES and RAILGUN.",
             1.3*border, 1.5*border + 10*line);
-        ctx.fillText("Fire POINT DEFENSE CANNONS with just a MOUSE CLICK;",
+        CTX.fillText("Fire POINT DEFENSE CANNONS with just a MOUSE CLICK;",
             1.3*border, 1.5*border + 12*line);
-        ctx.fillText("You can shoot down enemy torpedoes if you're quick!",
+        CTX.fillText("You can shoot down enemy torpedoes if you're quick!",
             1.3*border, 1.5*border + 13*line);
-        ctx.fillText("If you need HELP again, press [H] for some tips,",
+        CTX.fillText("If you need HELP again, press [H] for some tips,",
             1.3*border, 1.5*border + 15*line);
-        ctx.fillText("or press [ESC] to PAUSE, so you can eat chips.",
+        CTX.fillText("or press [ESC] to PAUSE, so you can eat chips.",
             1.3*border, 1.5*border + 16*line);
-        ctx.fillText("Please send any bug reports to my fax machine.",
+        CTX.fillText("Please send any bug reports to my fax machine.",
             1.3*border, 1.5*border + 18*line);
     }
     else if (PLAYER_SHIP.remove)
     {
-        ctx.font = "100px Helvetica";
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = "darkgray";
-        ctx.fillText("YOU DIED", WIDTH/2 + 20, HEIGHT/2 - 20);
-        ctx.font = "25px Helvetica";
-        ctx.fillText("PRESS [SPACE] TO RESPAWN",
+        CTX.font = "100px Helvetica";
+        CTX.globalAlpha = 1;
+        CTX.fillStyle = "darkgray";
+        CTX.fillText("YOU DIED", WIDTH/2 + 20, HEIGHT/2 - 20);
+        CTX.font = "25px Helvetica";
+        CTX.fillText("PRESS [SPACE] TO RESPAWN",
                      WIDTH/2 + 20, HEIGHT/2 + 30);
     }
     else if (GAME_PAUSED)
     {
-        ctx.font = "100px Helvetica";
-        ctx.globalAlpha = 0.4;
-        ctx.fillStyle = "darkgray";
-        ctx.fillText("PAUSED", WIDTH/2 + 20, HEIGHT/2 - 20);
-        ctx.font = "25px Helvetica";
-        ctx.fillText("PRESS [H] FOR HELP",
+        CTX.font = "100px Helvetica";
+        CTX.globalAlpha = 0.4;
+        CTX.fillStyle = "darkgray";
+        CTX.fillText("PAUSED", WIDTH/2 + 20, HEIGHT/2 - 20);
+        CTX.font = "25px Helvetica";
+        CTX.fillText("PRESS [H] FOR HELP",
                      WIDTH/2 + 20, HEIGHT/2 + 30);
     }
     else if (SLOW_TIME)
     {
-        ctx.font = "100px Helvetica";
-        ctx.globalAlpha = 0.4;
-        ctx.fillStyle = "darkgray";
-        ctx.fillText("TARGET", WIDTH/2 + 20, HEIGHT/2 - 20);
+        CTX.font = "100px Helvetica";
+        CTX.globalAlpha = 0.4;
+        CTX.fillStyle = "darkgray";
+        CTX.fillText("TARGET", WIDTH/2 + 20, HEIGHT/2 - 20);
     }
     else if (RESPAWN_TIMER > 0 && RESPAWN_TIMER < RESPAWN_DELAY)
     {
-        ctx.font = "30px Helvetica";
-        ctx.globalAlpha = 0.4;
-        ctx.fillStyle = "darkgray";
+        CTX.font = "30px Helvetica";
+        CTX.globalAlpha = 0.4;
+        CTX.fillStyle = "darkgray";
         let rtime = (Math.round(RESPAWN_TIMER*100)/100).toLocaleString("en",
             {useGrouping: false, minimumFractionDigits: 2});
-        ctx.fillText(rtime, WIDTH/2 + 20, HEIGHT/2 - 20);
+        CTX.fillText(rtime, WIDTH/2 + 20, HEIGHT/2 - 20);
     }
-    ctx.font = "30px Helvetica";
-    ctx.globalAlpha = 0.4;
-    ctx.fillStyle = "darkgray";
-    ctx.fillText("WAVE " + PLAYER_SCORE, WIDTH - 200, HEIGHT - 10);
+    CTX.font = "30px Helvetica";
+    CTX.globalAlpha = 0.4;
+    CTX.fillStyle = "darkgray";
+    CTX.fillText("WAVE " + PLAYER_SCORE, WIDTH - 200, HEIGHT - 10);
 }
 
 function start()

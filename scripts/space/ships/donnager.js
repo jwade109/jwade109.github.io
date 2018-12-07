@@ -1,9 +1,9 @@
-// battleship.js
+// donnager.js
 
-const BATTLESHIP_MAX_HEALTH = 10000;
-const BATTLESHIP_EXPLOSION_RADIUS = 600;
+const DONNAGER_MAX_HEALTH = 10000;
+const DONNAGER_EXPLOSION_RADIUS = 600;
 
-class Battleship
+class Donnager
 {
     constructor(pos, theta)
     {
@@ -16,10 +16,11 @@ class Battleship
         this.length = 475.5;
         this.width = 150;
         this.radius = 1;
-        this.health = BATTLESHIP_MAX_HEALTH;
+        this.health = DONNAGER_MAX_HEALTH;
         this.pdc_reload = 0;
         this.name = "MCRN \"" +
             NAMES[Math.floor(Math.random()*NAMES.length)] + "\"";
+        this.type = "Donnager Class";
 
         this.box = new Hitbox([[this.width/6, this.length/2],
                                [-this.width/6, this.length/2],
@@ -114,8 +115,8 @@ class Battleship
             }
             this.remove = true;
             WORLD.push(new Explosion(this.pos.slice(), this.vel.slice(),
-                BATTLESHIP_EXPLOSION_RADIUS));
-            throwAlert(this.name + " (" + this.constructor.name +
+                DONNAGER_EXPLOSION_RADIUS));
+            throwAlert(this.name + " (" + this.type +
                 ") was destroyed.", ALERT_DISPLAY_TIME);
         }
 

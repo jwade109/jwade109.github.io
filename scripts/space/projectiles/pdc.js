@@ -82,9 +82,11 @@ class PointDefenseCannon
         let vel = rot2d([PDC_VELOCITY + Math.random()*10 - 5, 0], noisy);
         vel[0] += this.object.vel[0];
         vel[1] += this.object.vel[1];
-        let b = new Bullet(gpos, vel, noisy, PDC_LENGTH);
+        let b = new Bullet(gpos.slice(), vel, noisy, PDC_LENGTH);
         b.origin = this.object;
         WORLD.push(b);
+        WORLD.push(new Explosion(gpos,
+            this.object.vel.slice(), Math.random()*2 + 5));
 
         this.gamma = theta - this.theta - this.object.theta;
     }
@@ -96,11 +98,11 @@ class PointDefenseCannon
         ctx.translate(gpos[0]*PIXELS, gpos[1]*PIXELS);
         ctx.rotate(-this.object.theta - this.theta);
 
-        if (DRAW_FIRING_ARC && this.object instanceof Anubis)
+        if (DRAW_FIRING_ARC)
         {
+            ctx.save();
             ctx.fillStyle = "orange";
             ctx.globalAlpha = 0.2;
-            ctx.save();
             ctx.rotate(this.range[0]);
             ctx.beginPath();
             ctx.moveTo(0, 0);

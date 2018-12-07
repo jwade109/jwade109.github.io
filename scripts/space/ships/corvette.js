@@ -1,4 +1,4 @@
-// ship.js
+// corvette.js
 
 const PLAYER_INVINCIBLE = false;
 const PLAYER_MAX_HEALTH = 2000;
@@ -11,10 +11,10 @@ const PLAYER_SHIP_MASS = 1;
 const PLAYER_SHIP_MOMENT_INERTIA = 350;
 const PLAYER_EXPLOSION_RADIUS = 180;
 
-const ROCINANTE_LENGTH = 42;
-const ROCINANTE_WIDTH = 11;
+const CORVETTE_LENGTH = 42;
+const CORVETTE_WIDTH = 11;
 
-class Ship
+class Corvette
 {
     constructor(pos, theta)
     {
@@ -33,13 +33,14 @@ class Ship
         this.railgun_reload = RAILGUN_COOLDOWN;
         this.health = PLAYER_MAX_HEALTH;
         this.name = "\"Rocinante\"";
+        this.type = "Corvette Class";
 
-        this.width = ROCINANTE_WIDTH;
-        this.length = ROCINANTE_LENGTH;
-        this.box = new Hitbox([[this.width/3, this.length/2],
-                               [this.width/2, -this.length/2],
-                               [-this.width/2, -this.length/2],
-                               [-this.width/3, this.length/2]]);
+        this.width = CORVETTE_WIDTH;
+        this.length = CORVETTE_LENGTH;
+        this.box = new Hitbox([[this.length/2, this.width/3],
+                               [-this.length/2, this.width/2],
+                               [-this.length/2, -this.width/2],
+                               [this.length/2, -this.width/3]]);
         this.box.object = this;
 
         let tx = this.width*0.45;
@@ -134,7 +135,7 @@ class Ship
     {
         for (let pdc of this.pdcs)
         {
-            if (TARGET_OBJECT == null) pdc.fireAt(MOUSEPOS);
+            if (TARGET_OBJECT == null) pdc.fireAt([MOUSEX, MOUSEY]);
             else pdc.intercept(TARGET_OBJECT);
         }
     }
@@ -147,7 +148,7 @@ class Ship
         {
             let rvel = sub2d(target.vel, PLAYER_SHIP.vel);
             norm = norm2d(rvel);
-            desired_angle = angle2d([1, 0], rvel);
+            desired_angle = anglebtwn([1, 0], rvel);
             if (norm < 2) desired_angle = this.theta;
         }
         let error = desired_angle - this.theta;

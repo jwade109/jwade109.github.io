@@ -23,6 +23,7 @@ class Debris
 
         this.name = Math.floor(Math.random()*10000000) + "-" +
             DEBRIS_NAMES[Math.floor(Math.random()*DEBRIS_NAMES.length)]
+        this.type = "Debris";
 
         this.color = "darkgray";
         if (Math.random() < 0.4)

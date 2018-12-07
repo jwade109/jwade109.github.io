@@ -1,7 +1,5 @@
 // explosion.js
 
-// const EXPLOSION_DURATION = 0.6;
-
 class Explosion
 {
     constructor(pos, vel, max_radius)

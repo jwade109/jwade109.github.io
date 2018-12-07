@@ -61,7 +61,7 @@ class Hitbox
         let global_points = [];
         for (let p of this.points)
         {
-            let rp = rot2d(p, this.object.theta + Math.PI/2);
+            let rp = rot2d(p, this.object.theta);
             let gp = this.object.pos.slice();
             global_points.push([gp[0] + rp[0], gp[1] + rp[1]]);
         }

@@ -1,14 +1,11 @@
-// anubis.js
+// morrigan.js
 
-const ANUBIS_MAX_HEALTH = 700;
-const ANUBIS_MASS = 1;
-const ANUBIS_MOMENT_INERTIA = 700;
-const ANUBIS_EXPLOSION_RADIUS = 240;
-const ANUBIS_LENGTH = 61.5;
-const ANUBIS_WIDTH = 24.2;
-const ANUBIS_PDC_RANGE = 250;
+const MORRIGAN_MAX_HEALTH = 350;
+const MORRIGAN_MASS = 1;
+const MORRIGAN_MOMENT_INERTIA = 500;
+const MORRIGAN_EXPLOSION_RADIUS = 120;
 
-class Anubis
+class Morrigan
 {
     constructor(pos, theta)
     {
@@ -21,34 +18,40 @@ class Anubis
         this.omega = 0;
         this.alpha = 0;
 
-        this.mass = ANUBIS_MASS;
-        this.j = ANUBIS_MOMENT_INERTIA;
+        this.mass = MORRIGAN_MASS;
+        this.j = MORRIGAN_MOMENT_INERTIA;
         this.torpedo_reload = 0;
-        this.health = ANUBIS_MAX_HEALTH;
+        this.side = true;
+        this.health = MORRIGAN_MAX_HEALTH;
         this.permanent = true;
-        this.name = "\"" + NAMES[Math.floor(Math.random()*NAMES.length)] + "\"";
+        this.name = "MCRN \"" +
+            NAMES[Math.floor(Math.random()*NAMES.length)] + "\"";
+        this.type = "Morrigan Class";
 
-        this.width = ANUBIS_WIDTH;
-        this.length = ANUBIS_LENGTH;
-        this.box = new Hitbox([[0, this.length/2],
-                               [this.width/2, -this.length/4],
-                               [0, -this.length/2],
-                               [-this.width/2, -this.length/4]]);
+        this.width = 9;
+        this.length = 31;
+        this.radius = this.width/2;
+        this.box = new Hitbox([[this.width/2, this.length/2],
+                               [this.width/2, -this.length/2],
+                               [-this.width/2, -this.length/2],
+                               [-this.width/2, this.length/2]]);
         this.box.object = this;
 
+        this.engine = new Thruster([0, -this.length/2], -Math.PI/2,
+            this.mass, this.width);
+        this.engine.drawbell = false;
+
+        let range = [-Math.PI/2.2, Math.PI/2.2];
         this.pdcs =
             [new PointDefenseCannon(
-                [-this.length*0.45, -0],
-                Math.PI, this, [-2, 2], ANUBIS_PDC_RANGE),
+                [-this.length/6, -this.width*0.5], Math.PI/2.5, this, range, 350),
              new PointDefenseCannon(
-                [this.length/6, this.width/6],
-                -Math.PI/2, this, [-2, 2], ANUBIS_PDC_RANGE),
-             new PointDefenseCannon(
-                [-this.length/6, -this.width/3],
-                Math.PI/2, this, [-Math.PI/2, Math.PI/2], ANUBIS_PDC_RANGE)];
-        for (let pdc of this.pdcs) pdc.nodraw = true;
+                [-this.length/6, this.width*0.5], -Math.PI/2.5, this, range, 350)];
 
         this.is_enemy = true;
+
+        this.gray = "#606060";
+        this.orange = "#8D3F32";
     }
 
     launchTorpedo()
@@ -90,24 +93,78 @@ class Anubis
         ctx.save(); // save global reference frame
         ctx.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
 
+        // ctx.save();
+        // if (LOCK_CAMERA) ctx.rotate(-PLAYER_SHIP.theta);
+        // ctx.globalAlpha = 0.4;
+        // ctx.strokeStyle = "red";
+        // ctx.strokeRect(-this.length/2, -this.length/2,
+        //                this.length, this.length);
+        // ctx.restore();
+
         ctx.rotate(-this.theta);
         // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE FRAME
-        let dist = distance(this.pos, PLAYER_SHIP.pos);
-        let opacity = Math.max(0, Math.min(1 - (dist - 750)/100, 1));
-        ctx.globalAlpha = opacity;
-        ctx.fillStyle = "black";
-        ctx.strokeStyle = "lightgray";
+
+        let x0 = -0.50*this.length*PIXELS;
+        let x1 = -0.40*this.length*PIXELS;
+        let x2 = -0.37*this.length*PIXELS;
+        let x3 = -0.32*this.length*PIXELS;
+        let x4 = -0.25*this.length*PIXELS;
+        let x5 = -0.10*this.length*PIXELS;
+        let x6 =  0.10*this.length*PIXELS;
+        let x7 =  0.20*this.length*PIXELS;
+        let x8 =  0.25*this.length*PIXELS;
+        let x9 =  0.3*this.length*PIXELS;
+        let x10 = 0.50*this.length*PIXELS;
+        let x11 = 0.65*this.length*PIXELS;
+
+        let y0 = 0.05*this.width*PIXELS;
+        let y1 = 0.15*this.width*PIXELS;
+        let y2 = 0.25*this.width*PIXELS;
+        let y3 = 0.35*this.width*PIXELS;
+        let y4 = 0.50*this.width*PIXELS;
+
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = "black";
+        ctx.fillStyle = this.gray;
         ctx.beginPath();
-        ctx.moveTo(this.length*PIXELS/2, 0);
-        ctx.lineTo(-this.length/4*PIXELS, -this.width*PIXELS/2);
-        ctx.lineTo(-this.length*PIXELS/2, 0);
-        ctx.lineTo(-this.length/4*PIXELS, this.width*PIXELS/2);
-        ctx.lineTo(this.length*PIXELS/2, 0);
+        ctx.moveTo(x0, y3);
+        ctx.lineTo(x1, y1);
+        ctx.lineTo(x1, y3);
+        ctx.lineTo(x3, y4);
+        ctx.lineTo(x5, y4);
+        ctx.lineTo(x6, y3);
+        ctx.lineTo(x7, y4);
+        ctx.lineTo(x10, y3);
+        ctx.lineTo(x10, -y3);
+        ctx.lineTo(x7, -y4);
+        ctx.lineTo(x6, -y3);
+        ctx.lineTo(x5, -y4);
+        ctx.lineTo(x3, -y4);
+        ctx.lineTo(x1, -y3);
+        ctx.lineTo(x1, -y1);
+        ctx.lineTo(x0, -y3);
+        ctx.lineTo(x0, y3);
         ctx.fill();
-        ctx.globalAlpha = 0.3;
         ctx.stroke();
 
+        ctx.fillStyle = this.orange;
+        ctx.beginPath();
+        // ctx.rect(x5, y2, x4 - x2, y4 - y2);
+        // ctx.rect(x5, -y2 - (y4 - y2), x4 - x2, y4 - y2);
+        ctx.rect(-0.3*this.length*PIXELS, -0.15*this.width*PIXELS,
+                        0.6*this.length*PIXELS, 0.3*this.width*PIXELS);
+        ctx.rect(-0.3*this.length*PIXELS, -0.15*this.width*PIXELS,
+                        0.6*this.length*PIXELS, 0.3*this.width*PIXELS);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.moveTo(x10, y1);
+        ctx.lineTo(x11, y1);
+        ctx.stroke();
+
+
         ctx.rotate(-Math.PI/2);
+        this.engine.draw(ctx);
         ctx.restore();
         if (DRAW_HITBOX) this.box.draw(ctx);
         for (let pdc of this.pdcs) pdc.draw(ctx);
@@ -129,44 +186,44 @@ class Anubis
 
             this.acc = [0, 0];
             this.alpha = 0;
+            this.engine.firing = true;
 
             return;
         }
 
-        let closest = null, min = Infinity;
-        for (let obj of WORLD)
-        {
-            if (obj instanceof Torpedo && obj.target == this)
-            {
-                let dist = distance(this.pos, obj.pos);
-                if (dist < min)
-                {
-                    min = dist;
-                    closest = obj;
-                }
-            }
-        }
+        // let closest = null, min = Infinity;
+        // for (let obj of WORLD)
+        // {
+        //     if (obj instanceof Torpedo && obj.target == this)
+        //     {
+        //         let dist = distance(this.pos, obj.pos);
+        //         if (dist < min)
+        //         {
+        //             min = dist;
+        //             closest = obj;
+        //         }
+        //     }
+        // }
 
         let dist = distance(PLAYER_SHIP.pos, this.pos);
         if (this.torpedo_reload > 0) this.torpedo_reload -= dt;
         else if (TORPEDO_MIN_RANGE < dist && dist < WORLD_RENDER_DISTANCE)
         {
             this.launchTorpedo();
-            this.torpedo_reload = Math.random()*1.2;
-            if (Math.random() < 0.4)
-                this.torpedo_reload = Math.random()*4 + 8;
+            this.torpedo_reload = Math.random()*4 + 2;
         }
 
         if (this.pdc_reload > 0) this.pdc_reload -= dt;
-        else if (closest != null)
-            this.firePDC(closest);
-        else if (Math.random() < 0.5)
+        // else if (closest != null)
+        //     this.firePDC(closest);
+        if (Math.random() < 0.5)
             this.firePDC(PLAYER_SHIP);
 
         let dx = PLAYER_SHIP.pos[0] - this.pos[0];
         let dy = PLAYER_SHIP.pos[1] - this.pos[1];
-        let bodyacc =
-            [-(1800 - dist)/10, 0];
+        let bodyacc = [-(TORPEDO_MIN_RANGE + 100 - dist)/10, 0];
+        if (bodyacc[0] > 4) this.engine.firing = true;
+        else this.engine.firing = false;
         this.acc = this.b2g(bodyacc);
         this.acc[0] += (PLAYER_SHIP.vel[0] - this.vel[0])/3;
         this.acc[1] += (PLAYER_SHIP.vel[1] - this.vel[1])/3;
@@ -188,15 +245,6 @@ class Anubis
 
         this.box.pos = this.pos.slice();
         this.box.theta = this.theta;
-
-        dist = distance(this.pos, PLAYER_SHIP.pos);
-        let opacity = Math.max(0, Math.min(1 - (dist - 750)/100, 1));
-        if (this === TARGET_OBJECT && opacity == 0)
-        {
-            TARGET_OBJECT = null;
-            throwAlert("Cannot maintain lock on cloaked vessel.",
-                ALERT_DISPLAY_TIME);
-        }
     }
 
     explode()
@@ -205,11 +253,11 @@ class Anubis
         let num_debris = 15 + Math.random()*7;
         for (let i = 0; i < num_debris; ++i)
         {
-            let pos = this.box.getRandom();
+            let pos = this.pos.slice();
             let vel = this.vel.slice();
             vel[0] += Math.random()*200 - 100;
             vel[1] += Math.random()*200 - 100;
-            let size = Math.random()*this.width/2;
+            let size = Math.random()*this.width/2 + this.width/2;
             let deb = new Debris(pos, vel,
                 this.theta, this.omega + Math.random()*5 - 2.5, size);
             deb.name = this.name;
@@ -219,8 +267,8 @@ class Anubis
         }
         this.remove = true;
         WORLD.push(new Explosion(this.pos.slice(), this.vel.slice(),
-            DESTROYER_EXPLOSION_RADIUS));
-        throwAlert(this.name + " (" + this.constructor.name +
+            MORRIGAN_EXPLOSION_RADIUS));
+        throwAlert(this.name + " (" + this.type +
             ") was destroyed.", ALERT_DISPLAY_TIME);
     }
 
@@ -259,9 +307,4 @@ class Anubis
     {
         return rot2d(v, -this.theta);
     }
-}
-
-function distance(p1, p2)
-{
-    return Math.sqrt(Math.pow(p1[0] - p2[0], 2) + Math.pow(p1[1] - p2[1], 2));
 }
