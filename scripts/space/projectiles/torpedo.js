@@ -56,9 +56,9 @@ class Torpedo
         if (DRAW_TORPEDO_PATH && this.tracking)
         {
             ctx.save();
-            ctx.globalAlpha = 0.2;
+            ctx.globalAlpha = 0.3;
             ctx.strokeStyle = "black";
-            ctx.setLineDash([20*PIXELS, 30*PIXELS]);
+            ctx.setLineDash([40*PIXELS, 15*PIXELS]);
             ctx.beginPath();
             for (let i = 1; i < this.pos_history.length; ++i)
             {
@@ -83,15 +83,12 @@ class Torpedo
             ctx.fill();
         }
         ctx.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
-        if (this.tracking)
-        {
-            ctx.save();
-            ctx.rotate(Math.PI/4);
-            ctx.strokeStyle = "blue";
-            ctx.globalAlpha = 0.4;
-            ctx.strokeRect(-5*PIXELS, -5*PIXELS, 10*PIXELS, 10*PIXELS);
-            ctx.restore();
-        }
+        ctx.save();
+        ctx.rotate(Math.PI/4);
+        ctx.strokeStyle = "blue";
+        ctx.globalAlpha = 0.4;
+        ctx.strokeRect(-5*PIXELS, -5*PIXELS, 10*PIXELS, 10*PIXELS);
+        ctx.restore();
         ctx.rotate(-this.theta - Math.PI/2);
         ctx.strokeStyle = "black";
         ctx.fillStyle = "black";
@@ -144,6 +141,7 @@ class Torpedo
         this.vel[1] += acc[1]*dt;
         this.pos[0] += this.vel[0]*dt;
         this.pos[1] += this.vel[1]*dt;
+
         this.pos_history.push(this.pos.slice());
     }
 

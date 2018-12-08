@@ -31,10 +31,10 @@ class Amun_Ra
 
         this.width = AMUN_RA_WIDTH;
         this.length = AMUN_RA_LENGTH;
-        this.box = new Hitbox([[0, this.length/2],
-                               [this.width/2, -this.length/4],
-                               [0, -this.length/2],
-                               [-this.width/2, -this.length/4]]);
+        this.box = new Hitbox([[this.length/2, 0],
+                               [-this.length/4, this.width/2],
+                               [-this.length/2, 0],
+                               [-this.length/4, -this.width/2]]);
         this.box.object = this;
 
         this.pdcs =
@@ -192,7 +192,7 @@ class Amun_Ra
 
         dist = distance(this.pos, PLAYER_SHIP.pos);
         let opacity = Math.max(0, Math.min(1 - (dist - 750)/100, 1));
-        if (this === TARGET_OBJECT && opacity == 0)
+        if (this === TARGET_OBJECT && opacity == 0 && Math.random() < dt)
         {
             TARGET_OBJECT = null;
             throwAlert("Cannot maintain lock on cloaked vessel.",

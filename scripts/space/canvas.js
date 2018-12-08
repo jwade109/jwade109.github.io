@@ -13,7 +13,6 @@ var MAX_ENEMIES = 3;
 var GAME_PAUSED = true;
 var SLOW_TIME = false;
 var SHOW_HELP = false;
-var LAST_EVENT = null;
 var GAME_OVER = false;
 var PLAYER_SCORE = 0;
 
@@ -33,10 +32,12 @@ var TIME = 0;
 var CANVAS = document.getElementById("canvas");
 var CTX = CANVAS.getContext("2d");
 
-var left = false, right = false, up = false, down = false, space = false,
+var LEFT_KEY = false, RIGHT_KEY = false, UP_KEY = false, DOWN_KEY = false,
+    space = false,
     akey = false, wkey = false, dkey = false, skey = false, xkey = false,
     fkey = false, qkey = false, ekey = false, leftClick = false,
     rightClick = false, shift = false, MOUSEBUTTON_DOWN = false;
+    ENTER_KEY = false;
 
 var ONE_KEY = false, TWO_KEY = false;
 
@@ -47,6 +48,7 @@ var firemode = true;
 var WIDTH = document.body.clientWidth;
 var HEIGHT = document.body.scrollHeight;
 var MOUSEX = 0, MOUSEY = 0;
+var MOUSE_SCREEN_POS = [0, 0];
 
 var VIEW_RADIUS = 800;
 var PIXELS = WIDTH/(2*VIEW_RADIUS); //  pixels per meter
@@ -96,7 +98,8 @@ document.addEventListener('mousewheel', function(event)
 
 document.addEventListener('mousemove', function(event)
 {
-    LAST_EVENT = event;
+    console.log("update");
+    MOUSE_SCREEN_POS = [event.clientX, event.clientY];
     updateMouse();
 });
 
@@ -134,6 +137,8 @@ document.addEventListener('keydown', function(event)
         case 9: event.preventDefault();
                 TARGET_OBJECT = WORLD[0];
                 break;
+        case 13: ENTER_KEY = true;
+                 break;
         case 16: shift = true; break;
         case 27: GAME_PAUSED = !GAME_PAUSED;
                  SHOW_HELP = false;
@@ -141,10 +146,10 @@ document.addEventListener('keydown', function(event)
         case 32: if (GAME_OVER) location.reload();
                  else space = true;
                  break;
-        case 37: left = true; break;
-        case 38: up = true; break;
-        case 39: right = true; break;
-        case 40: down = true; break;
+        case 37: LEFT_KEY = true; break;
+        case 38: UP_KEY = true; break;
+        case 39: RIGHT_KEY = true; break;
+        case 40: DOWN_KEY = true; break;
         case 49: ONE_KEY = true; break
         case 50: TWO_KEY = true; break;
         case 65: akey = true; break;
@@ -184,6 +189,9 @@ document.addEventListener('keydown', function(event)
         case 68: dkey = true; break;
         case 83: skey = true; break;
         case 88: MATCH_VELOCITY = true; break;
+        case 191: if (NEAREST_OBJECT !== PLAYER_SHIP)
+                      TARGET_OBJECT = NEAREST_OBJECT;
+                  break;
         default:
             console.log('unhandled keycode: ' + event.keyCode);
     }
@@ -194,12 +202,14 @@ document.addEventListener('keyup', function(event)
     switch (event.keyCode)
     {
         case 16: shift = false; break;
+        case 13: ENTER_KEY = false;
+                 break;
         case 27: /* ESCAPE_KEY */ break;
         case 32: space = false; break;
-        case 37: left = false; break;
-        case 38: up = false; break;
-        case 39: right = false; break;
-        case 40: down = false; break;
+        case 37: LEFT_KEY = false; break;
+        case 38: UP_KEY = false; break;
+        case 39: RIGHT_KEY = false; break;
+        case 40: DOWN_KEY = false; break;
         case 49: ONE_KEY = false; break
         case 50: TWO_KEY = false; break;
         case 65: akey = false; break;
@@ -237,11 +247,10 @@ function zoom(radius)
 
 function updateMouse()
 {
-    if (LAST_EVENT == null) return;
     let rect = CANVAS.getBoundingClientRect();
-    MOUSEX = (LAST_EVENT.clientX - rect.left +
+    MOUSEX = (MOUSE_SCREEN_POS[0] - rect.left +
         PLAYER_SHIP.pos[0]*PIXELS - WIDTH/2)/PIXELS;
-    MOUSEY = (LAST_EVENT.clientY - rect.top +
+    MOUSEY = (MOUSE_SCREEN_POS[1] - rect.top +
         PLAYER_SHIP.pos[1]*PIXELS - HEIGHT/2)/PIXELS;
     if (LOCK_CAMERA)
     {
@@ -707,26 +716,26 @@ function physics(dt)
             PLAYER_SHIP.thrusters[3].firing = true;
             PLAYER_SHIP.thrusters[4].firing = true;
         }
-        if (skey || down)
+        if (skey)
         {
             PLAYER_SHIP.thrusters[1].firing = true;
             PLAYER_SHIP.thrusters[2].firing = true;
         }
-        if (akey || left)
+        if (akey)
         {
             PLAYER_SHIP.thrusters[2].firing = true;
             PLAYER_SHIP.thrusters[6].firing = true;
             PLAYER_SHIP.thrusters[0].firing = true;
             PLAYER_SHIP.thrusters[4].firing = true;
         }
-        if (dkey || right)
+        if (dkey)
         {
             PLAYER_SHIP.thrusters[1].firing = true;
             PLAYER_SHIP.thrusters[5].firing = true;
             PLAYER_SHIP.thrusters[3].firing = true;
             PLAYER_SHIP.thrusters[7].firing = true;
         }
-        if (shift || up)
+        if (shift)
         {
             PLAYER_SHIP.thrusters[8].firing = true;
         }
@@ -736,7 +745,7 @@ function physics(dt)
             else PLAYER_SHIP.fireRailgun();
             space = false;
         }
-        if (leftClick)
+        if (leftClick || ENTER_KEY)
         {
             PLAYER_SHIP.firePDC();
         }
@@ -837,8 +846,8 @@ function draw()
     for (let obj of WORLD) obj.draw(CTX);
     CTX.globalAlpha = 1;
     CTX.beginPath();
-    CTX.arc(MOUSEX*PIXELS, MOUSEY*PIXELS, 1, 0, Math.PI*2);
-    CTX.fill();
+    CTX.arc(MOUSEX*PIXELS, MOUSEY*PIXELS, 4, 0, Math.PI*2);
+    CTX.stroke();
 
     if (NEAREST_OBJECT != null && (SLOW_TIME || GAME_PAUSED))
     {
@@ -884,7 +893,7 @@ function draw()
             if (typeof TARGET_OBJECT.type != "undefined")
                 CTX.fillText(TARGET_OBJECT.type.toUpperCase(), 0, -20*PIXELS);
             else
-                CTX.fillText(NEAREST_OBJECT.constructor.name.toUpperCase(),
+                CTX.fillText(TARGET_OBJECT.constructor.name.toUpperCase(),
                     0, -20*PIXELS);
             CTX.font = "10px Helvetica";
             if (typeof TARGET_OBJECT.name != 'undefined')
@@ -1104,6 +1113,12 @@ function start()
 
         if (ONE_KEY && VIEW_RADIUS < 3000) zoom(VIEW_RADIUS + 10);
         if (TWO_KEY && VIEW_RADIUS > 50) zoom(VIEW_RADIUS - 10);
+
+        let ds = 5;
+        if (UP_KEY) MOUSE_SCREEN_POS[1] -= ds;
+        if (DOWN_KEY) MOUSE_SCREEN_POS[1] += ds;
+        if (LEFT_KEY) MOUSE_SCREEN_POS[0] -= ds;
+        if (RIGHT_KEY) MOUSE_SCREEN_POS[0] += ds;
 
     }, 1000/FPS);
 }

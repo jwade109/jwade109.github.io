@@ -22,12 +22,12 @@ class Donnager
             NAMES[Math.floor(Math.random()*NAMES.length)] + "\"";
         this.type = "Donnager Class";
 
-        this.box = new Hitbox([[this.width/6, this.length/2],
-                               [-this.width/6, this.length/2],
-                               [-this.width/6, 0],
-                               [-this.width/2, -this.length/2],
-                               [this.width/2, -this.length/2],
-                               [this.width/6, 0]]);
+        this.box = new Hitbox([[this.length/2, this.width/6, ],
+                               [this.length/2, -this.width/6, ],
+                               [0, -this.width/6],
+                               [-this.length/2, -this.width/2],
+                               [-this.length/2, this.width/2],
+                               [0, this.width/6]]);
         let range = [-Math.PI/2.2, Math.PI/2.2];
         this.pdcs =
             [new PointDefenseCannon(

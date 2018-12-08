@@ -31,10 +31,10 @@ class Morrigan
         this.width = 9;
         this.length = 31;
         this.radius = this.width/2;
-        this.box = new Hitbox([[this.width/2, this.length/2],
-                               [this.width/2, -this.length/2],
-                               [-this.width/2, -this.length/2],
-                               [-this.width/2, this.length/2]]);
+        this.box = new Hitbox([[this.length/2, this.width/2],
+                               [-this.length/2, this.width/2],
+                               [-this.length/2, -this.width/2],
+                               [this.length/2, -this.width/2]]);
         this.box.object = this;
 
         this.engine = new Thruster([0, -this.length/2], -Math.PI/2,
