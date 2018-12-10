@@ -62,16 +62,19 @@ class Corvette
                 -Math.PI/2, main_thrust, this.width)];
         for (let t of this.thrusters) t.drawbell = false;
 
-        let range = [-Math.PI/2.2, Math.PI/2.2];
         this.pdcs =
             [new PointDefenseCannon(
-                [this.length/4, this.width*0.36], -Math.PI/2.4, this, range, 500),
+                [this.length/4, this.width*0.36], -Math.PI/2.4, this,
+                [-Math.PI/2.2, Math.PI/2.2], 500),
              new PointDefenseCannon(
-                [this.length/4, -this.width*0.36], Math.PI/2.4, this, range, 500),
+                [this.length/4, -this.width*0.36], Math.PI/2.4, this,
+                [-Math.PI/2.2, Math.PI/2.2], 500),
              new PointDefenseCannon(
-                [-this.length/6, -this.width*0.44], Math.PI/2, this, range, 500),
+                [-this.length/6, -this.width*0.44], Math.PI/2, this,
+                [-Math.PI/2.2, Math.PI/1.8], 500),
              new PointDefenseCannon(
-                [-this.length/6, this.width*0.44], -Math.PI/2, this, range, 500)];
+                [-this.length/6, this.width*0.44], -Math.PI/2, this,
+                [-Math.PI/1.8, Math.PI/2.2], 500)];
 
         this.gray = "#909090";
     }
@@ -135,8 +138,10 @@ class Corvette
     {
         for (let pdc of this.pdcs)
         {
-            if (TARGET_OBJECT == null) pdc.fireAt([MOUSEX, MOUSEY]);
-            else pdc.intercept(TARGET_OBJECT);
+            if (TARGET_OBJECT == null)
+                pdc.fireAt([MOUSEX, MOUSEY]);
+            else if (isNaN(pdc.intercept(TARGET_OBJECT)))
+                pdc.fireAt([MOUSEX, MOUSEY]);
         }
     }
 

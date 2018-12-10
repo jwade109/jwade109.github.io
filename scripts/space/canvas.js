@@ -15,6 +15,7 @@ var SLOW_TIME = false;
 var SHOW_HELP = false;
 var GAME_OVER = false;
 var PLAYER_SCORE = 0;
+var DOCKING_MODE = false;
 
 var PLAYER_VEL = [0, 0];
 
@@ -59,13 +60,15 @@ var TARGET_OBJECT = null;
 
 var WORLD = [];
 const WORLD_RENDER_DISTANCE = 4000;
+const MIN_ZOOM = 10;
+const MAX_ZOOM = 3000;
 
-WORLD.push(new Station([1300, -2100], 0));
+WORLD.push(new Station([700, -400], 0));
 var PLAYER_SHIP = new Corvette([0, 0], Math.PI/2);
 WORLD.push(PLAYER_SHIP);
 
-let bs = new Donnager([100, -400], Math.PI/6);
-WORLD.push(bs);
+// let bs = new Donnager([100, -400], Math.PI/6);
+// WORLD.push(bs);
 
 let current = new Date().getTime(), last = current, dt = 0;
 
@@ -91,14 +94,13 @@ canvas.oncontextmenu = function(e)
 
 document.addEventListener('mousewheel', function(event)
 {
-    if (event.deltaY > 0 && VIEW_RADIUS < 3000) zoom(VIEW_RADIUS*1.3);
-    if (event.deltaY < 0 && VIEW_RADIUS > 50) zoom(VIEW_RADIUS/1.3);
+    if (event.deltaY > 0) zoom(VIEW_RADIUS*1.3);
+    if (event.deltaY < 0) zoom(VIEW_RADIUS/1.3);
 },
 { capture: true, passive: true});
 
 document.addEventListener('mousemove', function(event)
 {
-    console.log("update");
     MOUSE_SCREEN_POS = [event.clientX, event.clientY];
     updateMouse();
 });
@@ -177,6 +179,10 @@ document.addEventListener('keydown', function(event)
                  break;
         case 78: DRAW_HITBOX = !DRAW_HITBOX;
                  break;
+        case 80: DOCKING_MODE = !DOCKING_MODE;
+                 str = DOCKING_MODE ? "enabled." : "disabled."
+                 throwAlert("Docking mode " + str, ALERT_DISPLAY_TIME);
+                 break;
         case 81: qkey = true; break;
         case 82: SLOW_TIME = !SLOW_TIME; break;
         case 86: LOCK_CAMERA = !LOCK_CAMERA;
@@ -221,6 +227,7 @@ document.addEventListener('keyup', function(event)
         case 75: /* KKEY */ break;
         case 77: /* MKEY */ break;
         case 78: /* NKEY */ break;
+        case 80: /* PKEY */ break;
         case 81: qkey = false; break;
         case 86: /* VKEY */ break;
         case 87: wkey = false; break;
@@ -241,7 +248,7 @@ function throwAlert(msg, time)
 
 function zoom(radius)
 {
-    VIEW_RADIUS = Math.max(100, Math.min(radius, 3000));
+    VIEW_RADIUS = Math.max(MIN_ZOOM, Math.min(radius, MAX_ZOOM));
     PIXELS = WIDTH/(2*VIEW_RADIUS); //  pixels per meter
 }
 
@@ -596,10 +603,10 @@ function handleCollision(obj1, obj2)
 
 function isOffScreen(coords)
 {
-    let corners = [[-WIDTH/(2*PIXELS) + 5, -HEIGHT/(2*PIXELS) + 5],
-                   [ WIDTH/(2*PIXELS) - 5, -HEIGHT/(2*PIXELS) + 5],
-                   [ WIDTH/(2*PIXELS) - 5,  HEIGHT/(2*PIXELS) - 5],
-                   [-WIDTH/(2*PIXELS) + 5,  HEIGHT/(2*PIXELS) - 5]];
+    let corners = [[-WIDTH/(2*PIXELS) + 5/PIXELS, -HEIGHT/(2*PIXELS) + 5/PIXELS],
+                   [ WIDTH/(2*PIXELS) - 5/PIXELS, -HEIGHT/(2*PIXELS) + 5/PIXELS],
+                   [ WIDTH/(2*PIXELS) - 5/PIXELS,  HEIGHT/(2*PIXELS) - 5/PIXELS],
+                   [-WIDTH/(2*PIXELS) + 5/PIXELS,  HEIGHT/(2*PIXELS) - 5/PIXELS]];
     let hitbox = new Hitbox(corners);
     hitbox.object = [];
     hitbox.object.pos = PLAYER_SHIP.pos.slice();
@@ -708,13 +715,33 @@ function physics(dt)
         }
         if (qkey)
         {
-            PLAYER_SHIP.thrusters[0].firing = true;
-            PLAYER_SHIP.thrusters[7].firing = true;
+            if (DOCKING_MODE)
+            {
+                PLAYER_SHIP.thrusters[2].firing = true;
+                PLAYER_SHIP.thrusters[6].firing = true;
+                PLAYER_SHIP.thrusters[0].firing = true;
+                PLAYER_SHIP.thrusters[4].firing = true;
+            }
+            else
+            {
+                PLAYER_SHIP.thrusters[0].firing = true;
+                PLAYER_SHIP.thrusters[7].firing = true;
+            }
         }
         if (ekey)
         {
-            PLAYER_SHIP.thrusters[3].firing = true;
-            PLAYER_SHIP.thrusters[4].firing = true;
+            if (DOCKING_MODE)
+            {
+                PLAYER_SHIP.thrusters[1].firing = true;
+                PLAYER_SHIP.thrusters[5].firing = true;
+                PLAYER_SHIP.thrusters[3].firing = true;
+                PLAYER_SHIP.thrusters[7].firing = true;
+            }
+            else
+            {
+                PLAYER_SHIP.thrusters[3].firing = true;
+                PLAYER_SHIP.thrusters[4].firing = true;
+            }
         }
         if (skey)
         {
@@ -723,17 +750,33 @@ function physics(dt)
         }
         if (akey)
         {
-            PLAYER_SHIP.thrusters[2].firing = true;
-            PLAYER_SHIP.thrusters[6].firing = true;
-            PLAYER_SHIP.thrusters[0].firing = true;
-            PLAYER_SHIP.thrusters[4].firing = true;
+            if (DOCKING_MODE)
+            {
+                PLAYER_SHIP.thrusters[0].firing = true;
+                PLAYER_SHIP.thrusters[7].firing = true;
+            }
+            else
+            {
+                PLAYER_SHIP.thrusters[2].firing = true;
+                PLAYER_SHIP.thrusters[6].firing = true;
+                PLAYER_SHIP.thrusters[0].firing = true;
+                PLAYER_SHIP.thrusters[4].firing = true;
+            }
         }
         if (dkey)
         {
-            PLAYER_SHIP.thrusters[1].firing = true;
-            PLAYER_SHIP.thrusters[5].firing = true;
-            PLAYER_SHIP.thrusters[3].firing = true;
-            PLAYER_SHIP.thrusters[7].firing = true;
+            if (DOCKING_MODE)
+            {
+                PLAYER_SHIP.thrusters[3].firing = true;
+                PLAYER_SHIP.thrusters[4].firing = true;
+            }
+            else
+            {
+                PLAYER_SHIP.thrusters[1].firing = true;
+                PLAYER_SHIP.thrusters[5].firing = true;
+                PLAYER_SHIP.thrusters[3].firing = true;
+                PLAYER_SHIP.thrusters[7].firing = true;
+            }
         }
         if (shift)
         {
@@ -790,6 +833,10 @@ function draw()
     HEIGHT = CTX.canvas.height;
     updateMouse();
 
+    // CTX.fillStyle = "#222222";
+    // CTX.globalAlpha = 1;
+    // CTX.fillRect(0, 0, WIDTH, HEIGHT);
+
     CTX.save();
     CTX.translate(WIDTH/2, HEIGHT/2);
     if (LOCK_CAMERA) CTX.rotate(PLAYER_SHIP.theta - Math.PI/2);
@@ -845,6 +892,7 @@ function draw()
 
     for (let obj of WORLD) obj.draw(CTX);
     CTX.globalAlpha = 1;
+    CTX.strokeStyle = "black";
     CTX.beginPath();
     CTX.arc(MOUSEX*PIXELS, MOUSEY*PIXELS, 4, 0, Math.PI*2);
     CTX.stroke();
@@ -1111,8 +1159,8 @@ function start()
         dt = (current - last)/1000;
         last = current;
 
-        if (ONE_KEY && VIEW_RADIUS < 3000) zoom(VIEW_RADIUS + 10);
-        if (TWO_KEY && VIEW_RADIUS > 50) zoom(VIEW_RADIUS - 10);
+        if (ONE_KEY) zoom(VIEW_RADIUS + 10);
+        if (TWO_KEY) zoom(VIEW_RADIUS - 10);
 
         let ds = 5;
         if (UP_KEY) MOUSE_SCREEN_POS[1] -= ds;

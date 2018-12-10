@@ -1,6 +1,6 @@
 // pdc.js
 
-const PDC_LENGTH = 2.5;
+const PDC_LENGTH = 1.2;
 const PDC_SPREAD = 1.5*Math.PI/180;
 const PDC_VELOCITY = 800;
 const PDC_COOLDOWN = 1/50;
@@ -20,7 +20,9 @@ class PointDefenseCannon
         this.last_fired = -Infinity;
         this.range = range;
         this.radius = Math.min(radius, PDC_MAX_RANGE);
-        this.color = "gray";
+        this.barrelColor = "gray";
+        this.magColor = "gray";
+        this.baseColor = "gray";
         this.nodraw = false;
     }
 
@@ -67,8 +69,8 @@ class PointDefenseCannon
     fireBullet(theta)
     {
         let gun_orient = this.object.theta + this.theta;
-        let min = gun_orient + this.range[0];
-        let max = gun_orient + this.range[1];
+        let min = gun_orient - this.range[1];
+        let max = gun_orient - this.range[0];
 
         while (theta < gun_orient - Math.PI) theta += Math.PI*2;
         while (theta > gun_orient + Math.PI) theta -= Math.PI*2;
@@ -101,15 +103,18 @@ class PointDefenseCannon
         if (DRAW_FIRING_ARC)
         {
             ctx.save();
+            ctx.rotate(-this.gamma);
             ctx.fillStyle = "orange";
+            ctx.strokeStyle = "black";
             ctx.globalAlpha = 0.2;
-            ctx.rotate(this.range[0]);
             ctx.beginPath();
             ctx.moveTo(0, 0);
-            ctx.lineTo(PDC_MAX_RANGE*PIXELS, 0);
-
-            ctx.arc(0, 0, this.radius*PIXELS, 0,
-                this.range[1] - this.range[0]);
+            ctx.lineTo(this.radius*PIXELS, 0);
+            ctx.stroke();
+            ctx.rotate(this.gamma);
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, this.radius*PIXELS,
+                this.range[0], this.range[1], false);
             ctx.lineTo(0, 0);
             ctx.fill();
             ctx.restore();
@@ -120,18 +125,23 @@ class PointDefenseCannon
             ctx.rotate(-this.gamma);
 
             ctx.strokeStyle = "black";
-            ctx.fillStyle = this.color;
+            ctx.fillStyle = this.baseColor;
             ctx.globalAlpha = 1;
+            ctx.fillRect(-0.2*PIXELS, -0.6*PIXELS, 0.4*PIXELS, 1.2*PIXELS);
+            ctx.strokeRect(-0.2*PIXELS, -0.6*PIXELS, 0.4*PIXELS, 1.2*PIXELS);
+
+            ctx.fillStyle = this.barrelColor;
             ctx.beginPath();
-            ctx.arc(0, 0, 0.9*PIXELS, 0, Math.PI*2);
+            ctx.moveTo(0, 0);
+            ctx.rect(-0.1*PIXELS, -0.1*PIXELS, 1.2*PIXELS, 0.2*PIXELS);
             ctx.fill();
             ctx.stroke();
 
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.rect(0.5*PIXELS, -0.1*PIXELS, 1.2*PIXELS, 0.2*PIXELS);
-            ctx.fill();
-            ctx.stroke();
+            ctx.fillStyle = this.magColor;
+            ctx.fillRect(-0.5*PIXELS, -0.9*PIXELS, 1*PIXELS, 0.6*PIXELS);
+            ctx.strokeRect(-0.5*PIXELS, -0.9*PIXELS, 1*PIXELS, 0.6*PIXELS);
+            ctx.fillRect(-0.5*PIXELS, 0.3*PIXELS, 1*PIXELS, 0.6*PIXELS);
+            ctx.strokeRect(-0.5*PIXELS, 0.3*PIXELS, 1*PIXELS, 0.6*PIXELS);
         }
         ctx.restore();
     }

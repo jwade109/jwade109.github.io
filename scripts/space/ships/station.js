@@ -14,10 +14,42 @@ class Station
                                [-this.size/4, -this.size/4],
                                [-this.size/4, this.size/4]]);
         this.box.object = this;
+
+        this.pdcs = [];
+        for (let theta = 0; theta < Math.PI*2; theta += Math.PI/3)
+        {
+            let pos = [Math.cos(theta)*this.size, -Math.sin(theta)*this.size];
+            this.pdcs.push(new PointDefenseCannon(
+                pos, theta, this, [-Math.PI, Math.PI], 1000));
+        }
     }
 
     step(dt)
     {
+        let candidates = [];
+        for (let obj of WORLD)
+        {
+            if (!(obj instanceof Debris)) continue;
+            if (obj.radius < SMALL_DEBRIS) continue;
+            let dist = distance(this.pos, obj.pos);
+            if (dist < 2500) candidates.push(obj);
+        }
+
+        for (let pdc of this.pdcs)
+        {
+            let best = null, min = Infinity;
+            for (let obj of candidates)
+            {
+                let dist = distance(obj.pos, pdc.globalPos());
+                if (dist < min)
+                {
+                    best = obj;
+                    min = dist;
+                }
+            }
+            if (best != null) pdc.intercept(best);
+        }
+
         this.pos_prev = this.pos.slice();
         this.pos[0] += this.vel[0]*dt;
         this.pos[1] += this.vel[1]*dt;
@@ -109,5 +141,6 @@ class Station
 
         ctx.restore();
         if (DRAW_HITBOX) this.box.draw(ctx);
+        for (let pdc of this.pdcs) pdc.draw(ctx);
     }
 }

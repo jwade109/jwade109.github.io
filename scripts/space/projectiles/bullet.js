@@ -25,11 +25,15 @@ class Bullet
 
         ctx.save();
         ctx.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
-        ctx.rotate(-this.theta - Math.PI/2);
+        ctx.rotate(-this.theta);
         ctx.globalAlpha = 1;
-        ctx.fillStyle = "black";
-        ctx.fillRect(-this.width/2*PIXELS, -this.length/2*PIXELS,
-                     this.width*PIXELS, this.length*PIXELS);
+        ctx.strokeStyle = "black";
+        ctx.beginPath();
+        ctx.moveTo(-this.length/2*PIXELS, 0);
+        ctx.lineTo(this.length/2*PIXELS, 0);
+        ctx.stroke();
+        // ctx.fillRect(-this.width/2*PIXELS, -this.length/2*PIXELS,
+        //              this.width*PIXELS, this.length*PIXELS);
         ctx.restore();
     }
 
