@@ -1,6 +1,6 @@
 // collidable-base.js
 
-function Vessel(length, width, max_health)
+function Collidable(length, width, max_health)
 {
     this.pos = [0, 0];
     this.pos_prev = [0, 0];

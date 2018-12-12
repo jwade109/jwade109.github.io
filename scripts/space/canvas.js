@@ -67,8 +67,7 @@ WORLD.push(new Station([700, -400], 0));
 var PLAYER_SHIP = new Corvette([0, 0], Math.PI/2);
 WORLD.push(PLAYER_SHIP);
 
-// let bs = new Donnager([100, -400], Math.PI/6);
-// WORLD.push(bs);
+WORLD.push(new Donnager([0, -2000], -Math.PI/6));
 
 let current = new Date().getTime(), last = current, dt = 0;
 
@@ -1159,8 +1158,8 @@ function start()
         dt = (current - last)/1000;
         last = current;
 
-        if (ONE_KEY) zoom(VIEW_RADIUS + 10);
-        if (TWO_KEY) zoom(VIEW_RADIUS - 10);
+        if (ONE_KEY) zoom(VIEW_RADIUS + 50);
+        if (TWO_KEY) zoom(VIEW_RADIUS - 50);
 
         let ds = 5;
         if (UP_KEY) MOUSE_SCREEN_POS[1] -= ds;
