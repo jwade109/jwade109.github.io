@@ -21,7 +21,8 @@ var PLAYER_VEL = [0, 0];
 
 var SPAWN_DEBRIS = true;
 var RESPAWN_DELAY = 10;
-var RESPAWN_TIMER = RESPAWN_DELAY;
+var RESPAWN_TIMER = 25;
+var BETWEEN_WAVES = true;
 
 var PAN = [0, 0];
 
@@ -63,7 +64,7 @@ const WORLD_RENDER_DISTANCE = 4000;
 const MIN_ZOOM = 10;
 const MAX_ZOOM = 3000;
 
-WORLD.push(new Station([700, -400], 0));
+// WORLD.push(new Station([700, -400], 0));
 var PLAYER_SHIP = new Corvette([0, 0], Math.PI/2);
 WORLD.push(PLAYER_SHIP);
 
@@ -279,9 +280,7 @@ function updateMouse()
         let dx = obj.pos[0] - MOUSEX;
         let dy = obj.pos[1] - MOUSEY;
         let dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist < min &&
-            !(obj instanceof Bullet) &&
-            !(obj instanceof Railgun))
+        if (dist < min && obj.trackable)
         {
             min = dist;
             NEAREST_OBJECT = obj;
@@ -318,286 +317,293 @@ function collide(obj1, obj2)
 
 function handleCollision(obj1, obj2)
 {
-    function objectsAre(str1, str2)
-    {
-        if ((obj1.constructor.name == str1 &&
-             obj2.constructor.name == str2)) return true;
-        if ((obj2.constructor.name == str1 &&
-             obj1.constructor.name == str2))
-        {
-            let temp = obj2;
-            obj2 = obj1;
-            obj1 = temp;
-            return true;
-        }
-        return false;
-    }
+    // function objectsAre(str1, str2)
+    // {
+    //     if ((obj1.constructor.name == str1 &&
+    //          obj2.constructor.name == str2)) return true;
+    //     if ((obj2.constructor.name == str1 &&
+    //          obj1.constructor.name == str2))
+    //     {
+    //         let temp = obj2;
+    //         obj2 = obj1;
+    //         obj1 = temp;
+    //         return true;
+    //     }
+    //     return false;
+    // }
+    //
+    // if (obj1 === obj2) return;
+    // if (obj1.remove || obj2.remove) return false;
+    // if (obj1.constructor.name == obj2.constructor.name) return;
+    // if (objectsAre("Corvette", "Morrigan") ||
+    //     objectsAre("Corvette", "Amun_Ra"))
+    // {
+    //     obj1.damage(obj1.health);
+    //     obj2.damage(obj2.health);
+    //     return;
+    // }
+    // if (objectsAre("Corvette", "Debris"))
+    // {
+    //     let debris = obj1;
+    //     if (!(debris instanceof Debris))
+    //     {
+    //         debris = obj2;
+    //     }
+    //     if (debris.radius > LARGE_DEBRIS)
+    //     {
+    //         let vel = [(PLAYER_SHIP.vel[0] + debris.vel[0])/2,
+    //                    (PLAYER_SHIP.vel[1] + debris.vel[1])/2];
+    //         let domega = Math.random()*3 - 1.5;
+    //         debris.vel = vel;
+    //         debris.explode();
+    //         PLAYER_SHIP.vel = vel;
+    //         PLAYER_SHIP.omega += domega;
+    //         PLAYER_SHIP.damage(DEBRIS_DAMAGE);
+    //     }
+    //     return;
+    // }
+    // if (objectsAre("Corvette", "Torpedo"))
+    // {
+    //     let ship = obj1, torpedo = obj2;
+    //     if (!(ship instanceof Corvette))
+    //     {
+    //         ship = obj2;
+    //         torpedo = obj1;
+    //     }
+    //     if (torpedo.origin !== ship)
+    //     {
+    //         let domega = Math.random()*3 - 1.5;
+    //         ship.omega += domega;
+    //         torpedo.vel = ship.vel.slice();
+    //         torpedo.explode();
+    //         ship.damage(TORPEDO_DAMAGE);
+    //     }
+    //     return;
+    // }
+    // if (objectsAre("Corvette", "Bullet"))
+    // {
+    //     if (obj2.origin !== obj1)
+    //     {
+    //         obj2.vel = obj1.vel.slice();
+    //         obj2.explode();
+    //         obj1.damage(PDC_DAMAGE);
+    //     }
+    //     return;
+    // }
+    // else if (objectsAre("Torpedo", "Debris"))
+    // {
+    //     let debris = obj1, torpedo = obj2;
+    //     if (obj2 instanceof Debris)
+    //     {
+    //         debris = obj2;
+    //         torpedo = obj1;
+    //     }
+    //     if (debris.radius < SMALL_DEBRIS) return;
+    //     torpedo.vel = debris.vel.slice();
+    //     torpedo.explode();
+    //     debris.damage(TORPEDO_DAMAGE);
+    //     return;
+    // }
+    // else if (objectsAre("Bullet", "Debris"))
+    // {
+    //     let debris = obj1, bullet = obj2;
+    //     if (obj2 instanceof Debris)
+    //     {
+    //         debris = obj2;
+    //         bullet = obj1;
+    //     }
+    //     bullet.vel = debris.vel.slice();
+    //     bullet.explode();
+    //     debris.damage(PDC_DAMAGE);
+    //     return;
+    // }
+    // else if (objectsAre("Torpedo", "Bullet"))
+    // {
+    //     obj1.explode();
+    //     obj2.explode();
+    //     return;
+    // }
+    // else if (objectsAre("Railgun", "Debris"))
+    // {
+    //     let railgun = obj1, debris = obj2;
+    //     if (railgun instanceof Debris)
+    //     {
+    //         railgun = obj2;
+    //         debris = obj1;
+    //     }
+    //     debris.explode();
+    //     return;
+    // }
+    // else if (objectsAre("Railgun", "Torpedo"))
+    // {
+    //     let torpedo = obj1;
+    //     if (!(torpedo instanceof Torpedo))
+    //     {
+    //         torpedo = obj2;
+    //     }
+    //     if (Math.random() < 0.2) torpedo.explode();
+    //     return;
+    // }
+    // else if (objectsAre("Railgun", "Corvette"))
+    // {
+    //     return;
+    // }
+    // else if (objectsAre("Railgun", "Morrigan") ||
+    //          objectsAre("Railgun", "Amun_Ra"))
+    // {
+    //     let destroyer = obj1;
+    //     if (!(destroyer instanceof Morrigan))
+    //     {
+    //         destroyer = obj2;
+    //     }
+    //     destroyer.damage(200);
+    //     return;
+    // }
+    // else if (objectsAre("Debris", "Morrigan") ||
+    //          objectsAre("Debris", "Amun_Ra"))
+    // {
+    //     let debris = obj1, destroyer = obj2;
+    //     if (!(debris instanceof Debris))
+    //     {
+    //         debris = obj2;
+    //         destroyer = obj1;
+    //     }
+    //     if (debris.radius > LARGE_DEBRIS)
+    //     {
+    //         debris.vel = destroyer.vel.slice();
+    //         debris.explode();
+    //     }
+    //     return;
+    // }
+    // else if (objectsAre("Bullet", "Morrigan") ||
+    //          objectsAre("Bullet", "Amun_Ra"))
+    // {
+    //     let destroyer = obj1, bullet = obj2;
+    //     if (!(destroyer instanceof Morrigan))
+    //     {
+    //         destroyer = obj2;
+    //         bullet = obj1;
+    //     }
+    //     if (bullet.origin !== destroyer)
+    //     {
+    //         bullet.explode();
+    //         destroyer.damage(1);
+    //     }
+    //     return;
+    // }
+    // else if (objectsAre("Torpedo", "Morrigan") ||
+    //          objectsAre("Torpedo", "Amun_Ra"))
+    // {
+    //     let destroyer = obj1, torpedo = obj2;
+    //     if (!(destroyer instanceof Morrigan))
+    //     {
+    //         destroyer = obj2;
+    //         torpedo = obj1;
+    //     }
+    //     if (torpedo.origin !== destroyer)
+    //     {
+    //         torpedo.vel = destroyer.vel.slice();
+    //         destroyer.damage(100);
+    //         torpedo.explode();
+    //     }
+    //     return;
+    // }
+    // else if (objectsAre("Station", "Debris"))
+    // {
+    //     if (obj2.radius > LARGE_DEBRIS)
+    //     {
+    //         obj2.vel = obj1.vel.slice();
+    //         obj2.explode();
+    //     }
+    //     return;
+    // }
+    // else if (objectsAre("Station", "Bullet"))
+    // {
+    //     obj2.vel = obj1.vel.slice();
+    //     obj2.explode();
+    //     return;
+    // }
+    // else if (objectsAre("Station", "Corvette"))
+    // {
+    //     // obj2.vel = obj1.vel.slice();
+    //     obj2.damage(obj2.health);
+    //     return;
+    // }
+    // else if (objectsAre("Station", "Torpedo"))
+    // {
+    //     obj2.vel = obj1.vel.slice();
+    //     obj2.explode();
+    //     return;
+    // }
+    // else if (objectsAre("Station", "Railgun"))
+    // {
+    //     obj2.vel = obj1.vel.slice();
+    //     obj2.explode();
+    //     return;
+    // }
+    // else if (objectsAre("Station", "Morrigan") ||
+    //          objectsAre("Station", "Amun_Ra"))
+    // {
+    //     obj2.vel = obj1.vel.slice();
+    //     obj2.explode();
+    //     return;
+    // }
+    // else if (objectsAre("Donnager", "Corvette"))
+    // {
+    //     obj2.damage(obj2.health);
+    //     obj1.damage(obj2.health);
+    //     return;
+    // }
+    // else if (objectsAre("Donnager", "Debris"))
+    // {
+    //     if (obj2.radius > LARGE_DEBRIS)
+    //     {
+    //         obj2.vel = obj1.vel.slice();
+    //         obj2.explode();
+    //         obj1.damage(DEBRIS_DAMAGE);
+    //     }
+    //     return;
+    // }
+    // else if (objectsAre("Donnager", "Torpedo"))
+    // {
+    //     obj2.vel = obj1.vel.slice();
+    //     obj2.explode();
+    //     obj1.damage(TORPEDO_DAMAGE);
+    //     return;
+    // }
+    // else if (objectsAre("Donnager", "Railgun"))
+    // {
+    //     obj1.damage(RAILGUN_DAMAGE);
+    //     return;
+    // }
+    // else if (objectsAre("Donnager", "Bullet"))
+    // {
+    //     if (obj2.origin != obj1)
+    //     {
+    //         obj2.vel = obj1.vel.slice();
+    //         obj2.explode();
+    //         obj1.damage(PDC_DAMAGE);
+    //     }
+    //     return;
+    // }
+    // else if (objectsAre("Donnager", "Morrigan"))
+    // {
+    //     obj2.vel = obj1.vel.slice();
+    //     obj2.explode();
+    //     obj1.damage(obj2.health);
+    //     return;
+    // }
 
-    if (obj1 === obj2) return;
-    if (obj1.remove || obj2.remove) return false;
-    if (obj1.constructor.name == obj2.constructor.name) return;
-    if (objectsAre("Corvette", "Morrigan") ||
-        objectsAre("Corvette", "Amun_Ra"))
+    if (typeof obj1.handleCollision === 'function')
     {
-        obj1.damage(obj1.health);
-        obj2.damage(obj2.health);
+        obj1.handleCollision(obj2);
         return;
     }
-    if (objectsAre("Corvette", "Debris"))
+    if (typeof obj2.handleCollision === 'function')
     {
-        let debris = obj1;
-        if (!(debris instanceof Debris))
-        {
-            debris = obj2;
-        }
-        if (debris.radius > LARGE_DEBRIS)
-        {
-            let vel = [(PLAYER_SHIP.vel[0] + debris.vel[0])/2,
-                       (PLAYER_SHIP.vel[1] + debris.vel[1])/2];
-            let domega = Math.random()*3 - 1.5;
-            debris.vel = vel;
-            debris.explode();
-            PLAYER_SHIP.vel = vel;
-            PLAYER_SHIP.omega += domega;
-            PLAYER_SHIP.damage(DEBRIS_DAMAGE);
-        }
+        obj2.handleCollision(obj1);
         return;
     }
-    if (objectsAre("Corvette", "Torpedo"))
-    {
-        let ship = obj1, torpedo = obj2;
-        if (!(ship instanceof Corvette))
-        {
-            ship = obj2;
-            torpedo = obj1;
-        }
-        if (torpedo.origin !== ship)
-        {
-            let domega = Math.random()*3 - 1.5;
-            ship.omega += domega;
-            torpedo.vel = ship.vel.slice();
-            torpedo.explode();
-            ship.damage(TORPEDO_DAMAGE);
-        }
-        return;
-    }
-    if (objectsAre("Corvette", "Bullet"))
-    {
-        if (obj2.origin !== obj1)
-        {
-            obj2.vel = obj1.vel.slice();
-            obj2.explode();
-            obj1.damage(PDC_DAMAGE);
-        }
-        return;
-    }
-    else if (objectsAre("Torpedo", "Debris"))
-    {
-        let debris = obj1, torpedo = obj2;
-        if (obj2 instanceof Debris)
-        {
-            debris = obj2;
-            torpedo = obj1;
-        }
-        if (debris.radius < SMALL_DEBRIS) return;
-        torpedo.vel = debris.vel.slice();
-        torpedo.explode();
-        debris.damage(TORPEDO_DAMAGE);
-        return;
-    }
-    else if (objectsAre("Bullet", "Debris"))
-    {
-        let debris = obj1, bullet = obj2;
-        if (obj2 instanceof Debris)
-        {
-            debris = obj2;
-            bullet = obj1;
-        }
-        bullet.vel = debris.vel.slice();
-        bullet.explode();
-        debris.damage(PDC_DAMAGE);
-        return;
-    }
-    else if (objectsAre("Torpedo", "Bullet"))
-    {
-        obj1.explode();
-        obj2.explode();
-        return;
-    }
-    else if (objectsAre("Railgun", "Debris"))
-    {
-        let railgun = obj1, debris = obj2;
-        if (railgun instanceof Debris)
-        {
-            railgun = obj2;
-            debris = obj1;
-        }
-        debris.explode();
-        return;
-    }
-    else if (objectsAre("Railgun", "Torpedo"))
-    {
-        let torpedo = obj1;
-        if (!(torpedo instanceof Torpedo))
-        {
-            torpedo = obj2;
-        }
-        if (Math.random() < 0.2) torpedo.explode();
-        return;
-    }
-    else if (objectsAre("Railgun", "Corvette"))
-    {
-        return;
-    }
-    else if (objectsAre("Railgun", "Morrigan") ||
-             objectsAre("Railgun", "Amun_Ra"))
-    {
-        let destroyer = obj1;
-        if (!(destroyer instanceof Morrigan))
-        {
-            destroyer = obj2;
-        }
-        destroyer.damage(200);
-        return;
-    }
-    else if (objectsAre("Debris", "Morrigan") ||
-             objectsAre("Debris", "Amun_Ra"))
-    {
-        let debris = obj1, destroyer = obj2;
-        if (!(debris instanceof Debris))
-        {
-            debris = obj2;
-            destroyer = obj1;
-        }
-        if (debris.radius > LARGE_DEBRIS)
-        {
-            debris.vel = destroyer.vel.slice();
-            debris.explode();
-        }
-        return;
-    }
-    else if (objectsAre("Bullet", "Morrigan") ||
-             objectsAre("Bullet", "Amun_Ra"))
-    {
-        let destroyer = obj1, bullet = obj2;
-        if (!(destroyer instanceof Morrigan))
-        {
-            destroyer = obj2;
-            bullet = obj1;
-        }
-        if (bullet.origin !== destroyer)
-        {
-            bullet.explode();
-            destroyer.damage(1);
-        }
-        return;
-    }
-    else if (objectsAre("Torpedo", "Morrigan") ||
-             objectsAre("Torpedo", "Amun_Ra"))
-    {
-        let destroyer = obj1, torpedo = obj2;
-        if (!(destroyer instanceof Morrigan))
-        {
-            destroyer = obj2;
-            torpedo = obj1;
-        }
-        if (torpedo.origin !== destroyer)
-        {
-            torpedo.vel = destroyer.vel.slice();
-            destroyer.damage(100);
-            torpedo.explode();
-        }
-        return;
-    }
-    else if (objectsAre("Station", "Debris"))
-    {
-        if (obj2.radius > LARGE_DEBRIS)
-        {
-            obj2.vel = obj1.vel.slice();
-            obj2.explode();
-        }
-        return;
-    }
-    else if (objectsAre("Station", "Bullet"))
-    {
-        obj2.vel = obj1.vel.slice();
-        obj2.explode();
-        return;
-    }
-    else if (objectsAre("Station", "Corvette"))
-    {
-        // obj2.vel = obj1.vel.slice();
-        obj2.damage(obj2.health);
-        return;
-    }
-    else if (objectsAre("Station", "Torpedo"))
-    {
-        obj2.vel = obj1.vel.slice();
-        obj2.explode();
-        return;
-    }
-    else if (objectsAre("Station", "Railgun"))
-    {
-        obj2.vel = obj1.vel.slice();
-        obj2.explode();
-        return;
-    }
-    else if (objectsAre("Station", "Morrigan") ||
-             objectsAre("Station", "Amun_Ra"))
-    {
-        obj2.vel = obj1.vel.slice();
-        obj2.explode();
-        return;
-    }
-    else if (objectsAre("Donnager", "Corvette"))
-    {
-        obj2.damage(obj2.health);
-        obj1.damage(obj2.health);
-        return;
-    }
-    else if (objectsAre("Donnager", "Debris"))
-    {
-        if (obj2.radius > LARGE_DEBRIS)
-        {
-            obj2.vel = obj1.vel.slice();
-            obj2.explode();
-            obj1.damage(DEBRIS_DAMAGE);
-        }
-        return;
-    }
-    else if (objectsAre("Donnager", "Torpedo"))
-    {
-        obj2.vel = obj1.vel.slice();
-        obj2.explode();
-        obj1.damage(TORPEDO_DAMAGE);
-        return;
-    }
-    else if (objectsAre("Donnager", "Railgun"))
-    {
-        obj1.damage(RAILGUN_DAMAGE);
-        return;
-    }
-    else if (objectsAre("Donnager", "Bullet"))
-    {
-        if (obj2.origin != obj1)
-        {
-            obj2.vel = obj1.vel.slice();
-            obj2.explode();
-            obj1.damage(PDC_DAMAGE);
-        }
-        return;
-    }
-    else if (objectsAre("Donnager", "Morrigan"))
-    {
-        obj2.vel = obj1.vel.slice();
-        obj2.explode();
-        obj1.damage(obj2.health);
-        return;
-    }
-
-    // console.log("unhandled collision between " +
-    //             obj1.constructor.name + " and " +
-    //             obj2.constructor.name);
 }
 
 function isOffScreen(coords)
@@ -641,9 +647,8 @@ function physics(dt)
         let dx = WORLD[i].pos[0] - PLAYER_SHIP.pos[0];
         let dy = WORLD[i].pos[1] - PLAYER_SHIP.pos[1];
         let dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist > WORLD_RENDER_DISTANCE &&
-            (typeof WORLD[i].permanent === 'undefined'))
-                WORLD[i].remove = true;
+        if (dist > WORLD_RENDER_DISTANCE && !WORLD[i].permanent)
+            WORLD[i].remove = true;
         if (WORLD[i].remove == true) WORLD.splice(i, 1);
     }
 
@@ -676,8 +681,10 @@ function physics(dt)
 
     if (enemy_count == 0 && SPAWN_ENEMIES && !GAME_OVER && RESPAWN_TIMER < 0)
     {
+        BETWEEN_WAVES = false;
+        ++PLAYER_SCORE;
         throwAlert("Enemy vessels incoming.", ALERT_DISPLAY_TIME*3);
-        for (let i = 0; i < MAX_ENEMIES; ++i)
+        for (let i = 0; i < PLAYER_SCORE; ++i)
         {
             let r = WORLD_RENDER_DISTANCE*2;
             let rot = Math.random()*Math.PI*2;
@@ -685,15 +692,16 @@ function physics(dt)
                        Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
             let vel = [PLAYER_SHIP.vel[0], PLAYER_SHIP.vel[1]];
             let enemy = new Morrigan(pos, 0);
-            if (Math.random() < 0.33) enemy = new Amun_Ra(pos, 0);
+            if (PLAYER_SCORE > 2 && i == 0 || i == 5)
+                enemy = new Amun_Ra(pos, 0);
             enemy.vel = vel;
             WORLD.push(enemy);
         }
         RESPAWN_TIMER = RESPAWN_DELAY;
-        ++PLAYER_SCORE;
     }
     else if (enemy_count == 0)
     {
+        BETWEEN_WAVES = true;
         if (RESPAWN_TIMER == RESPAWN_DELAY)
             throwAlert("Enemy vessels inbound in " + RESPAWN_DELAY +
                 " seconds.", RESPAWN_DELAY);
@@ -866,9 +874,9 @@ function draw()
     CTX.beginPath();
     CTX.strokeStyle = CTX.fillStyle = "orange";
     CTX.setLineDash([20*PIXELS, 30*PIXELS]);
-    CTX.arc(0, 0, PDC_MAX_RANGE*PIXELS, 0, Math.PI*2);
+    CTX.arc(0, 0, CORVETTE_PDC_RANGE*PIXELS, 0, Math.PI*2);
     CTX.stroke();
-    CTX.fillText("PDC MAX RANGE", 0, -PDC_MAX_RANGE*PIXELS - 2);
+    CTX.fillText("PDC MAX RANGE", 0, -CORVETTE_PDC_RANGE*PIXELS - 2);
     CTX.restore();
 
     CTX.globalAlpha = 0.06;
@@ -1130,14 +1138,16 @@ function draw()
         CTX.fillStyle = "darkgray";
         CTX.fillText("TARGET", WIDTH/2 + 20, HEIGHT/2 - 20);
     }
-    else if (RESPAWN_TIMER > 0 && RESPAWN_TIMER < RESPAWN_DELAY)
+    else if (BETWEEN_WAVES && RESPAWN_TIMER > 0)
     {
         CTX.font = "30px Helvetica";
         CTX.globalAlpha = 0.4;
         CTX.fillStyle = "darkgray";
         let rtime = (Math.round(RESPAWN_TIMER*100)/100).toLocaleString("en",
             {useGrouping: false, minimumFractionDigits: 2});
-        CTX.fillText(rtime, WIDTH/2 + 20, HEIGHT/2 - 20);
+        CTX.fillText("WAVE " + (PLAYER_SCORE + 1) + " IN",
+            WIDTH/2 + 20, HEIGHT/2 - 60);
+        CTX.fillText("T-" + rtime + "s", WIDTH/2 + 20, HEIGHT/2 - 20);
     }
     CTX.font = "30px Helvetica";
     CTX.globalAlpha = 0.4;

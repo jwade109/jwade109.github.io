@@ -12,6 +12,7 @@ class Explosion
         this.time = 0;
         this.duration = max_radius/100;
 
+        this.trackable = false;
         this.nocollide = true;
     }
 

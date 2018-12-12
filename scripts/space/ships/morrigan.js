@@ -1,7 +1,7 @@
 // morrigan.js
 
 const MORRIGAN_MAX_HEALTH = 350;
-const MORRIGAN_MASS = 1;
+const MORRIGAN_MASS = 80000;
 const MORRIGAN_MOMENT_INERTIA = 500;
 const MORRIGAN_EXPLOSION_RADIUS = 120;
 
@@ -49,6 +49,7 @@ class Morrigan
                 [-this.length/6, this.width*0.5], -Math.PI/2.5, this, range, 350)];
 
         this.is_enemy = true;
+        this.trackable = true;
 
         this.gray = "#606060";
         this.orange = "#8D3F32";
@@ -177,6 +178,7 @@ class Morrigan
             this.alpha = -this.omega;
             this.acc = this.b2g([10, 0]);
 
+            this.pos_prev = this.pos.slice();
             this.vel[0] += this.acc[0]*dt;
             this.vel[1] += this.acc[1]*dt;
             this.pos[0] += this.vel[0]*dt;
@@ -191,20 +193,6 @@ class Morrigan
             return;
         }
 
-        // let closest = null, min = Infinity;
-        // for (let obj of WORLD)
-        // {
-        //     if (obj instanceof Torpedo && obj.target == this)
-        //     {
-        //         let dist = distance(this.pos, obj.pos);
-        //         if (dist < min)
-        //         {
-        //             min = dist;
-        //             closest = obj;
-        //         }
-        //     }
-        // }
-
         let dist = distance(PLAYER_SHIP.pos, this.pos);
         if (this.torpedo_reload > 0) this.torpedo_reload -= dt;
         else if (TORPEDO_MIN_RANGE < dist && dist < WORLD_RENDER_DISTANCE)
@@ -214,8 +202,6 @@ class Morrigan
         }
 
         if (this.pdc_reload > 0) this.pdc_reload -= dt;
-        // else if (closest != null)
-        //     this.firePDC(closest);
         if (Math.random() < 0.5)
             this.firePDC(PLAYER_SHIP);
 

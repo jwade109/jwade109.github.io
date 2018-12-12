@@ -1,7 +1,7 @@
 // amun-ra.js
 
 const AMUN_RA_MAX_HEALTH = 700;
-const AMUN_RA_MASS = 1;
+const AMUN_RA_MASS = 210000;
 const AMUN_RA_MOMENT_INERTIA = 700;
 const AMUN_RA_EXPLOSION_RADIUS = 240;
 const AMUN_RA_LENGTH = 61.5;
@@ -50,6 +50,7 @@ class Amun_Ra
         for (let pdc of this.pdcs) pdc.nodraw = true;
 
         this.is_enemy = true;
+        this.trackable = true;
     }
 
     launchTorpedo()
@@ -62,7 +63,7 @@ class Amun_Ra
         tpos[1] += poff[1];
         tvel[0] += voff[0];
         tvel[1] += voff[1];
-        let torp = new Torpedo(tpos, tvel, this.theta, TORPEDO_THRUST, 7);
+        let torp = new Torpedo(tpos, tvel, this.theta, TORPEDO_THRUST);
         torp.origin = this;
         torp.target = PLAYER_SHIP;
         WORLD.push(torp);
@@ -150,7 +151,7 @@ class Amun_Ra
 
         let dist = distance(PLAYER_SHIP.pos, this.pos);
         if (this.torpedo_reload > 0) this.torpedo_reload -= dt;
-        else if (dist > PDC_MAX_RANGE && dist < WORLD_RENDER_DISTANCE)
+        else if (dist > AMUN_RA_PDC_RANGE && dist < WORLD_RENDER_DISTANCE)
         {
             this.launchTorpedo();
             this.torpedo_reload = Math.random()*1.2;
@@ -259,9 +260,4 @@ class Amun_Ra
     {
         return rot2d(v, -this.theta);
     }
-}
-
-function distance(p1, p2)
-{
-    return Math.sqrt(Math.pow(p1[0] - p2[0], 2) + Math.pow(p1[1] - p2[1], 2));
 }

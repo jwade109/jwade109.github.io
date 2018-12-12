@@ -1,11 +1,8 @@
 // pdc.js
 
-const PDC_LENGTH = 1.2;
 const PDC_SPREAD = 1.5*Math.PI/180;
-const PDC_VELOCITY = 800;
+const PDC_VELOCITY = 1400;
 const PDC_COOLDOWN = 1/50;
-const PDC_DAMAGE = 1;
-const PDC_MAX_RANGE = 500;
 var DRAW_FIRING_ARC = false;
 
 class PointDefenseCannon
@@ -19,7 +16,7 @@ class PointDefenseCannon
         this.cooldown = PDC_COOLDOWN;
         this.last_fired = -Infinity;
         this.range = range;
-        this.radius = Math.min(radius, PDC_MAX_RANGE);
+        this.radius = radius;
         this.barrelColor = "gray";
         this.magColor = "gray";
         this.baseColor = "gray";
@@ -84,7 +81,7 @@ class PointDefenseCannon
         let vel = rot2d([PDC_VELOCITY + Math.random()*10 - 5, 0], noisy);
         vel[0] += this.object.vel[0];
         vel[1] += this.object.vel[1];
-        let b = new Bullet(gpos.slice(), vel, noisy, PDC_LENGTH);
+        let b = new Bullet(gpos.slice(), vel, noisy);
         b.origin = this.object;
         WORLD.push(b);
         WORLD.push(new Explosion(gpos,

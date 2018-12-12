@@ -1,7 +1,11 @@
 // donnager.js
 
+const DONNAGER_LENGTH = 475.5;
+const DONNAGER_WIDTH = 150;
 const DONNAGER_MAX_HEALTH = 10000;
 const DONNAGER_EXPLOSION_RADIUS = 600;
+const DONNAGER_MASS = 150000000;
+const DONNAGER_PDC_RANGE = 900;
 
 class Donnager
 {
@@ -13,9 +17,10 @@ class Donnager
         this.omega = 0;
         this.vel = [50*Math.cos(theta), -50*Math.sin(theta)];
 
-        this.length = 475.5;
-        this.width = 150;
+        this.length = DONNAGER_LENGTH;
+        this.width = DONNAGER_WIDTH;
         this.health = DONNAGER_MAX_HEALTH;
+        this.mass = DONNAGER_MASS;
         this.name = "MCRN \"" +
             NAMES[Math.floor(Math.random()*NAMES.length)] + "\"";
         this.type = "Donnager Class";
@@ -29,20 +34,60 @@ class Donnager
         let range = [-Math.PI/2.2, Math.PI/2.2];
         this.pdcs =
             [new PointDefenseCannon(
-                [this.length/4, this.width*0.36], -Math.PI/2.4, this, range, 700),
+                [this.length/4, this.width*0.36], -Math.PI/2.4,
+                 this, range, DONNAGER_PDC_RANGE),
              new PointDefenseCannon(
-                [this.length/4, -this.width*0.36], Math.PI/2.4, this, range, 700),
+                [this.length/4, -this.width*0.36], Math.PI/2.4,
+                 this, range, DONNAGER_PDC_RANGE),
              new PointDefenseCannon(
-                [-this.length/6, -this.width*0.44], Math.PI/2, this, range, 700),
+                [-this.length/6, -this.width*0.44], Math.PI/2,
+                 this, range, DONNAGER_PDC_RANGE),
              new PointDefenseCannon(
-                [-this.length/6, this.width*0.44], -Math.PI/2, this, range, 700)];
+                [-this.length/6, this.width*0.44], -Math.PI/2,
+                 this, range, DONNAGER_PDC_RANGE),
+             new PointDefenseCannon(
+                [-0, -this.width*0.4], Math.PI/2,
+                 this, range, DONNAGER_PDC_RANGE),
+             new PointDefenseCannon(
+                [-0, this.width*0.4], -Math.PI/2,
+                 this, range, DONNAGER_PDC_RANGE),
+             new PointDefenseCannon(
+                [this.length/2, 0], 0,
+                 this, range, DONNAGER_PDC_RANGE),
+             new PointDefenseCannon(
+                [-this.length/2, 0], Math.PI,
+                 this, range, DONNAGER_PDC_RANGE)];
         this.box.object = this;
+        this.trackable = true;
         this.permanent = true;
     }
 
     step(dt)
     {
-        for (let pdc of this.pdcs) pdc.intercept(PLAYER_SHIP);
+        let candidates = [];
+        for (let obj of WORLD)
+        {
+            if (!(obj instanceof Torpedo)) continue;
+            let dist = distance(this.pos, obj.pos);
+            if (dist < 3000) candidates.push(obj);
+        }
+
+        for (let pdc of this.pdcs)
+        {
+            let best = null, min = Infinity;
+            for (let obj of candidates)
+            {
+                let dist = distance(obj.pos, pdc.globalPos());
+                if (dist < min)
+                {
+                    best = obj;
+                    min = dist;
+                }
+            }
+            if (best != null) pdc.intercept(best);
+            else pdc.intercept(PLAYER_SHIP);
+        }
+
         this.pos_prev = this.pos.slice();
         this.pos[0] += this.vel[0]*dt;
         this.pos[1] += this.vel[1]*dt;
@@ -64,7 +109,7 @@ class Donnager
         ctx.rotate(-this.theta - Math.PI/2);
 
         ctx.globalAlpha = 1;
-        ctx.fillStyle = "gray";
+        ctx.fillStyle = "brown";
         ctx.strokeStyle = "black";
         ctx.beginPath();
         ctx.moveTo(this.width/3*PIXELS, this.length/2*PIXELS);
@@ -72,6 +117,7 @@ class Donnager
         ctx.lineTo(-this.width/2*PIXELS, -this.length/2*PIXELS);
         ctx.lineTo(-this.width/3*PIXELS, this.length/2*PIXELS);
         ctx.lineTo(this.width/3*PIXELS, this.lengh/2*PIXELS);
+        ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
@@ -82,7 +128,6 @@ class Donnager
 
     explode()
     {
-        if (this.remove) return;
         let num_debris = 25 + Math.random()*9;
         for (let i = 0; i < num_debris; ++i)
         {
@@ -99,7 +144,8 @@ class Donnager
             let deb = new Debris(pos, vel,
                 this.theta,
                 this.omega + Math.random()*5 - 2.5, size);
-            deb.color = "gray";
+            deb.color = "brown";
+            deb.name = this.name;
             WORLD.push(deb);
 
             if (Math.random() < 0.1)

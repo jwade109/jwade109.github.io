@@ -13,6 +13,10 @@ const PLAYER_EXPLOSION_RADIUS = 180;
 
 const CORVETTE_LENGTH = 42;
 const CORVETTE_WIDTH = 11;
+const CORVETTE_MASS = 120000;
+const CORVETTE_MAIN_THRUST = 20*9.81*CORVETTE_MASS;
+const CORVETTE_RCS_THRUST = 3*9.81;
+const CORVETTE_PDC_RANGE = 500;
 
 class Corvette
 {
@@ -27,7 +31,7 @@ class Corvette
         this.omega = 0;
         this.alpha = 0;
 
-        this.mass = 1;
+        this.mass = CORVETTE_MASS;
         this.j = 300;
         this.torpedo_reload = 0;
         this.railgun_reload = RAILGUN_COOLDOWN;
@@ -46,20 +50,18 @@ class Corvette
         let tx = this.width*0.45;
         let ty = this.width*0.7;
 
-        let small_thrust = 30;
-        let main_thrust = 200;
-        let small_width = 3;
+        let sw = 3;
         this.thrusters = [
-            new Thruster([tx, ty], 0, small_thrust, small_width),
-            new Thruster([tx, ty], Math.PI/2, small_thrust, small_width),
-            new Thruster([-tx, ty], Math.PI/2, small_thrust, small_width),
-            new Thruster([-tx, ty], Math.PI, small_thrust, small_width),
-            new Thruster([-tx, -ty], Math.PI, small_thrust, small_width),
-            new Thruster([-tx, -ty], 3*Math.PI/2, small_thrust, small_width),
-            new Thruster([tx, -ty], 3*Math.PI/2, small_thrust, small_width),
-            new Thruster([tx, -ty], 0, small_thrust, small_width),
+            new Thruster([tx, ty], 0, CORVETTE_RCS_THRUST, sw),
+            new Thruster([tx, ty], Math.PI/2, CORVETTE_RCS_THRUST, sw),
+            new Thruster([-tx, ty], Math.PI/2, CORVETTE_RCS_THRUST, sw),
+            new Thruster([-tx, ty], Math.PI, CORVETTE_RCS_THRUST, sw),
+            new Thruster([-tx, -ty], Math.PI, CORVETTE_RCS_THRUST, sw),
+            new Thruster([-tx, -ty], 3*Math.PI/2, CORVETTE_RCS_THRUST, sw),
+            new Thruster([tx, -ty], 3*Math.PI/2, CORVETTE_RCS_THRUST, sw),
+            new Thruster([tx, -ty], 0, CORVETTE_RCS_THRUST, sw),
             new Thruster([0, -this.length/2],
-                -Math.PI/2, main_thrust, this.width)];
+                -Math.PI/2, CORVETTE_MAIN_THRUST, this.width)];
         for (let t of this.thrusters) t.drawbell = false;
 
         this.pdcs =
@@ -77,6 +79,7 @@ class Corvette
                 [-Math.PI/1.8, Math.PI/2.2], 500)];
 
         this.gray = "#909090";
+        this.trackable = false;
     }
 
     launchTorpedo()
@@ -212,7 +215,7 @@ class Corvette
             ctx.globalAlpha = 0.3;
             ctx.strokeStyle = "black";
             ctx.beginPath();
-            ctx.arc(0, 0, PDC_MAX_RANGE*PIXELS, 0, Math.PI*2);
+            ctx.arc(0, 0, CORVETTE_PDC_RANGE*PIXELS, 0, Math.PI*2);
             ctx.stroke();
         }
 

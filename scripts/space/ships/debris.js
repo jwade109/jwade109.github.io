@@ -15,6 +15,7 @@ class Debris
         this.omega = omega;
         this.radius = radius;
         this.health = radius;
+        this.mass = radius*radius*radius;
         this.box = new Hitbox([[this.radius/2, this.radius/2],
                                [this.radius/2, -this.radius/2],
                                [-this.radius/2, -this.radius/2],
@@ -24,6 +25,8 @@ class Debris
         this.name = Math.floor(Math.random()*10000000) + "-" +
             DEBRIS_NAMES[Math.floor(Math.random()*DEBRIS_NAMES.length)]
         this.type = "Debris";
+        this.trackable = radius >= SMALL_DEBRIS;
+        this.nocollide = !this.trackable;
 
         this.color = "darkgray";
         if (Math.random() < 0.4)
