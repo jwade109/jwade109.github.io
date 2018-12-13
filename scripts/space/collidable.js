@@ -15,9 +15,11 @@ function Collidable(length, width, max_health)
     this.health = max_health;
     this.time = 0;
     this.mass = 1;
+    this.izz = 1;
 
     this.trackable = true;
     this.permanent = false;
+    this.is_enemy = false;
 
     this.name = "Todd";
     this.type = "Platonic Solid";
@@ -79,6 +81,10 @@ Collidable.prototype.skin = function()
     CTX.globalAlpha = 0.3;
     CTX.fill();
     CTX.globalAlpha = 1;
+    CTX.stroke();
+    CTX.beginPath();
+    CTX.moveTo(0, 0);
+    CTX.lineTo(3*PIXELS, 0);
     CTX.stroke();
     CTX.restore();
 }

@@ -10,6 +10,13 @@ function det2d(u, v)
     return u[0]*v[1] - u[1]*v[0];
 }
 
+function cross3d(u, v)
+{
+    return [u[1]*v[2] - u[2]*v[1],
+            u[2]*v[0] - u[0]*v[2],
+            u[0]*v[1] - u[1]*v[0]];
+}
+
 // turns u into a unit vector
 function unit2d(u)
 {

@@ -122,6 +122,7 @@ class Amun_Ra
             this.alpha = -this.omega;
             this.acc = this.b2g([10, 0]);
 
+            this.pos_prev = this.pos.slice();
             this.vel[0] += this.acc[0]*dt;
             this.vel[1] += this.acc[1]*dt;
             this.pos[0] += this.vel[0]*dt;
