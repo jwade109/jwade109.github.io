@@ -3,7 +3,7 @@
 const PI = Math.PI;
 const RAD2DEG = 180/Math.PI;
 
-var DRAW_TRACE = false;
+var DRAW_TRACE = true;
 var LOCK_CAMERA = false;
 var CAMERA_INERTIA = 1;
 var MATCH_VELOCITY = false;
@@ -417,7 +417,7 @@ function physics(dt)
         {
             PLAYER_SHIP.health += PASSIVE_REGEN*dt;
             PLAYER_SHIP.health =
-                Math.min(PLAYER_SHIP.health, PLAYER_MAX_HEALTH);
+                Math.min(PLAYER_SHIP.health, CORVETTE_MAX_HEALTH);
         }
     }
     if (!GAME_OVER)
@@ -475,6 +475,7 @@ function physics(dt)
                 PLAYER_SHIP.thrusters[6].firing = true;
                 PLAYER_SHIP.thrusters[0].firing = true;
                 PLAYER_SHIP.thrusters[4].firing = true;
+                // PLAYER_SHIP.applyMoment(50000000);
             }
         }
         if (dkey)
@@ -490,11 +491,14 @@ function physics(dt)
                 PLAYER_SHIP.thrusters[5].firing = true;
                 PLAYER_SHIP.thrusters[3].firing = true;
                 PLAYER_SHIP.thrusters[7].firing = true;
+                // PLAYER_SHIP.applyMoment(-50000000);
             }
         }
         if (shift)
         {
             PLAYER_SHIP.thrusters[8].firing = true;
+            // PLAYER_SHIP.applyForce(rot2d([CORVETTE_MAIN_THRUST, 0],
+            //     PLAYER_SHIP.theta));
         }
         if (space)
         {
@@ -510,6 +514,7 @@ function physics(dt)
         {
             PLAYER_SHIP.matchVelocity(TARGET_OBJECT);
         }
+        // PLAYER_SHIP.applyMoment(-PLAYER_SHIP.omega*CORVETTE_MOMENT_INERTIA);
 
         TIME += dt;
     }
@@ -693,7 +698,7 @@ function draw()
         let border = 10;
         let spacing = 5;
         let hh = Math.max(0, PLAYER_SHIP.health)/
-            PLAYER_MAX_HEALTH*(HEIGHT - 2*border);
+            CORVETTE_MAX_HEALTH*(HEIGHT - 2*border);
         let rh = (HEIGHT - 2*border) - Math.max(0, PLAYER_SHIP.railgun_reload)/
             RAILGUN_COOLDOWN*(HEIGHT - 2*border);
 
@@ -710,7 +715,7 @@ function draw()
         CTX.save();
         CTX.translate(border + cw, HEIGHT - border);
         CTX.rotate(-Math.PI/2);
-        let percent = Math.round(PLAYER_SHIP.health/PLAYER_MAX_HEALTH*100);
+        let percent = Math.round(PLAYER_SHIP.health/CORVETTE_MAX_HEALTH*100);
         CTX.fillText("HULL (" + percent + "%)", 0, -3);
         let railgun_status = "(READY TO FIRE)";
         if (PLAYER_SHIP.railgun_reload > 0) railgun_status = "(CHARGING)";

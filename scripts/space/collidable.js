@@ -51,6 +51,16 @@ Collidable.prototype.step = function(dt)
     }
 }
 
+Collidable.prototype.applyMoment = function(moment)
+{
+    this.alpha += moment/this.izz;
+}
+
+Collidable.prototype.applyForce = function(force)
+{
+    this.acc = add2d(this.acc, div2d(force, this.mass));
+}
+
 Collidable.prototype.draw = function()
 {
     this.skin();

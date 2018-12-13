@@ -1,16 +1,13 @@
 // corvette.js
 
 const PLAYER_INVINCIBLE = false;
-const PLAYER_MAX_HEALTH = 2000;
-const PASSIVE_REGEN = 2*PLAYER_MAX_HEALTH/100;
+const CORVETTE_MAX_HEALTH = 2000;
+const PASSIVE_REGEN = 2*CORVETTE_MAX_HEALTH/100;
 const INFINITE_FUEL = true;
 const INFINITE_AMMO = false;
-const PLAYER_MAX_MISSILES = 30;
-const PLAYER_MAX_RAILGUN = 40;
-const PLAYER_SHIP_MASS = 1;
-const PLAYER_SHIP_MOMENT_INERTIA = 5000000;
-const PLAYER_EXPLOSION_RADIUS = 180;
 
+const CORVETTE_MOMENT_INERTIA = 5000000;
+const CORVETTE_EXPLOSION_RADIUS = 180;
 const CORVETTE_LENGTH = 42;
 const CORVETTE_WIDTH = 11;
 const CORVETTE_MASS = 120000;
@@ -20,11 +17,11 @@ const CORVETTE_PDC_RANGE = 500;
 
 function Corvette(pos, theta)
 {
-    Collidable.call(this, CORVETTE_LENGTH, CORVETTE_WIDTH, PLAYER_MAX_HEALTH);
+    Collidable.call(this, CORVETTE_LENGTH, CORVETTE_WIDTH, CORVETTE_MAX_HEALTH);
     this.pos = pos.slice();
     this.theta = theta;
     this.mass = CORVETTE_MASS;
-    this.izz = PLAYER_SHIP_MOMENT_INERTIA;
+    this.izz = CORVETTE_MOMENT_INERTIA;
     this.torpedo_reload = 0;
     this.railgun_reload = 0;
     this.name = "\"Rocinante\"";
@@ -125,7 +122,7 @@ Corvette.prototype.fireRailgun = function()
     this.vel[0] += dv[0];
     this.vel[1] += dv[1];
     WORLD.push(new Explosion(this.pos.slice(),
-        this.vel.slice(), TORPEDO_EXPLOSION_RADIUS))
+        this.vel.slice(), TORPEDO_EXPLOSION_RADIUS));
 }
 
 Corvette.prototype.firePDC = function()
@@ -328,7 +325,7 @@ Corvette.prototype.step = function(dt)
         t.firing = false;
     }
 
-    this.acc = rot2d(bodyacc, this.theta);
+    this.acc = add2d(this.acc, rot2d(bodyacc, this.theta));
     this.alpha += moment/this.izz;
 
     this.vel[0] += this.acc[0]*dt;
@@ -352,13 +349,13 @@ Corvette.prototype.damage = function(d)
 
     function transition(x, health)
     {
-        return health/PLAYER_MAX_HEALTH <= x &&
-            (health + d)/PLAYER_MAX_HEALTH > x && health > 0;
+        return health/CORVETTE_MAX_HEALTH <= x &&
+            (health + d)/CORVETTE_MAX_HEALTH > x && health > 0;
     }
 
     if (transition(0.3, this.health) || transition(0.1, this.health))
         throwAlert("Warning: hull integrity at " +
-            Math.round(100*this.health/PLAYER_MAX_HEALTH) + "%",
+            Math.round(100*this.health/CORVETTE_MAX_HEALTH) + "%",
             ALERT_DISPLAY_TIME);
     if (this.health <= 0) this.explode();
     else if (Math.random() < 0.05*d)
@@ -403,7 +400,7 @@ Corvette.prototype.explode = function()
         WORLD.push(deb);
     }
     WORLD.push(new Explosion(this.pos.slice(), this.vel.slice(),
-        PLAYER_EXPLOSION_RADIUS));
+        CORVETTE_EXPLOSION_RADIUS));
     this.acc = [0, 0];
     this.alpha = 0;
     this.omega = 0;

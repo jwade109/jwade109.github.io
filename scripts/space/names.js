@@ -64,7 +64,9 @@ var NAMES = [
     "Transgression",
     "Dulcinea",
     "Sancho",
-    "Babylon"
+    "Babylon",
+    "Halifax",
+    "Bulwark"
 ];
 
 var DEBRIS_NAMES = [
