@@ -63,7 +63,7 @@ Collidable.prototype.applyForce = function(force)
 
 Collidable.prototype.draw = function()
 {
-    this.skin();
+    if (!DRAW_HITBOX) this.skin();
 
     if (DRAW_TRACE)
     {

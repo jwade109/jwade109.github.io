@@ -206,7 +206,7 @@ Morrigan.prototype.explode = function()
     let num_debris = 15 + Math.random()*7;
     for (let i = 0; i < num_debris; ++i)
     {
-        let pos = this.pos.slice();
+        let pos = this.box.getRandom();
         let vel = this.vel.slice();
         vel[0] += Math.random()*200 - 100;
         vel[1] += Math.random()*200 - 100;

@@ -2,8 +2,9 @@
 
 const PDC_SPREAD = 1.5*Math.PI/180;
 const PDC_VELOCITY = 1400;
-const PDC_COOLDOWN = 1/50;
+const PDC_COOLDOWN = 1/20;
 var DRAW_FIRING_ARC = false;
+
 
 class PointDefenseCannon
 {
@@ -21,6 +22,11 @@ class PointDefenseCannon
         this.magColor = "gray";
         this.baseColor = "gray";
         this.nodraw = false;
+
+        this.audio = new Audio("scripts/space/sounds/Weapon Machine Gun " +
+            "World War II Historical Single Shot Distant 01.wav");
+        this.audio.volume = 0.1;
+        this.audio.playbackRate = 2;
     }
 
     globalPos()
@@ -84,10 +90,17 @@ class PointDefenseCannon
         let b = new Bullet(gpos.slice(), vel, noisy);
         b.origin = this.object;
         WORLD.push(b);
-        WORLD.push(new Explosion(gpos,
-            this.object.vel.slice(), Math.random()*2 + 5));
-
+        // WORLD.push(new Explosion(gpos,
+        //     this.object.vel.slice(), Math.random()*2 + 5));
         this.gamma = theta - this.theta - this.object.theta;
+
+        if (this.object === PLAYER_SHIP)
+        {
+            this.audio.currentTime = 0;
+            this.audio.play();
+        }
+
+        // if (Math.random() < 0.95) return;
     }
 
     draw(ctx)

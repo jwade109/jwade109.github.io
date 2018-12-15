@@ -26,27 +26,29 @@ function Corvette(pos, theta)
     this.railgun_reload = 0;
     this.name = "\"Rocinante\"";
     this.type = "Corvette Class";
+    this.gray = "#909090";
+    this.trackable = false;
     this.box = new Hitbox([[this.length/2, this.width/3],
                            [-this.length/2, this.width/2],
                            [-this.length/2, -this.width/2],
                            [this.length/2, -this.width/3]]);
     this.box.object = this;
-    let tx = this.width*0.45;
-    let ty = this.width*0.7;
 
-    let sw = 3;
-    this.thrusters = [
-        new Thruster([tx, ty], 0, CORVETTE_RCS_THRUST, sw),
-        new Thruster([tx, ty], Math.PI/2, CORVETTE_RCS_THRUST, sw),
-        new Thruster([-tx, ty], Math.PI/2, CORVETTE_RCS_THRUST, sw),
-        new Thruster([-tx, ty], Math.PI, CORVETTE_RCS_THRUST, sw),
-        new Thruster([-tx, -ty], Math.PI, CORVETTE_RCS_THRUST, sw),
-        new Thruster([-tx, -ty], 3*Math.PI/2, CORVETTE_RCS_THRUST, sw),
-        new Thruster([tx, -ty], 3*Math.PI/2, CORVETTE_RCS_THRUST, sw),
-        new Thruster([tx, -ty], 0, CORVETTE_RCS_THRUST, sw),
-        new Thruster([0, -this.length/2],
-            -Math.PI/2, CORVETTE_MAIN_THRUST, this.width)];
-    for (let t of this.thrusters) t.drawbell = false;
+    // let tx = this.width*0.45;
+    // let ty = this.width*0.7;
+    // let sw = 3;
+    // this.thrusters = [
+    //     new Thruster([tx, ty], 0, CORVETTE_RCS_THRUST, sw),
+    //     new Thruster([tx, ty], Math.PI/2, CORVETTE_RCS_THRUST, sw),
+    //     new Thruster([-tx, ty], Math.PI/2, CORVETTE_RCS_THRUST, sw),
+    //     new Thruster([-tx, ty], Math.PI, CORVETTE_RCS_THRUST, sw),
+    //     new Thruster([-tx, -ty], Math.PI, CORVETTE_RCS_THRUST, sw),
+    //     new Thruster([-tx, -ty], 3*Math.PI/2, CORVETTE_RCS_THRUST, sw),
+    //     new Thruster([tx, -ty], 3*Math.PI/2, CORVETTE_RCS_THRUST, sw),
+    //     new Thruster([tx, -ty], 0, CORVETTE_RCS_THRUST, sw),
+    //     new Thruster([0, -this.length/2],
+    //         -Math.PI/2, CORVETTE_MAIN_THRUST, this.width)];
+    // for (let t of this.thrusters) t.drawbell = false;
 
     this.pdcs =
         [new PointDefenseCannon(
@@ -61,9 +63,6 @@ function Corvette(pos, theta)
          new PointDefenseCannon(
             [-this.length/6, this.width*0.44], -Math.PI/2, this,
             [-Math.PI/1.8, Math.PI/2.2], 500)];
-
-    this.gray = "#909090";
-    this.trackable = false;
 }
 
 Corvette.prototype = Object.create(Collidable.prototype);
@@ -138,43 +137,43 @@ Corvette.prototype.firePDC = function()
 
 Corvette.prototype.matchVelocity = function(target)
 {
-    let norm = 0;
-    let desired_angle = this.theta;
-    if (target != null)
-    {
-        let rvel = sub2d(target.vel, PLAYER_SHIP.vel);
-        norm = norm2d(rvel);
-        desired_angle = anglebtwn([1, 0], rvel);
-        if (norm < 2) desired_angle = this.theta;
-    }
-    let error = desired_angle - this.theta;
-    while (error > Math.PI) error -= Math.PI*2;
-    while (error < -Math.PI) error += Math.PI*2;
-    let alpha = 10*error - 5*this.omega;
-    if (alpha > 0.05)
-    {
-        PLAYER_SHIP.thrusters[2].firing = true;
-        PLAYER_SHIP.thrusters[6].firing = true;
-        PLAYER_SHIP.thrusters[0].firing = true;
-        PLAYER_SHIP.thrusters[4].firing = true;
-    }
-    else if (alpha < -0.05)
-    {
-        PLAYER_SHIP.thrusters[1].firing = true;
-        PLAYER_SHIP.thrusters[5].firing = true;
-        PLAYER_SHIP.thrusters[3].firing = true;
-        PLAYER_SHIP.thrusters[7].firing = true;
-    }
-    if (Math.abs(error) < 5/180*Math.PI &&
-        Math.abs(this.omega) < 5/180*Math.PI)
-    {
-        if (norm > 50) this.thrusters[8].firing = true;
-        else if (norm > 5)
-        {
-            this.thrusters[5].firing = true;
-            this.thrusters[6].firing = true;
-        }
-    }
+    // let norm = 0;
+    // let desired_angle = this.theta;
+    // if (target != null)
+    // {
+    //     let rvel = sub2d(target.vel, PLAYER_SHIP.vel);
+    //     norm = norm2d(rvel);
+    //     desired_angle = anglebtwn([1, 0], rvel);
+    //     if (norm < 2) desired_angle = this.theta;
+    // }
+    // let error = desired_angle - this.theta;
+    // while (error > Math.PI) error -= Math.PI*2;
+    // while (error < -Math.PI) error += Math.PI*2;
+    // let alpha = 10*error - 5*this.omega;
+    // if (alpha > 0.05)
+    // {
+    //     PLAYER_SHIP.thrusters[2].firing = true;
+    //     PLAYER_SHIP.thrusters[6].firing = true;
+    //     PLAYER_SHIP.thrusters[0].firing = true;
+    //     PLAYER_SHIP.thrusters[4].firing = true;
+    // }
+    // else if (alpha < -0.05)
+    // {
+    //     PLAYER_SHIP.thrusters[1].firing = true;
+    //     PLAYER_SHIP.thrusters[5].firing = true;
+    //     PLAYER_SHIP.thrusters[3].firing = true;
+    //     PLAYER_SHIP.thrusters[7].firing = true;
+    // }
+    // if (Math.abs(error) < 5/180*Math.PI &&
+    //     Math.abs(this.omega) < 5/180*Math.PI)
+    // {
+    //     if (norm > 50) this.thrusters[8].firing = true;
+    //     else if (norm > 5)
+    //     {
+    //         this.thrusters[5].firing = true;
+    //         this.thrusters[6].firing = true;
+    //     }
+    // }
 }
 
 Corvette.prototype.skin = function()
@@ -199,11 +198,11 @@ Corvette.prototype.skin = function()
     CTX.rotate(-this.theta - Math.PI/2)
     // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE FRAME
 
-    for (let t of this.thrusters)
-    {
-        if (this.fuel <= t.thrust) t.firing = false;
-        t.draw(CTX);
-    }
+    // for (let t of this.thrusters)
+    // {
+    //     if (this.fuel <= t.thrust) t.firing = false;
+    //     t.draw(CTX);
+    // }
 
     CTX.save();
     CTX.rotate(Math.PI/2);
@@ -309,21 +308,21 @@ Corvette.prototype.step = function(dt)
     let bodyacc = [0, 0];
     let moment = 0;
     let dfuel = 0;
-    for (let t of this.thrusters)
-    {
-        if (t.firing && (this.fuel >= t.thrust || INFINITE_FUEL))
-        {
-            if (!INFINITE_FUEL) this.fuel -= t.thrust;
-            let thrustv = [-t.thrust*Math.sin(t.theta),
-                           -t.thrust*Math.cos(t.theta)];
-            bodyacc[0] += thrustv[0]/this.mass;
-            bodyacc[1] += thrustv[1]/this.mass;
-
-            moment += thrustv[0]*t.pos[0] - thrustv[1]*t.pos[1];
-        }
-
-        t.firing = false;
-    }
+    // for (let t of this.thrusters)
+    // {
+    //     if (t.firing && (this.fuel >= t.thrust || INFINITE_FUEL))
+    //     {
+    //         if (!INFINITE_FUEL) this.fuel -= t.thrust;
+    //         let thrustv = [-t.thrust*Math.sin(t.theta),
+    //                        -t.thrust*Math.cos(t.theta)];
+    //         bodyacc[0] += thrustv[0]/this.mass;
+    //         bodyacc[1] += thrustv[1]/this.mass;
+    //
+    //         moment += thrustv[0]*t.pos[0] - thrustv[1]*t.pos[1];
+    //     }
+    //
+    //     t.firing = false;
+    // }
 
     this.acc = add2d(this.acc, rot2d(bodyacc, this.theta));
     this.alpha += moment/this.izz;
@@ -406,7 +405,7 @@ Corvette.prototype.explode = function()
     this.omega = 0;
     this.health = -Infinity;
     this.remove = true;
-    for (let t of this.thrusters) t.firing = false;
+    // for (let t of this.thrusters) t.firing = false;
     GAME_OVER = true;
     TARGET_OBJECT = null;
     throwAlert(this.name + " was lost with all hands.", Infinity);

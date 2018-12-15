@@ -34,6 +34,10 @@ var TIME = 0;
 var CANVAS = document.getElementById("canvas");
 var CTX = CANVAS.getContext("2d");
 
+var AUDIO = new Audio("scripts/space/sounds/Hall of the Mountain King.mp3");
+console.log(AUDIO);
+AUDIO.volume = 0.05;
+
 var LEFT_KEY = false, RIGHT_KEY = false, UP_KEY = false, DOWN_KEY = false,
     space = false,
     akey = false, wkey = false, dkey = false, skey = false, xkey = false,
@@ -60,10 +64,9 @@ var TARGET_OBJECT = null;
 
 var WORLD = [];
 const WORLD_RENDER_DISTANCE = 4000;
-const MIN_ZOOM = 10;
+const MIN_ZOOM = 30;
 const MAX_ZOOM = 3000;
 
-// WORLD.push(new Station([700, -400], 0));
 var PLAYER_SHIP = new Corvette([0, 0], Math.PI/2);
 WORLD.push(PLAYER_SHIP);
 
@@ -100,6 +103,7 @@ document.addEventListener('mousewheel', function(event)
 
 document.addEventListener('mousemove', function(event)
 {
+    if (!AUDIO.ispaused) AUDIO.play();
     MOUSE_SCREEN_POS = [event.clientX, event.clientY];
     updateMouse();
 });
@@ -170,8 +174,12 @@ document.addEventListener('keydown', function(event)
         case 75: if (GAME_PAUSED) physics(SLOW_DT);
                  break;
         case 77: DRAW_TRACE = !DRAW_TRACE;
+                 str = DRAW_TRACE ? "enabled." : "disabled."
+                 throwAlert("DRAW_TRACE " + str, ALERT_DISPLAY_TIME);
                  break;
         case 78: DRAW_HITBOX = !DRAW_HITBOX;
+                 str = DRAW_HITBOX ? "enabled." : "disabled."
+                 throwAlert("DRAW_HITBOX " + str, ALERT_DISPLAY_TIME);
                  break;
         case 80: DOCKING_MODE = !DOCKING_MODE;
                  str = DOCKING_MODE ? "enabled." : "disabled."
@@ -235,8 +243,8 @@ document.addEventListener('keyup', function(event)
 
 function throwAlert(msg, time)
 {
-    for (let m of ALERTS)
-    if (m[0] == msg) return;
+    // for (let m of ALERTS)
+    if (ALERTS.length > 0 && ALERTS[ALERTS.length - 1][0] == msg) return;
     ALERTS.push([msg, time]);
 }
 
@@ -471,11 +479,11 @@ function physics(dt)
             }
             else
             {
-                PLAYER_SHIP.thrusters[2].firing = true;
-                PLAYER_SHIP.thrusters[6].firing = true;
-                PLAYER_SHIP.thrusters[0].firing = true;
-                PLAYER_SHIP.thrusters[4].firing = true;
-                // PLAYER_SHIP.applyMoment(50000000);
+                // PLAYER_SHIP.thrusters[2].firing = true;
+                // PLAYER_SHIP.thrusters[6].firing = true;
+                // PLAYER_SHIP.thrusters[0].firing = true;
+                // PLAYER_SHIP.thrusters[4].firing = true;
+                PLAYER_SHIP.applyMoment(50000000);
             }
         }
         if (dkey)
@@ -487,18 +495,18 @@ function physics(dt)
             }
             else
             {
-                PLAYER_SHIP.thrusters[1].firing = true;
-                PLAYER_SHIP.thrusters[5].firing = true;
-                PLAYER_SHIP.thrusters[3].firing = true;
-                PLAYER_SHIP.thrusters[7].firing = true;
-                // PLAYER_SHIP.applyMoment(-50000000);
+                // PLAYER_SHIP.thrusters[1].firing = true;
+                // PLAYER_SHIP.thrusters[5].firing = true;
+                // PLAYER_SHIP.thrusters[3].firing = true;
+                // PLAYER_SHIP.thrusters[7].firing = true;
+                PLAYER_SHIP.applyMoment(-50000000);
             }
         }
         if (shift)
         {
-            PLAYER_SHIP.thrusters[8].firing = true;
-            // PLAYER_SHIP.applyForce(rot2d([CORVETTE_MAIN_THRUST, 0],
-            //     PLAYER_SHIP.theta));
+            // PLAYER_SHIP.thrusters[8].firing = true;
+            PLAYER_SHIP.applyForce(rot2d([CORVETTE_MAIN_THRUST, 0],
+                PLAYER_SHIP.theta));
         }
         if (space)
         {

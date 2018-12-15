@@ -14,6 +14,20 @@ class Explosion
 
         this.trackable = false;
         this.nocollide = true;
+
+        let sources = [
+          "Explosion Distant 01.wav",
+          "Explosion Distant 02.wav",
+          "Explosion Distant Air Bomb 01.wav",
+          "Explosion Distant Bomb 01.wav",
+          "Explosion Distant Bomb 02.wav"
+        ]
+        let randn = Math.floor(Math.random()*sources.length);
+        console.log(randn);
+        this.audio = new Audio(
+            "scripts/space/sounds/" + sources[randn]);
+        this.audio.volume = 0.1;
+        this.audio.play();
     }
 
     step(dt)
