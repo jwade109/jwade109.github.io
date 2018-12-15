@@ -139,9 +139,7 @@ document.addEventListener('keydown', function(event)
     let str = "";
     switch (event.keyCode)
     {
-        case 9: event.preventDefault();
-                TARGET_OBJECT = WORLD[0];
-                break;
+        case 9:  break;
         case 13: ENTER_KEY = true;
                  break;
         case 16: shift = true; break;
@@ -869,6 +867,11 @@ function draw()
 
 function start()
 {
+    if (GAME_PAUSED) AUDIO.playbackRate = 0;
+    else if (SLOW_TIME) AUDIO.playbackRate = 0.7;
+    else AUDIO.playbackRate = 1;
+
+
     current = new Date().getTime();
     draw();
     let time_passed = 0;

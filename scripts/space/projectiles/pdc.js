@@ -50,9 +50,9 @@ class PointDefenseCannon
     {
         if (distance(target.pos, this.globalPos()) > this.radius)
         {
-            if (this.object === PLAYER_SHIP)
-            throwAlert("Cannot fire PDC -- target exceeds tracking range.",
-                ALERT_DISPLAY_TIME);
+            // if (this.object === PLAYER_SHIP)
+            // throwAlert("Cannot fire PDC -- target exceeds tracking range.",
+            //     ALERT_DISPLAY_TIME);
             return NaN;
         }
 
