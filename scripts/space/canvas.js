@@ -103,7 +103,7 @@ document.addEventListener('mousewheel', function(event)
 
 document.addEventListener('mousemove', function(event)
 {
-    if (!AUDIO.ispaused) AUDIO.play();
+    if (!AUDIO.ispaused && AUDIO.readyState > 0) AUDIO.play();
     MOUSE_SCREEN_POS = [event.clientX, event.clientY];
     updateMouse();
 });
