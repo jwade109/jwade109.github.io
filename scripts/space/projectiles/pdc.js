@@ -2,9 +2,8 @@
 
 const PDC_SPREAD = 1.5*Math.PI/180;
 const PDC_VELOCITY = 1400;
-const PDC_COOLDOWN = 1/20;
+const PDC_COOLDOWN = 1/10;
 var DRAW_FIRING_ARC = false;
-
 
 class PointDefenseCannon
 {
@@ -99,8 +98,6 @@ class PointDefenseCannon
             this.audio.currentTime = 0;
             this.audio.play();
         }
-
-        // if (Math.random() < 0.95) return;
     }
 
     draw(ctx)

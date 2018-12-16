@@ -1,5 +1,7 @@
 // canvas.js
 
+const VERSION = "2018.12.16a Lego"
+
 const PI = Math.PI;
 const RAD2DEG = 180/Math.PI;
 
@@ -34,7 +36,7 @@ var TIME = 0;
 var CANVAS = document.getElementById("canvas");
 var CTX = CANVAS.getContext("2d");
 
-var AUDIO = new Audio("scripts/space/sounds/Hall of the Mountain King.mp3");
+var AUDIO = new Audio("scripts/space/sounds/Wii Shop Channel Music.mp3");
 console.log(AUDIO);
 AUDIO.volume = 0.05;
 
@@ -103,7 +105,7 @@ document.addEventListener('mousewheel', function(event)
 
 document.addEventListener('mousemove', function(event)
 {
-    if (!AUDIO.ispaused && AUDIO.readyState > 0) AUDIO.play();
+    // if (!AUDIO.ispaused && AUDIO.readyState > 0) AUDIO.play();
     MOUSE_SCREEN_POS = [event.clientX, event.clientY];
     updateMouse();
 });
@@ -430,75 +432,39 @@ function physics(dt)
     {
         if (wkey)
         {
-            PLAYER_SHIP.thrusters[5].firing = true;
-            PLAYER_SHIP.thrusters[6].firing = true;
+            // PLAYER_SHIP.thrusters[5].firing = true;
+            // PLAYER_SHIP.thrusters[6].firing = true;
         }
         if (qkey)
         {
-            if (DOCKING_MODE)
-            {
-                PLAYER_SHIP.thrusters[2].firing = true;
-                PLAYER_SHIP.thrusters[6].firing = true;
-                PLAYER_SHIP.thrusters[0].firing = true;
-                PLAYER_SHIP.thrusters[4].firing = true;
-            }
-            else
-            {
-                PLAYER_SHIP.thrusters[0].firing = true;
-                PLAYER_SHIP.thrusters[7].firing = true;
-            }
+            // PLAYER_SHIP.thrusters[0].firing = true;
+            // PLAYER_SHIP.thrusters[7].firing = true;
         }
         if (ekey)
         {
-            if (DOCKING_MODE)
-            {
-                PLAYER_SHIP.thrusters[1].firing = true;
-                PLAYER_SHIP.thrusters[5].firing = true;
-                PLAYER_SHIP.thrusters[3].firing = true;
-                PLAYER_SHIP.thrusters[7].firing = true;
-            }
-            else
-            {
-                PLAYER_SHIP.thrusters[3].firing = true;
-                PLAYER_SHIP.thrusters[4].firing = true;
-            }
+            // PLAYER_SHIP.thrusters[3].firing = true;
+            // PLAYER_SHIP.thrusters[4].firing = true;
         }
         if (skey)
         {
-            PLAYER_SHIP.thrusters[1].firing = true;
-            PLAYER_SHIP.thrusters[2].firing = true;
+            // PLAYER_SHIP.thrusters[1].firing = true;
+            // PLAYER_SHIP.thrusters[2].firing = true;
         }
         if (akey)
         {
-            if (DOCKING_MODE)
-            {
-                PLAYER_SHIP.thrusters[0].firing = true;
-                PLAYER_SHIP.thrusters[7].firing = true;
-            }
-            else
-            {
-                // PLAYER_SHIP.thrusters[2].firing = true;
-                // PLAYER_SHIP.thrusters[6].firing = true;
-                // PLAYER_SHIP.thrusters[0].firing = true;
-                // PLAYER_SHIP.thrusters[4].firing = true;
-                PLAYER_SHIP.applyMoment(50000000);
-            }
+            // PLAYER_SHIP.thrusters[2].firing = true;
+            // PLAYER_SHIP.thrusters[6].firing = true;
+            // PLAYER_SHIP.thrusters[0].firing = true;
+            // PLAYER_SHIP.thrusters[4].firing = true;
+            PLAYER_SHIP.applyMoment(50000000);
         }
         if (dkey)
         {
-            if (DOCKING_MODE)
-            {
-                PLAYER_SHIP.thrusters[3].firing = true;
-                PLAYER_SHIP.thrusters[4].firing = true;
-            }
-            else
-            {
-                // PLAYER_SHIP.thrusters[1].firing = true;
-                // PLAYER_SHIP.thrusters[5].firing = true;
-                // PLAYER_SHIP.thrusters[3].firing = true;
-                // PLAYER_SHIP.thrusters[7].firing = true;
-                PLAYER_SHIP.applyMoment(-50000000);
-            }
+            // PLAYER_SHIP.thrusters[1].firing = true;
+            // PLAYER_SHIP.thrusters[5].firing = true;
+            // PLAYER_SHIP.thrusters[3].firing = true;
+            // PLAYER_SHIP.thrusters[7].firing = true;
+            PLAYER_SHIP.applyMoment(-50000000);
         }
         if (shift)
         {
@@ -518,7 +484,7 @@ function physics(dt)
         }
         if (MATCH_VELOCITY)
         {
-            PLAYER_SHIP.matchVelocity(TARGET_OBJECT);
+            // PLAYER_SHIP.matchVelocity(TARGET_OBJECT);
         }
         // PLAYER_SHIP.applyMoment(-PLAYER_SHIP.omega*CORVETTE_MOMENT_INERTIA);
 
@@ -780,6 +746,11 @@ function draw()
             70, 30 + 20*(ALERTS.length - i - 1));
     }
 
+
+    CTX.fillStyle = "gray";
+    CTX.font = "12px Helvetica";
+    CTX.fillText("BUILD: " + VERSION.toUpperCase(), 720, HEIGHT - 10);
+
     if (GAME_PAUSED && SHOW_HELP)
     {
         CTX.globalAlpha = 0.9;
@@ -868,8 +839,17 @@ function draw()
 function start()
 {
     if (GAME_PAUSED) AUDIO.playbackRate = 0;
-    else if (SLOW_TIME) AUDIO.playbackRate = 0.7;
-    else AUDIO.playbackRate = 1;
+    else if (SLOW_TIME)
+    {
+        AUDIO.playbackRate = 1;
+        AUDIO.volume = 0.015;
+    }
+    else
+    {
+        if (!AUDIO.ispaused) AUDIO.play();
+        AUDIO.playbackRate = 1;
+        AUDIO.volume = 0.03;
+    }
 
 
     current = new Date().getTime();
