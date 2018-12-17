@@ -23,6 +23,7 @@ function Collidable(length, width, max_health)
 
     this.name = "Todd";
     this.type = "Platonic Solid";
+    this.faction = "Neutral";
 
     this.box = new Hitbox([[length/2, width/2],
                            [-length/2, width/2],
@@ -31,7 +32,12 @@ function Collidable(length, width, max_health)
     this.box.object = this;
 }
 
-Collidable.prototype.step = function(dt)
+Collidable.prototype.control = function(dt)
+{
+    // no default control action
+}
+
+Collidable.prototype.physics = function(dt)
 {
     this.time += dt;
     this.pos_prev = this.pos.slice();
@@ -49,6 +55,12 @@ Collidable.prototype.step = function(dt)
         this.box.pos = this.pos.slice();
         this.box.theta = this.theta;
     }
+}
+
+Collidable.prototype.step = function(dt)
+{
+    this.control(dt);
+    this.physics(dt);
 }
 
 Collidable.prototype.applyMoment = function(moment)
@@ -135,19 +147,19 @@ Collidable.prototype.explode = function()
 
 function conserveMomentum(obj1, obj2)
 {
-    if (obj1.mass > 1000*obj2.mass)
+    if (obj1.mass >= obj2.mass)
     {
         obj2.vel = obj1.vel.slice();
         return;
     }
-    if (obj2.mass > 1000*obj1.mass)
+    if (obj2.mass >= obj1.mass)
     {
         obj1.vel = obj2.vel.slice();
         return;
     }
-    let momentum = add2d(mult2d(obj1.vel, obj1.mass),
-        mult2d(obj2.vel, obj2.mass));
-    let vel = div2d(momentum, obj1.mass + obj2.mass);
-    obj1.vel = vel;
-    obj2.vel = vel;
+    // let momentum = add2d(mult2d(obj1.vel, obj1.mass),
+    //     mult2d(obj2.vel, obj2.mass));
+    // let vel = div2d(momentum, obj1.mass + obj2.mass);
+    // obj1.vel = vel;
+    // obj2.vel = vel;
 }

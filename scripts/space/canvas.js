@@ -1,6 +1,6 @@
 // canvas.js
 
-const VERSION = "2018.12.16a Lego"
+const VERSION = "2018.12.16b Turtle"
 
 const PI = Math.PI;
 const RAD2DEG = 180/Math.PI;
@@ -17,7 +17,6 @@ var SLOW_TIME = false;
 var SHOW_HELP = false;
 var GAME_OVER = false;
 var PLAYER_SCORE = 0;
-var DOCKING_MODE = false;
 
 var PLAYER_VEL = [0, 0];
 
@@ -37,7 +36,6 @@ var CANVAS = document.getElementById("canvas");
 var CTX = CANVAS.getContext("2d");
 
 var AUDIO = new Audio("scripts/space/sounds/Wii Shop Channel Music.mp3");
-console.log(AUDIO);
 AUDIO.volume = 0.05;
 
 var LEFT_KEY = false, RIGHT_KEY = false, UP_KEY = false, DOWN_KEY = false,
@@ -56,7 +54,7 @@ var firemode = true;
 var WIDTH = document.body.clientWidth;
 var HEIGHT = document.body.scrollHeight;
 var MOUSEX = 0, MOUSEY = 0;
-var MOUSE_SCREEN_POS = [0, 0];
+var MOUSE_SCREEN_POS = [WIDTH/2, HEIGHT/2];
 
 var VIEW_RADIUS = 800;
 var PIXELS = WIDTH/(2*VIEW_RADIUS); //  pixels per meter
@@ -180,10 +178,6 @@ document.addEventListener('keydown', function(event)
         case 78: DRAW_HITBOX = !DRAW_HITBOX;
                  str = DRAW_HITBOX ? "enabled." : "disabled."
                  throwAlert("DRAW_HITBOX " + str, ALERT_DISPLAY_TIME);
-                 break;
-        case 80: DOCKING_MODE = !DOCKING_MODE;
-                 str = DOCKING_MODE ? "enabled." : "disabled."
-                 throwAlert("Docking mode " + str, ALERT_DISPLAY_TIME);
                  break;
         case 81: qkey = true; break;
         case 82: SLOW_TIME = !SLOW_TIME; break;
@@ -432,43 +426,43 @@ function physics(dt)
     {
         if (wkey)
         {
-            // PLAYER_SHIP.thrusters[5].firing = true;
-            // PLAYER_SHIP.thrusters[6].firing = true;
+            PLAYER_SHIP.thrusters[5].firing = true;
+            PLAYER_SHIP.thrusters[6].firing = true;
         }
         if (qkey)
         {
-            // PLAYER_SHIP.thrusters[0].firing = true;
-            // PLAYER_SHIP.thrusters[7].firing = true;
+            PLAYER_SHIP.thrusters[0].firing = true;
+            PLAYER_SHIP.thrusters[7].firing = true;
         }
         if (ekey)
         {
-            // PLAYER_SHIP.thrusters[3].firing = true;
-            // PLAYER_SHIP.thrusters[4].firing = true;
+            PLAYER_SHIP.thrusters[3].firing = true;
+            PLAYER_SHIP.thrusters[4].firing = true;
         }
         if (skey)
         {
-            // PLAYER_SHIP.thrusters[1].firing = true;
-            // PLAYER_SHIP.thrusters[2].firing = true;
+            PLAYER_SHIP.thrusters[1].firing = true;
+            PLAYER_SHIP.thrusters[2].firing = true;
         }
         if (akey)
         {
-            // PLAYER_SHIP.thrusters[2].firing = true;
-            // PLAYER_SHIP.thrusters[6].firing = true;
-            // PLAYER_SHIP.thrusters[0].firing = true;
-            // PLAYER_SHIP.thrusters[4].firing = true;
+            PLAYER_SHIP.thrusters[2].firing = true;
+            PLAYER_SHIP.thrusters[6].firing = true;
+            PLAYER_SHIP.thrusters[0].firing = true;
+            PLAYER_SHIP.thrusters[4].firing = true;
             PLAYER_SHIP.applyMoment(50000000);
         }
         if (dkey)
         {
-            // PLAYER_SHIP.thrusters[1].firing = true;
-            // PLAYER_SHIP.thrusters[5].firing = true;
-            // PLAYER_SHIP.thrusters[3].firing = true;
-            // PLAYER_SHIP.thrusters[7].firing = true;
+            PLAYER_SHIP.thrusters[1].firing = true;
+            PLAYER_SHIP.thrusters[5].firing = true;
+            PLAYER_SHIP.thrusters[3].firing = true;
+            PLAYER_SHIP.thrusters[7].firing = true;
             PLAYER_SHIP.applyMoment(-50000000);
         }
         if (shift)
         {
-            // PLAYER_SHIP.thrusters[8].firing = true;
+            PLAYER_SHIP.thrusters[8].firing = true;
             PLAYER_SHIP.applyForce(rot2d([CORVETTE_MAIN_THRUST, 0],
                 PLAYER_SHIP.theta));
         }
@@ -842,13 +836,13 @@ function start()
     else if (SLOW_TIME)
     {
         AUDIO.playbackRate = 1;
-        AUDIO.volume = 0.015;
+        AUDIO.volume = 0.02;
     }
     else
     {
         if (!AUDIO.ispaused) AUDIO.play();
         AUDIO.playbackRate = 1;
-        AUDIO.volume = 0.03;
+        AUDIO.volume = 0.05;
     }
 
 

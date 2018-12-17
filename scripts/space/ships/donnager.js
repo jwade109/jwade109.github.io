@@ -58,7 +58,7 @@ function Donnager(pos, theta)
 
 Donnager.prototype = Object.create(Collidable.prototype);
 
-Donnager.prototype.step = function(dt)
+Donnager.prototype.control = function(dt)
 {
     let candidates = [PLAYER_SHIP];
     for (let obj of WORLD)
@@ -83,10 +83,6 @@ Donnager.prototype.step = function(dt)
         if (best != null) pdc.intercept(best);
         else pdc.intercept(PLAYER_SHIP);
     }
-
-    this.pos_prev = this.pos.slice();
-    this.pos[0] += this.vel[0]*dt;
-    this.pos[1] += this.vel[1]*dt;
 }
 
 Donnager.prototype.skin = function()

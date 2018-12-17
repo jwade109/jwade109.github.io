@@ -2,7 +2,7 @@
 
 const BULLET_MAX_HEALTH = 1;
 const BULLET_LENGTH = 2;
-const BULLET_DAMAGE = 1;
+const BULLET_DAMAGE = 5;
 const BULLET_MASS = 0.05;
 
 function Bullet(pos, vel, theta)

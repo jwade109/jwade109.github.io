@@ -53,16 +53,16 @@ function Corvette(pos, theta)
     this.pdcs =
         [new PointDefenseCannon(
             [this.length/4, this.width*0.36], -Math.PI/2.4, this,
-            [-Math.PI/2.2, Math.PI/2.2], 500),
+            [-Math.PI/2.2, Math.PI/2.2], CORVETTE_PDC_RANGE),
          new PointDefenseCannon(
             [this.length/4, -this.width*0.36], Math.PI/2.4, this,
-            [-Math.PI/2.2, Math.PI/2.2], 500),
+            [-Math.PI/2.2, Math.PI/2.2], CORVETTE_PDC_RANGE),
          new PointDefenseCannon(
             [-this.length/6, -this.width*0.44], Math.PI/2, this,
-            [-Math.PI/2.2, Math.PI/1.8], 500),
+            [-Math.PI/2.2, Math.PI/1.8], CORVETTE_PDC_RANGE),
          new PointDefenseCannon(
             [-this.length/6, this.width*0.44], -Math.PI/2, this,
-            [-Math.PI/1.8, Math.PI/2.2], 500)];
+            [-Math.PI/1.8, Math.PI/2.2], CORVETTE_PDC_RANGE)];
 }
 
 Corvette.prototype = Object.create(Collidable.prototype);
@@ -134,6 +134,8 @@ Corvette.prototype.firePDC = function()
             pdc.fireAt([MOUSEX, MOUSEY]);
     }
 }
+
+Corvette.prototype.control = Controller.player;
 
 Corvette.prototype.matchVelocity = function(target)
 {
@@ -297,48 +299,6 @@ Corvette.prototype.skin = function()
     CTX.restore();
 
     for (let pdc of this.pdcs) pdc.draw(CTX);
-}
-
-Corvette.prototype.step = function(dt)
-{
-    this.pos_prev = this.pos.slice();
-    if (this.torpedo_reload > 0) this.torpedo_reload -= dt;
-    if (this.railgun_reload > 0) this.railgun_reload -= dt;
-    if (this.pdc_reload > 0) this.pdc_reload -= dt;
-    let bodyacc = [0, 0];
-    let moment = 0;
-    let dfuel = 0;
-    // for (let t of this.thrusters)
-    // {
-    //     if (t.firing && (this.fuel >= t.thrust || INFINITE_FUEL))
-    //     {
-    //         if (!INFINITE_FUEL) this.fuel -= t.thrust;
-    //         let thrustv = [-t.thrust*Math.sin(t.theta),
-    //                        -t.thrust*Math.cos(t.theta)];
-    //         bodyacc[0] += thrustv[0]/this.mass;
-    //         bodyacc[1] += thrustv[1]/this.mass;
-    //
-    //         moment += thrustv[0]*t.pos[0] - thrustv[1]*t.pos[1];
-    //     }
-    //
-    //     t.firing = false;
-    // }
-
-    this.acc = add2d(this.acc, rot2d(bodyacc, this.theta));
-    this.alpha += moment/this.izz;
-
-    this.vel[0] += this.acc[0]*dt;
-    this.vel[1] += this.acc[1]*dt;
-    this.pos[0] += this.vel[0]*dt;
-    this.pos[1] += this.vel[1]*dt;
-    this.omega += this.alpha*dt;
-    this.theta += this.omega*dt;
-
-    this.acc = [0, 0];
-    this.alpha = 0;
-
-    this.box.pos = this.pos.slice();
-    this.box.theta = this.theta;
 }
 
 Corvette.prototype.damage = function(d)

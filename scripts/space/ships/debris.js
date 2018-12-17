@@ -28,29 +28,16 @@ function Debris(pos, vel, theta, omega, radius)
 
 Debris.prototype = Object.create(Collidable.prototype);
 
-Debris.prototype.step = function(dt)
+Debris.prototype.control = function(dt)
 {
-    this.pos_prev = this.pos.slice();
-    this.pos[0] += this.vel[0]*dt;
-    this.pos[1] += this.vel[1]*dt;
-    this.theta += this.omega*dt;
-
-    if (this.hasOwnProperty("box"))
-    {
-        this.box.pos = this.pos.slice();
-        this.box.theta = this.theta;
-    }
-
     if (this.radius < SMALL_DEBRIS) this.opacity -= dt*Math.random();
     if (this.opacity <= 0) this.remove = true;
 }
 
 Debris.prototype.skin = function()
 {
-
     CTX.save();
     CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
-
     CTX.rotate(-this.theta);
     CTX.strokeStyle = "black";
     CTX.fillStyle = this.color;

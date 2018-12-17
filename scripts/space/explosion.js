@@ -23,7 +23,6 @@ class Explosion
           "Explosion Distant Bomb 02.wav"
         ]
         let randn = Math.floor(Math.random()*sources.length);
-        console.log(randn);
         this.audio = new Audio(
             "scripts/space/sounds/" + sources[randn]);
         this.audio.volume = 0.1;
