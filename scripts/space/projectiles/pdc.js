@@ -22,9 +22,9 @@ class PointDefenseCannon
         this.baseColor = "gray";
         this.nodraw = false;
 
-        this.audio = new Audio("scripts/space/sounds/Weapon Machine Gun " +
-            "World War II Historical Single Shot Distant 01.wav");
-        this.audio.volume = 0.1;
+        this.audio = new Audio("scripts/space/sounds/" +
+            "Weapon Gun Rifle M16 Single Shot Interior Shooting Range 01.wav");
+        this.audio.volume = 0.005;
         this.audio.playbackRate = 2;
     }
 

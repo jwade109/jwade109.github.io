@@ -1,6 +1,6 @@
 // canvas.js
 
-const VERSION = "2018.12.16b Turtle"
+const VERSION = "2018.12.16c Tortoise"
 
 const PI = Math.PI;
 const RAD2DEG = 180/Math.PI;
@@ -35,8 +35,7 @@ var TIME = 0;
 var CANVAS = document.getElementById("canvas");
 var CTX = CANVAS.getContext("2d");
 
-var AUDIO = new Audio("scripts/space/sounds/Wii Shop Channel Music.mp3");
-AUDIO.volume = 0.05;
+var AUDIO = new Audio("scripts/space/sounds/Mii Channel Jazz Theme.mp3");
 
 var LEFT_KEY = false, RIGHT_KEY = false, UP_KEY = false, DOWN_KEY = false,
     space = false,
@@ -93,6 +92,12 @@ canvas.oncontextmenu = function(e)
 {
     e.preventDefault();
 };
+
+document.addEventListener('visibilitychange', function(event)
+{
+    if (document.hidden) GAME_PAUSED = true;
+    AUDIO.ispaused = true;
+});
 
 document.addEventListener('mousewheel', function(event)
 {
@@ -156,16 +161,16 @@ document.addEventListener('keydown', function(event)
         case 49: ONE_KEY = true; break
         case 50: TWO_KEY = true; break;
         case 65: akey = true; break;
-        case 66: DRAW_FIRING_ARC = !DRAW_FIRING_ARC; break;
+        case 66: DRAW_FIRING_ARC = !DRAW_FIRING_ARC;
+                 str = DRAW_FIRING_ARC ? "enabled." : "disabled."
+                 throwAlert("DRAW_FIRING_ARC " + str, ALERT_DISPLAY_TIME);
+                 break;
         case 69: ekey = true; break;
         case 70: firemode = !firemode;
                  str = firemode ?
                      "Switched active weapon to torpedoes." :
                      "Switched active weapon to railgun.";
                  throwAlert(str, ALERT_DISPLAY_TIME);
-                 break;
-        case 72: SHOW_HELP = !SHOW_HELP;
-                 if (SHOW_HELP) GAME_PAUSED = true;
                  break;
         case 74: if (GAME_PAUSED) physics(-SLOW_DT);
                  break;
@@ -494,12 +499,6 @@ function physics(dt)
         obj.vel[0] -= vel[0];
         obj.vel[1] -= vel[1];
     }
-
-    for (let i in ALERTS)
-    {
-        ALERTS[i][1] -= dt;
-        if (ALERTS[i][1] < 0) ALERTS.splice(i, 1);
-    }
 }
 
 function draw()
@@ -574,7 +573,7 @@ function draw()
     CTX.arc(MOUSEX*PIXELS, MOUSEY*PIXELS, 4, 0, Math.PI*2);
     CTX.stroke();
 
-    if (NEAREST_OBJECT != null && (SLOW_TIME || GAME_PAUSED))
+    if (NEAREST_OBJECT != null && SLOW_TIME && !GAME_PAUSED)
     {
         CTX.save();
         CTX.translate(NEAREST_OBJECT.pos[0]*PIXELS,
@@ -745,48 +744,48 @@ function draw()
     CTX.font = "12px Helvetica";
     CTX.fillText("BUILD: " + VERSION.toUpperCase(), 720, HEIGHT - 10);
 
-    if (GAME_PAUSED && SHOW_HELP)
-    {
-        CTX.globalAlpha = 0.9;
-        CTX.fillStyle = "white";
-        // CTX.fillRect(0, 0, width, height);
-        CTX.font = "24px Helvetica";
-        CTX.globalAlpha = 0.6;
-        CTX.beginPath();
-        let border = 40, line = 30;
-        CTX.rect(0, 0, WIDTH, HEIGHT);
-        CTX.fill();
-        CTX.globalAlpha = 1;
-        CTX.fillStyle = "black";
-        CTX.fillText("You are the captain of a stolen Martian corvette.",
-            1.3*border, 1.5*border);
-        CTX.fillText("(\"It's legitimate salvage!\", you insist " +
-            "every chance you get.)", 1.3*border, 1.5*border + line);
-        CTX.fillText("Destroy all the destroyers before " +
-            "they destroy you.", 1.3*border, 1.5*border + 3*line);
-        CTX.fillText("You can zoom out and in with keys [1] and [2].",
-            1.3*border, 1.5*border + 4*line);
-        CTX.fillText("To fire the MAIN ENGINE, just press the [SHIFT] key;",
-            1.3*border, 1.5*border + 6*line);
-        CTX.fillText("Fire MANEUVERING THRUSTERS with " +
-            "[W], [A], [S], [D], [Q], and [E].",
-            1.3*border, 1.5*border + 7*line);
-        CTX.fillText("Hit [SPACE] to fire your PRIMARY WEAPON;",
-            1.3*border, 1.5*border + 9*line);
-        CTX.fillText("Use [F] to switch between TORPEDOES and RAILGUN.",
-            1.3*border, 1.5*border + 10*line);
-        CTX.fillText("Fire POINT DEFENSE CANNONS with just a MOUSE CLICK;",
-            1.3*border, 1.5*border + 12*line);
-        CTX.fillText("You can shoot down enemy torpedoes if you're quick!",
-            1.3*border, 1.5*border + 13*line);
-        CTX.fillText("If you need HELP again, press [H] for some tips,",
-            1.3*border, 1.5*border + 15*line);
-        CTX.fillText("or press [ESC] to PAUSE, so you can eat chips.",
-            1.3*border, 1.5*border + 16*line);
-        CTX.fillText("Please send any bug reports to my fax machine.",
-            1.3*border, 1.5*border + 18*line);
-    }
-    else if (PLAYER_SHIP.remove)
+    // if (GAME_PAUSED && SHOW_HELP)
+    // {
+    //     CTX.globalAlpha = 0.9;
+    //     CTX.fillStyle = "white";
+    //     // CTX.fillRect(0, 0, width, height);
+    //     CTX.font = "24px Helvetica";
+    //     CTX.globalAlpha = 0.6;
+    //     CTX.beginPath();
+    //     let border = 40, line = 30;
+    //     CTX.rect(0, 0, WIDTH, HEIGHT);
+    //     CTX.fill();
+    //     CTX.globalAlpha = 1;
+    //     CTX.fillStyle = "black";
+    //     CTX.fillText("You are the captain of a stolen Martian corvette.",
+    //         1.3*border, 1.5*border);
+    //     CTX.fillText("(\"It's legitimate salvage!\", you insist " +
+    //         "every chance you get.)", 1.3*border, 1.5*border + line);
+    //     CTX.fillText("Destroy all the destroyers before " +
+    //         "they destroy you.", 1.3*border, 1.5*border + 3*line);
+    //     CTX.fillText("You can zoom out and in with keys [1] and [2].",
+    //         1.3*border, 1.5*border + 4*line);
+    //     CTX.fillText("To fire the MAIN ENGINE, just press the [SHIFT] key;",
+    //         1.3*border, 1.5*border + 6*line);
+    //     CTX.fillText("Fire MANEUVERING THRUSTERS with " +
+    //         "[W], [A], [S], [D], [Q], and [E].",
+    //         1.3*border, 1.5*border + 7*line);
+    //     CTX.fillText("Hit [SPACE] to fire your PRIMARY WEAPON;",
+    //         1.3*border, 1.5*border + 9*line);
+    //     CTX.fillText("Use [F] to switch between TORPEDOES and RAILGUN.",
+    //         1.3*border, 1.5*border + 10*line);
+    //     CTX.fillText("Fire POINT DEFENSE CANNONS with just a MOUSE CLICK;",
+    //         1.3*border, 1.5*border + 12*line);
+    //     CTX.fillText("You can shoot down enemy torpedoes if you're quick!",
+    //         1.3*border, 1.5*border + 13*line);
+    //     CTX.fillText("If you need HELP again, press [H] for some tips,",
+    //         1.3*border, 1.5*border + 15*line);
+    //     CTX.fillText("or press [ESC] to PAUSE, so you can eat chips.",
+    //         1.3*border, 1.5*border + 16*line);
+    //     CTX.fillText("Please send any bug reports to my fax machine.",
+    //         1.3*border, 1.5*border + 18*line);
+    // }
+    if (PLAYER_SHIP.remove)
     {
         CTX.font = "100px Helvetica";
         CTX.globalAlpha = 1;
@@ -801,10 +800,26 @@ function draw()
         CTX.font = "100px Helvetica";
         CTX.globalAlpha = 0.4;
         CTX.fillStyle = "darkgray";
+        CTX.strokeStyle = "darkgray";
         CTX.fillText("PAUSED", WIDTH/2 + 20, HEIGHT/2 - 20);
-        CTX.font = "25px Helvetica";
-        CTX.fillText("PRESS [H] FOR HELP",
-                     WIDTH/2 + 20, HEIGHT/2 + 30);
+        CTX.font = "20px Helvetica";
+        CTX.globalAlpha = 0.8;
+        CTX.fillStyle = "white";
+        CTX.fillRect(WIDTH/2 + 30, HEIGHT/2 + 30, 500, 300);
+        CTX.globalAlpha = 1;
+        CTX.strokeRect(WIDTH/2 + 30, HEIGHT/2 + 30, 500, 300);
+        CTX.fillStyle = "black";
+        CTX.fillText("[SHIFT] TO ACCELERATE", WIDTH/2 + 50, HEIGHT/2 + 70);
+        CTX.fillText("[A/D] TO TURN", WIDTH/2 + 50, HEIGHT/2 + 100);
+        CTX.fillText("[SPACE] TO FIRE WEAPONS", WIDTH/2 + 50, HEIGHT/2 + 130);
+        CTX.fillText("[F] TO SWITCH WEAPONS", WIDTH/2 + 50, HEIGHT/2 + 160);
+        CTX.fillText("[T] TO SLOW DOWN TIME", WIDTH/2 + 50, HEIGHT/2 + 190);
+        CTX.fillText("[LEFT CLICK] TO FIRE ANTI-TORPEDO CANNONS",
+            WIDTH/2 + 50, HEIGHT/2 + 220);
+        CTX.fillText("[RIGHT CLICK] TO TARGET LOCK",
+            WIDTH/2 + 50, HEIGHT/2 + 250);
+        CTX.fillText("[1][2] TO ZOOM IN/OUT", WIDTH/2 + 50, HEIGHT/2 + 280);
+        CTX.fillText("[B][N][M] FOR DEBUG", WIDTH/2 + 50, HEIGHT/2 + 310);
     }
     else if (SLOW_TIME)
     {
@@ -832,19 +847,20 @@ function draw()
 
 function start()
 {
-    if (GAME_PAUSED) AUDIO.playbackRate = 0;
-    else if (SLOW_TIME)
+    for (let i in ALERTS)
     {
-        AUDIO.playbackRate = 1;
-        AUDIO.volume = 0.02;
+        ALERTS[i][1] -= dt;
+        if (ALERTS[i][1] < 0) ALERTS.splice(i, 1);
     }
+
+    if (document.hidden) GAME_PAUSED = true;
+    if (GAME_PAUSED) AUDIO.playbackRate = 0;
     else
     {
         if (!AUDIO.ispaused) AUDIO.play();
         AUDIO.playbackRate = 1;
-        AUDIO.volume = 0.05;
+        AUDIO.volume = 0.015;
     }
-
 
     current = new Date().getTime();
     draw();

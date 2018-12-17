@@ -34,21 +34,21 @@ function Corvette(pos, theta)
                            [this.length/2, -this.width/3]]);
     this.box.object = this;
 
-    // let tx = this.width*0.45;
-    // let ty = this.width*0.7;
-    // let sw = 3;
-    // this.thrusters = [
-    //     new Thruster([tx, ty], 0, CORVETTE_RCS_THRUST, sw),
-    //     new Thruster([tx, ty], Math.PI/2, CORVETTE_RCS_THRUST, sw),
-    //     new Thruster([-tx, ty], Math.PI/2, CORVETTE_RCS_THRUST, sw),
-    //     new Thruster([-tx, ty], Math.PI, CORVETTE_RCS_THRUST, sw),
-    //     new Thruster([-tx, -ty], Math.PI, CORVETTE_RCS_THRUST, sw),
-    //     new Thruster([-tx, -ty], 3*Math.PI/2, CORVETTE_RCS_THRUST, sw),
-    //     new Thruster([tx, -ty], 3*Math.PI/2, CORVETTE_RCS_THRUST, sw),
-    //     new Thruster([tx, -ty], 0, CORVETTE_RCS_THRUST, sw),
-    //     new Thruster([0, -this.length/2],
-    //         -Math.PI/2, CORVETTE_MAIN_THRUST, this.width)];
-    // for (let t of this.thrusters) t.drawbell = false;
+    let tx = this.width*0.45;
+    let ty = this.width*0.7;
+    let sw = 3;
+    this.thrusters = [
+        new Thruster([tx, ty], 0, CORVETTE_RCS_THRUST, sw),
+        new Thruster([tx, ty], Math.PI/2, CORVETTE_RCS_THRUST, sw),
+        new Thruster([-tx, ty], Math.PI/2, CORVETTE_RCS_THRUST, sw),
+        new Thruster([-tx, ty], Math.PI, CORVETTE_RCS_THRUST, sw),
+        new Thruster([-tx, -ty], Math.PI, CORVETTE_RCS_THRUST, sw),
+        new Thruster([-tx, -ty], 3*Math.PI/2, CORVETTE_RCS_THRUST, sw),
+        new Thruster([tx, -ty], 3*Math.PI/2, CORVETTE_RCS_THRUST, sw),
+        new Thruster([tx, -ty], 0, CORVETTE_RCS_THRUST, sw),
+        new Thruster([0, -this.length/2],
+            -Math.PI/2, CORVETTE_MAIN_THRUST, this.width)];
+    for (let t of this.thrusters) t.drawbell = false;
 
     this.pdcs =
         [new PointDefenseCannon(
@@ -200,11 +200,11 @@ Corvette.prototype.skin = function()
     CTX.rotate(-this.theta - Math.PI/2)
     // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE FRAME
 
-    // for (let t of this.thrusters)
-    // {
-    //     if (this.fuel <= t.thrust) t.firing = false;
-    //     t.draw(CTX);
-    // }
+    for (let t of this.thrusters)
+    {
+        if (this.fuel <= t.thrust) t.firing = false;
+        t.draw(CTX);
+    }
 
     CTX.save();
     CTX.rotate(Math.PI/2);

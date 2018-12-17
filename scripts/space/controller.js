@@ -7,6 +7,7 @@ static player(dt)
 {
     if (this.torpedo_reload > 0) this.torpedo_reload -= dt;
     if (this.railgun_reload > 0) this.railgun_reload -= dt;
+    for (let thruster of this.thrusters) thruster.firing = false;
 }
 
 static morrigan(dt)

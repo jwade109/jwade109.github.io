@@ -138,7 +138,7 @@ Morrigan.prototype.skin = function()
     for (let pdc of this.pdcs) pdc.draw(CTX);
 }
 
-Morrigan.prototype.step = Controller.morrigan;
+Morrigan.prototype.control = Controller.morrigan;
 
 Morrigan.prototype.explode = function()
 {
