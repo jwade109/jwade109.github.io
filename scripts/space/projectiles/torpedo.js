@@ -3,7 +3,6 @@
 const TORPEDO_MASS = 200;
 const TORPEDO_THRUST = 100*9.81*TORPEDO_MASS;
 const TORPEDO_DAMAGE = 200;
-const TORPEDO_MIN_RANGE = 0;
 const TORPEDO_LENGTH = 6;
 const TORPEDO_WIDTH = 1;
 const TORPEDO_MAX_HEALTH = 1;
@@ -36,13 +35,15 @@ Torpedo.prototype = Object.create(Collidable.prototype);
 
 Torpedo.prototype.step = function(dt)
 {
-    if (this.target.remove) this.tracking = false;
+    if (this.target != null && this.target.remove) this.tracking = false;
     this.time += dt;
 
-    let theta = -torpedoGuidance(this.pos.slice(),
-                                 this.vel.slice(),
-                                 this.target.pos.slice(),
-                                 this.target.vel.slice());
+    let theta = this.theta;
+    if (this.target != null)
+        theta = -torpedoGuidance(this.pos.slice(),
+                         this.vel.slice(),
+                         this.target.pos.slice(),
+                         this.target.vel.slice());
 
     while (theta < this.theta - Math.PI) theta += Math.PI*2;
     while (theta > this.theta + Math.PI) theta -= Math.PI*2;

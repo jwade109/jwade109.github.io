@@ -1,6 +1,6 @@
 // canvas.js
 
-const VERSION = "2018.12.17a Hare"
+const VERSION = "2018.12.17b Harpy"
 
 const PI = Math.PI;
 const RAD2DEG = 180/Math.PI;
@@ -14,7 +14,6 @@ var MAX_ENEMIES = 3;
 var GAME_PAUSED = true;
 var PAUSE_TIME = 0;
 var SLOW_TIME = false;
-var SHOW_HELP = false;
 var GAME_OVER = false;
 var PLAYER_SCORE = 0;
 
@@ -47,24 +46,23 @@ var LEFT_KEY = false, RIGHT_KEY = false, UP_KEY = false, DOWN_KEY = false,
 var ONE_KEY = false, TWO_KEY = false;
 
 var ALERTS = [];
-var ALERT_DISPLAY_TIME = 3;
-var firemode = true;
+const ALERT_DISPLAY_TIME = 3;
+var PLAYER_WEAPON_SELECT = true; // true - missiles, false - railgun
 
 var WIDTH = document.body.clientWidth;
 var HEIGHT = document.body.scrollHeight;
 var MOUSEX = 0, MOUSEY = 0;
 var MOUSE_SCREEN_POS = [WIDTH/2, HEIGHT/2];
 
-var VIEW_RADIUS = 800;
-var PIXELS = WIDTH/(2*VIEW_RADIUS); //  pixels per meter
+const MIN_ZOOM = 30;
+const MAX_ZOOM = 3000;
+var VIEW_RADIUS; zoom(900);
 
 var NEAREST_OBJECT = null;
 var TARGET_OBJECT = null;
 
 var WORLD = [];
 const WORLD_RENDER_DISTANCE = 4000;
-const MIN_ZOOM = 30;
-const MAX_ZOOM = 3000;
 
 var PLAYER_SHIP = new Corvette([0, 0], Math.PI/2);
 WORLD.push(PLAYER_SHIP);
@@ -153,7 +151,6 @@ document.addEventListener('keydown', function(event)
                  break;
         case 32: if (GAME_OVER) location.reload();
                  else space = true;
-                 // WORLD.push(new Mine());
                  break;
         case 37: LEFT_KEY = true; break;
         case 38: UP_KEY = true; break;
@@ -167,8 +164,8 @@ document.addEventListener('keydown', function(event)
                  throwAlert("DRAW_FIRING_ARC " + str, ALERT_DISPLAY_TIME);
                  break;
         case 69: ekey = true; break;
-        case 70: firemode = !firemode;
-                 str = firemode ?
+        case 70: PLAYER_WEAPON_SELECT = !PLAYER_WEAPON_SELECT;
+                 str = PLAYER_WEAPON_SELECT ?
                      "Switched active weapon to torpedoes." :
                      "Switched active weapon to railgun.";
                  throwAlert(str, ALERT_DISPLAY_TIME);
@@ -201,7 +198,7 @@ document.addEventListener('keydown', function(event)
                       TARGET_OBJECT = NEAREST_OBJECT;
                   break;
         default:
-            console.log('unhandled keycode: ' + event.keyCode);
+            // console.log('unhandled keycode: ' + event.keyCode);
     }
 });
 
@@ -237,7 +234,7 @@ document.addEventListener('keyup', function(event)
         case 83: skey = false; break;
         case 88: MATCH_VELOCITY = false; break;
         default:
-            console.log('unhandled keycode: ' + event.keyCode);
+            // console.log('unhandled keycode: ' + event.keyCode);
     }
 });
 
@@ -430,63 +427,60 @@ function physics(dt)
     }
     if (!GAME_OVER)
     {
-        if (wkey)
-        {
-            PLAYER_SHIP.thrusters[5].firing = true;
-            PLAYER_SHIP.thrusters[6].firing = true;
-        }
-        if (qkey)
-        {
-            PLAYER_SHIP.thrusters[0].firing = true;
-            PLAYER_SHIP.thrusters[7].firing = true;
-        }
-        if (ekey)
-        {
-            PLAYER_SHIP.thrusters[3].firing = true;
-            PLAYER_SHIP.thrusters[4].firing = true;
-        }
-        if (skey)
-        {
-            PLAYER_SHIP.thrusters[1].firing = true;
-            PLAYER_SHIP.thrusters[2].firing = true;
-        }
-        if (akey)
-        {
-            PLAYER_SHIP.thrusters[2].firing = true;
-            PLAYER_SHIP.thrusters[6].firing = true;
-            PLAYER_SHIP.thrusters[0].firing = true;
-            PLAYER_SHIP.thrusters[4].firing = true;
-            PLAYER_SHIP.applyMoment(50000000);
-        }
-        if (dkey)
-        {
-            PLAYER_SHIP.thrusters[1].firing = true;
-            PLAYER_SHIP.thrusters[5].firing = true;
-            PLAYER_SHIP.thrusters[3].firing = true;
-            PLAYER_SHIP.thrusters[7].firing = true;
-            PLAYER_SHIP.applyMoment(-50000000);
-        }
+        // if (wkey)
+        // {
+        //     // PLAYER_SHIP.thrusters[5].firing = true;
+        //     // PLAYER_SHIP.thrusters[6].firing = true;
+        // }
+        // if (qkey)
+        // {
+        //     // PLAYER_SHIP.thrusters[0].firing = true;
+        //     // PLAYER_SHIP.thrusters[7].firing = true;
+        // }
+        // if (ekey)
+        // {
+        //     // PLAYER_SHIP.thrusters[3].firing = true;
+        //     // PLAYER_SHIP.thrusters[4].firing = true;
+        // }
+        // if (skey)
+        // {
+        //     PLAYER_SHIP.thrusters[1].firing = true;
+        //     PLAYER_SHIP.thrusters[2].firing = true;
+        // }
         if (shift)
         {
-            PLAYER_SHIP.thrusters[8].firing = true;
+            // PLAYER_SHIP.thrusters[8].firing = true;
             PLAYER_SHIP.applyForce(rot2d([CORVETTE_MAIN_THRUST, 0],
                 PLAYER_SHIP.theta));
         }
         if (space)
         {
-            if (firemode) PLAYER_SHIP.launchTorpedo();
+            if (PLAYER_WEAPON_SELECT) PLAYER_SHIP.launchTorpedo(TARGET_OBJECT);
             else PLAYER_SHIP.fireRailgun();
             space = false;
         }
         if (leftClick || ENTER_KEY)
         {
-            PLAYER_SHIP.firePDC();
+            PLAYER_SHIP.firePDC(TARGET_OBJECT);
         }
-        if (MATCH_VELOCITY)
+
+        if (akey)
         {
-            // PLAYER_SHIP.matchVelocity(TARGET_OBJECT);
+            // PLAYER_SHIP.thrusters[2].firing = true;
+            // PLAYER_SHIP.thrusters[6].firing = true;
+            // PLAYER_SHIP.thrusters[0].firing = true;
+            // PLAYER_SHIP.thrusters[4].firing = true;
+            PLAYER_SHIP.applyMoment(50000000);
         }
-        // PLAYER_SHIP.applyMoment(-PLAYER_SHIP.omega*CORVETTE_MOMENT_INERTIA);
+        else if (dkey)
+        {
+            // PLAYER_SHIP.thrusters[1].firing = true;
+            // PLAYER_SHIP.thrusters[5].firing = true;
+            // PLAYER_SHIP.thrusters[3].firing = true;
+            // PLAYER_SHIP.thrusters[7].firing = true;
+            PLAYER_SHIP.applyMoment(-50000000);
+        }
+        else PLAYER_SHIP.applyMoment(-PLAYER_SHIP.omega*CORVETTE_MOMENT_INERTIA);
 
         TIME += dt;
     }
@@ -676,7 +670,7 @@ function draw()
 
     CTX.fillStyle = "gray";
     CTX.font = "12px Helvetica";
-    let weapon = firemode ? "TORPEDOES" : "RAILGUN";
+    let weapon = PLAYER_WEAPON_SELECT ? "TORPEDOES" : "RAILGUN";
     CTX.fillText("FIRING MODE: " + weapon, 70, HEIGHT - 10);
     CTX.fillText("RADAR RANGE: " + Math.round(VIEW_RADIUS) + " METERS",
         270, HEIGHT - 10);

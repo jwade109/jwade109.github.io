@@ -47,6 +47,7 @@ class PointDefenseCannon
 
     intercept(target)
     {
+        if (target == null) return NaN;
         if (distance(target.pos, this.globalPos()) > this.radius)
         {
             // if (this.object === PLAYER_SHIP)

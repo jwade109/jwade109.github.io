@@ -45,7 +45,7 @@ Morrigan.prototype.handleCollision = function(other)
     if (other === PLAYER_SHIP) this.damage(MORRIGAN_MAX_HEALTH);
 }
 
-Morrigan.prototype.launchTorpedo = function()
+Morrigan.prototype.launchTorpedo = function(target)
 {
     let poff = rot2d([0, this.length/2], this.theta + Math.PI/2);
     let voff = rot2d([0, 100], this.theta + Math.PI/2);
@@ -55,9 +55,10 @@ Morrigan.prototype.launchTorpedo = function()
     tpos[1] += poff[1];
     tvel[0] += voff[0];
     tvel[1] += voff[1];
-    let torp = new Torpedo(tpos, tvel, this.theta, TORPEDO_THRUST, 7);
+    let torp = new Torpedo(tpos, tvel, this.theta,
+        TORPEDO_THRUST, TORPEDO_LENGTH);
     torp.origin = this;
-    torp.target = PLAYER_SHIP;
+    torp.target = target;
     WORLD.push(torp);
 }
 

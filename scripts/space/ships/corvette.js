@@ -69,22 +69,14 @@ Corvette.prototype = Object.create(Collidable.prototype);
 
 Corvette.prototype.launchTorpedo = function()
 {
-    if (TARGET_OBJECT == null)
-    {
-        throwAlert("Torpedoes require target lock.", ALERT_DISPLAY_TIME);
-        return;
-    }
+    // if (TARGET_OBJECT == null)
+    // {
+    //     throwAlert("Torpedoes require target lock.", ALERT_DISPLAY_TIME);
+    //     return;
+    // }
     if (this.torpedo_reload > 0) return;
     this.torpedo_reload = 0.12;
     this.side = !this.side;
-
-    if (distance(TARGET_OBJECT.pos, PLAYER_SHIP.pos) < TORPEDO_MIN_RANGE)
-    {
-        throwAlert("Cannot fire torpedo -- " +
-            "Target closer than minimum tracking radius.",
-            ALERT_DISPLAY_TIME);
-        return;
-    }
 
     let poff = rot2d([this.length/2, 0], this.theta);
     let voff = rot2d([100, 0], this.theta);
@@ -124,13 +116,13 @@ Corvette.prototype.fireRailgun = function()
         this.vel.slice(), TORPEDO_EXPLOSION_RADIUS));
 }
 
-Corvette.prototype.firePDC = function()
+Corvette.prototype.firePDC = function(target)
 {
     for (let pdc of this.pdcs)
     {
-        if (TARGET_OBJECT == null)
+        if (target == null)
             pdc.fireAt([MOUSEX, MOUSEY]);
-        else if (isNaN(pdc.intercept(TARGET_OBJECT)))
+        else if (isNaN(pdc.intercept(target)))
             pdc.fireAt([MOUSEX, MOUSEY]);
     }
 }
@@ -183,33 +175,14 @@ Corvette.prototype.skin = function()
     CTX.save(); // save global reference frame
     CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
 
-    if (DRAW_FIRING_ARC)
-    {
-        CTX.globalAlpha = 0.3;
-        CTX.strokeStyle = "red";
-        CTX.beginPath();
-        CTX.arc(0, 0, TORPEDO_MIN_RANGE*PIXELS, 0, Math.PI*2);
-        CTX.stroke();
-        CTX.globalAlpha = 0.3;
-        CTX.strokeStyle = "black";
-        CTX.beginPath();
-        CTX.arc(0, 0, CORVETTE_PDC_RANGE*PIXELS, 0, Math.PI*2);
-        CTX.stroke();
-    }
-
-    CTX.rotate(-this.theta - Math.PI/2)
+    CTX.rotate(-this.theta)
     // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE FRAME
 
-    for (let t of this.thrusters)
-    {
-        if (this.fuel <= t.thrust) t.firing = false;
-        t.draw(CTX);
-    }
+    for (let t of this.thrusters) t.draw(CTX);
 
     CTX.save();
-    CTX.rotate(Math.PI/2);
 
-    if (!firemode)
+    if (!PLAYER_WEAPON_SELECT)
     {
         CTX.save();
         CTX.globalAlpha = 0.2;
