@@ -15,7 +15,7 @@ static morrigan(dt)
     if (PLAYER_SHIP.remove)
     {
         this.alpha = -this.omega;
-        this.acc = rot2d([10, 0], this.theta);
+        this.acc = rot2d([300, 0], this.theta);
         this.engine.firing = true;
         return;
     }

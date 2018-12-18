@@ -47,6 +47,13 @@ Railgun.prototype.handleCollision = function(other)
 
 Railgun.prototype.skin = function()
 {
+    CTX.globalAlpha = 0.6;
+    CTX.strokeStyle = "black";
+    CTX.beginPath();
+    CTX.moveTo(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+    CTX.lineTo(this.pos_prev[0]*PIXELS, this.pos_prev[1]*PIXELS);
+    CTX.stroke();
+
     CTX.save();
     CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
     CTX.rotate(-this.theta);

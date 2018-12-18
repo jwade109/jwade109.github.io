@@ -66,7 +66,33 @@ var NAMES = [
     "Sancho",
     "Babylon",
     "Halifax",
-    "Bulwark"
+    "Bulwark",
+    "Kestrel",
+    "Red-tail",
+    "Swallow",
+    "Torus",
+    "Vortex",
+    "Tetragon",
+    "Osprey",
+    "Nisos",
+    "Fregitadae",
+    "Adjudicator",
+    "Noether",
+    "Cerenkov",
+    "Gila Monster",
+    "Basilisk",
+    "Theseus",
+    "Man of War",
+    "The Stormwalker",
+    "Ariolimax",
+    "Shivan",
+    "Tektite",
+    "Nesasio",
+    "Simo",
+    "Kruos",
+    "Shrike",
+    "Bravais",
+    "Carnelian"
 ];
 
 var DEBRIS_NAMES = [
@@ -137,5 +163,8 @@ var DEBRIS_NAMES = [
     "Curiosity",
     "Discovery",
     "Pathfinder",
-    "Djikstra"
+    "Djikstra",
+    "Lanius",
+    "Zoltan",
+    "Crystal"
 ]

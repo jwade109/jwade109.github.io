@@ -19,6 +19,7 @@ function Donnager(pos, theta)
     this.type = "Donnager Class";
     this.trackable = true;
     this.permanent = true;
+    // this.is_enemy = true;
 
     this.box = new Hitbox([[this.length/2, this.width/6, ],
                            [this.length/2, -this.width/6, ],

@@ -1,11 +1,11 @@
 // canvas.js
 
-const VERSION = "2018.12.16c Tortoise"
+const VERSION = "2018.12.17a Hare"
 
 const PI = Math.PI;
 const RAD2DEG = 180/Math.PI;
 
-var DRAW_TRACE = true;
+var DRAW_TRACE = false;
 var LOCK_CAMERA = false;
 var CAMERA_INERTIA = 1;
 var MATCH_VELOCITY = false;
@@ -153,6 +153,7 @@ document.addEventListener('keydown', function(event)
                  break;
         case 32: if (GAME_OVER) location.reload();
                  else space = true;
+                 // WORLD.push(new Mine());
                  break;
         case 37: LEFT_KEY = true; break;
         case 38: UP_KEY = true; break;
@@ -640,21 +641,6 @@ function draw()
             CTX.stroke();
             CTX.restore();
         }
-
-
-        // CTX.save();
-        // let rvel = sub2d(TARGET_OBJECT.vel, PLAYER_SHIP.vel);
-        // let angle = angle2d([1, 0], rvel) + Math.PI/2;
-        // CTX.rotate(-angle);
-        // CTX.globalAlpha = 0.4;
-        // CTX.strokeStyle = "green";
-        // CTX.lineWidth = 3*PIXELS;
-        // CTX.beginPath();
-        // CTX.moveTo(-10*PIXELS, -45*PIXELS);
-        // CTX.lineTo(0, -55*PIXELS);
-        // CTX.lineTo(10*PIXELS, -45*PIXELS);
-        // CTX.stroke();
-        // CTX.restore();
     }
 
     CTX.restore();
@@ -813,7 +799,7 @@ function draw()
         CTX.fillText("[A/D] TO TURN", WIDTH/2 + 50, HEIGHT/2 + 100);
         CTX.fillText("[SPACE] TO FIRE WEAPONS", WIDTH/2 + 50, HEIGHT/2 + 130);
         CTX.fillText("[F] TO SWITCH WEAPONS", WIDTH/2 + 50, HEIGHT/2 + 160);
-        CTX.fillText("[T] TO SLOW DOWN TIME", WIDTH/2 + 50, HEIGHT/2 + 190);
+        CTX.fillText("[R] TO SLOW DOWN TIME", WIDTH/2 + 50, HEIGHT/2 + 190);
         CTX.fillText("[LEFT CLICK] TO FIRE ANTI-TORPEDO CANNONS",
             WIDTH/2 + 50, HEIGHT/2 + 220);
         CTX.fillText("[RIGHT CLICK] TO TARGET LOCK",
@@ -821,14 +807,19 @@ function draw()
         CTX.fillText("[1][2] TO ZOOM IN/OUT", WIDTH/2 + 50, HEIGHT/2 + 280);
         CTX.fillText("[B][N][M] FOR DEBUG", WIDTH/2 + 50, HEIGHT/2 + 310);
     }
-    else if (SLOW_TIME)
+
+    if (SLOW_TIME)
     {
-        CTX.font = "100px Helvetica";
-        CTX.globalAlpha = 0.4;
-        CTX.fillStyle = "darkgray";
-        CTX.fillText("TARGET", WIDTH/2 + 20, HEIGHT/2 - 20);
+        let grd = CTX.createRadialGradient(
+            WIDTH/2, HEIGHT/2, Math.min(WIDTH, HEIGHT)*0.5,
+            WIDTH/2, HEIGHT/2, Math.min(WIDTH, HEIGHT)*0.8);
+        grd.addColorStop(0, "rgba(255, 255, 255, 0)");
+        grd.addColorStop(1, "black");
+        CTX.fillStyle = grd;
+        CTX.globalAlpha = 0.2;
+        CTX.fillRect(0, 0, WIDTH, HEIGHT);
     }
-    else if (BETWEEN_WAVES && RESPAWN_TIMER > 0)
+    if (BETWEEN_WAVES && RESPAWN_TIMER > 0 && !GAME_PAUSED)
     {
         CTX.font = "30px Helvetica";
         CTX.globalAlpha = 0.4;

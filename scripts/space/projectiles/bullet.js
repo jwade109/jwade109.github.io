@@ -29,6 +29,13 @@ Bullet.prototype.handleCollision = function(other)
 
 Bullet.prototype.skin = function()
 {
+    CTX.globalAlpha = 0.6;
+    CTX.strokeStyle = "black";
+    CTX.beginPath();
+    CTX.moveTo(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+    CTX.lineTo(this.pos_prev[0]*PIXELS, this.pos_prev[1]*PIXELS);
+    CTX.stroke();
+
     CTX.save();
     CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
     CTX.rotate(-this.theta);
@@ -40,42 +47,3 @@ Bullet.prototype.skin = function()
     CTX.stroke();
     CTX.restore();
 }
-
-// class Bullet
-// {
-//     draw(ctx)
-//     {
-//         if (DRAW_TRACE)
-//         {
-//             ctx.globalAlpha = 0.6;
-//             ctx.strokeStyle = "red";
-//             ctx.beginPath();
-//             ctx.moveTo(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
-//             ctx.lineTo(this.pos_prev[0]*PIXELS, this.pos_prev[1]*PIXELS);
-//             ctx.stroke();
-//         }
-//
-//     }
-//
-//     step(dt)
-//     {
-//         this.pos_prev = this.pos.slice();
-//         this.pos[0] += this.vel[0]*dt;
-//         this.pos[1] += this.vel[1]*dt;
-//     }
-//
-//     explode()
-//     {
-//         this.remove = true;
-//     }
-//
-//     b2g(v)
-//     {
-//         return rot2d(v, this.theta);
-//     }
-//
-//     g2b(v)
-//     {
-//         return rot2d(v, -this.theta);
-//     }
-// }

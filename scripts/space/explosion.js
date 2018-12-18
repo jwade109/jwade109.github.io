@@ -40,13 +40,16 @@ class Explosion
 
     draw(ctx)
     {
-        let radius = Math.max(this.max_radius*(
-            Math.sin(this.time/this.duration*Math.PI) +
-            Math.sin(this.time/this.duration*Math.PI*12)*0.05), 0);
+        // let radius = Math.max(this.max_radius*(
+        //     Math.sin(this.time/this.duration*Math.PI) +
+        //     Math.sin(this.time/this.duration*Math.PI*12)*0.05), 0);
+
+        let radius = Math.pow(this.time/this.duration, 0.25)*this.max_radius;
 
         ctx.save();
         ctx.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
-        ctx.globalAlpha = 0.35;
+        // ctx.globalAlpha = 0.35;
+        ctx.globalAlpha = 0.8*Math.max(0, 1 - this.time/this.duration);
 
         ctx.fillStyle = "red";
         ctx.beginPath();

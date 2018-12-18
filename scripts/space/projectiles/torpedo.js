@@ -152,6 +152,7 @@ Torpedo.prototype.skin = function()
 Torpedo.prototype.handleCollision = function(other)
 {
     if (other === this.origin) return;
+    if (other.origin === this.origin) return;
     if (other instanceof Debris && other.radius < SMALL_DEBRIS) return;
     conserveMomentum(this, other);
     this.explode();

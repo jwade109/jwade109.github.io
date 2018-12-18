@@ -13,7 +13,7 @@ const CORVETTE_WIDTH = 11;
 const CORVETTE_MASS = 120000;
 const CORVETTE_MAIN_THRUST = 20*9.81*CORVETTE_MASS;
 const CORVETTE_RCS_THRUST = 9.81*CORVETTE_MASS;
-const CORVETTE_PDC_RANGE = 500;
+const CORVETTE_PDC_RANGE = Infinity; // 500;
 
 function Corvette(pos, theta)
 {

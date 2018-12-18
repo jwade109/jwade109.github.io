@@ -13,6 +13,7 @@ function Amun_Ra(pos, theta)
     Collidable.call(this, AMUN_RA_LENGTH, AMUN_RA_WIDTH, AMUN_RA_MAX_HEALTH);
     this.pos = pos.slice();
     this.theta = theta;
+    this.mass = AMUN_RA_MASS;
     this.torpedo_reload = 0;
     this.name = "\"" + NAMES[Math.floor(Math.random()*NAMES.length)] + "\"";
     this.type = "Amun-Ra Class";
