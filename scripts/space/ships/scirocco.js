@@ -2,7 +2,7 @@
 
 const SCIROCCO_LENGTH = 200;
 const SCIROCCO_WIDTH = 72;
-const SCIROCCO_HEALTH = 3000;
+const SCIROCCO_HEALTH = 5000;
 const SCIROCCO_MASS = 200000;
 const SCIROCCO_IZZ = 50000000;
 const SCIROCCO_EXPLOSION_RADIUS = 500;
@@ -19,7 +19,10 @@ function Scirocco(pos, theta)
     this.type = "Scirocco Class";
     this.faction = "MCRN";
     this.railgun_reload = 0;
+
     this.gamma = 0;
+    this.epsilon = 0;
+    this.nu = 0;
 
     this.box = new Hitbox([[-this.length/2, -this.width*8/18],
                            [-this.length*11/50, -this.width*8/18],
@@ -123,7 +126,13 @@ Scirocco.prototype.control = function(dt)
     let angle = angle2d([1, 0], sub2d([MOUSEX, MOUSEY], this.pos));
     while (angle < this.gamma - Math.PI) angle += Math.PI*2;
     while (angle > this.gamma + Math.PI) angle -= Math.PI*2;
-    this.gamma += (angle - this.gamma)*dt;
+
+    this.nu = (angle - this.gamma)*100 - this.epsilon*20;
+
+    this.epsilon += this.nu*dt;
+    this.epsilon = Math.max(-2, Math.min(this.epsilon, 2));
+    this.gamma += this.epsilon*dt;
+
     this.railgun_reload -= dt;
 }
 
@@ -146,13 +155,15 @@ Scirocco.prototype.skin = function()
         CTX.stroke();
         CTX.restore();
 
-        if (TARGET_OBJECT != null)
+        if (TARGET_OBJECT != null && SLOW_TIME)
         {
             let rvel = sub2d(TARGET_OBJECT.vel, this.vel);
-            let theta = interceptSolution(TARGET_OBJECT.pos,
+            let theta = -interceptSolution(TARGET_OBJECT.pos,
                 rvel, this.pos, RAILGUN_VEL);
+            while (theta < this.gamma - Math.PI) theta += Math.PI*2;
+            while (theta > this.gamma + Math.PI) theta -= Math.PI*2;
             CTX.save();
-            CTX.rotate(theta);
+            CTX.rotate(-theta);
             CTX.globalAlpha = 0.2;
             CTX.strokeStyle = "green";
             if (this.railgun_reload > 0)
@@ -161,6 +172,19 @@ Scirocco.prototype.skin = function()
             CTX.moveTo(0, 0);
             CTX.lineTo(2000*PIXELS, 0);
             CTX.stroke();
+            CTX.beginPath();
+            let arclen = (theta - this.gamma)*32;
+            if (arclen > 0)
+            {
+                CTX.arc(0, 0, 500*PIXELS, 0, arclen, false);
+                CTX.arc(0, 0, 400*PIXELS, arclen, 0, true);
+            }
+            else
+            {
+                CTX.arc(0, 0, 500*PIXELS, arclen, 0, false);
+                CTX.arc(0, 0, 400*PIXELS, 0, arclen, true);
+            }
+            CTX.fill();
             CTX.restore();
         }
     }

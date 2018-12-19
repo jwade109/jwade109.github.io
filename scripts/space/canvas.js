@@ -73,7 +73,7 @@ WORLD.push(PLAYER_SHIP);
 // PLAYER_SHIP.control = Controller.player;
 // PLAYER_SHIP.fireRailgun = function() { };
 
-// WORLD.push(new Donnager([0, -2000], -Math.PI/6));
+WORLD.push(new Donnager([0, -2000], -Math.PI/6));
 
 let current = new Date().getTime(), last = current, dt = 0;
 
