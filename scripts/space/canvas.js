@@ -909,11 +909,8 @@ function start()
         }
         else
         {
-            if (PLAYER_SCORE < 3)
-                UNDERTRACK.volume = fade(UNDERTRACK.volume, 0);
-            else
-                UNDERTRACK.volume = fade(UNDERTRACK.volume, 0.1);
-            OVERTRACK.volume = fade(OVERTRACK.volume, 0.2);
+            UNDERTRACK.volume = fade(UNDERTRACK.volume, 0);
+            OVERTRACK.volume = fade(OVERTRACK.volume, 0.25);
         }
     }
 
