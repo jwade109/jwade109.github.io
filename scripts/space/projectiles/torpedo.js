@@ -106,15 +106,17 @@ Torpedo.prototype.skin = function()
 
     if (this.target === PLAYER_SHIP && this.tracking)
     {
-        CTX.fillStyle = "red";
+        CTX.save();
+        let radius = 0.7*Math.max(PLAYER_SHIP.length, PLAYER_SHIP.width);
+        CTX.strokeStyle = "red";
         CTX.globalAlpha = 0.5;
         CTX.beginPath();
+        CTX.lineWidth = 4*PIXELS;
         let theta = Math.PI - angle2d(this.pos, this.target.pos);
         CTX.arc(this.target.pos[0]*PIXELS, this.target.pos[1]*PIXELS,
-            47*PIXELS, theta - 0.2, theta + 0.2, false);
-        CTX.arc(this.target.pos[0]*PIXELS, this.target.pos[1]*PIXELS,
-            50*PIXELS, theta + 0.2, theta - 0.2, true);
-        CTX.fill();
+            radius*PIXELS, theta - 0.2, theta + 0.2, false);
+        CTX.stroke();
+        CTX.restore();
     }
 
     CTX.save();

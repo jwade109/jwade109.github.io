@@ -1,6 +1,6 @@
 // canvas.js
 
-const VERSION = "2018.12.19a \"Indigo\""
+const VERSION = "2018.12.19b \"Ballistic\""
 
 const PI = Math.PI;
 const RAD2DEG = 180/Math.PI;
@@ -508,17 +508,17 @@ function draw()
             PLAYER_SHIP.pos[1]*PIXELS - 3);
     }
 
-    CTX.save();
-    CTX.globalAlpha = 0.4;
-    CTX.moveTo(PLAYER_SHIP.pos[0]*PIXELS, PLAYER_SHIP.pos[1]*PIXELS);
-    CTX.textAlign = "center";
-    CTX.beginPath();
-    CTX.strokeStyle = CTX.fillStyle = "orange";
-    CTX.setLineDash([20*PIXELS, 30*PIXELS]);
-    CTX.arc(0, 0, CORVETTE_PDC_RANGE*PIXELS, 0, Math.PI*2);
-    CTX.stroke();
-    CTX.fillText("PDC MAX RANGE", 0, -CORVETTE_PDC_RANGE*PIXELS - 2);
-    CTX.restore();
+    // CTX.save();
+    // CTX.globalAlpha = 0.4;
+    // CTX.moveTo(PLAYER_SHIP.pos[0]*PIXELS, PLAYER_SHIP.pos[1]*PIXELS);
+    // CTX.textAlign = "center";
+    // CTX.beginPath();
+    // CTX.strokeStyle = CTX.fillStyle = "orange";
+    // CTX.setLineDash([20*PIXELS, 30*PIXELS]);
+    // CTX.arc(0, 0, CORVETTE_PDC_RANGE*PIXELS, 0, Math.PI*2);
+    // CTX.stroke();
+    // CTX.fillText("PDC MAX RANGE", 0, -CORVETTE_PDC_RANGE*PIXELS - 2);
+    // CTX.restore();
 
     CTX.globalAlpha = 0.06;
     CTX.moveTo(PLAYER_SHIP.pos[0]*PIXELS,
@@ -568,6 +568,14 @@ function draw()
     }
     if (TARGET_OBJECT != null)
     {
+        let radius = 0.7*Math.max(PLAYER_SHIP.length, PLAYER_SHIP.width);
+        // CTX.strokeStyle = "black";
+        // CTX.globalAlpha = 0.5;
+        // CTX.beginPath();
+        // CTX.arc(0, 0, radius*PIXELS, 0, Math.PI*2);
+        // CTX.closePath();
+        // CTX.stroke();
+
         if (!isOffScreen(TARGET_OBJECT.pos))
         {
             CTX.save();
@@ -601,12 +609,85 @@ function draw()
             CTX.rotate(angle);
             CTX.globalAlpha = 0.4;
             CTX.strokeStyle = "red";
-            CTX.lineWidth = 3*PIXELS;
+            CTX.lineWidth = 4*PIXELS;
             CTX.beginPath();
-            CTX.moveTo(-10*PIXELS, -45*PIXELS);
-            CTX.lineTo(0, -55*PIXELS);
-            CTX.lineTo(10*PIXELS, -45*PIXELS);
+            CTX.moveTo(-20*PIXELS, -(radius + 5)*PIXELS);
+            CTX.lineTo(0*PIXELS, -(radius + 20)*PIXELS);
+            CTX.lineTo(20*PIXELS, -(radius + 5)*PIXELS);
             CTX.stroke();
+            CTX.restore();
+
+            let pro = sub2d(PLAYER_SHIP.vel, TARGET_OBJECT.vel);
+            pro = mult2d(unit2d(pro), radius);
+            retro = mult2d(pro, -1);
+
+            CTX.save();
+
+            // // prograde symbol
+            // CTX.beginPath();
+            // CTX.strokeStyle = "green";
+            // CTX.lineWidth = 2*PIXELS;
+            // CTX.arc(pro[0]*PIXELS, pro[1]*PIXELS, 10*PIXELS, 0, Math.PI*2);
+            // CTX.closePath();
+            // CTX.stroke();
+            // CTX.beginPath();
+            // CTX.moveTo((pro[0] + 10)*PIXELS, pro[1]*PIXELS);
+            // CTX.lineTo((pro[0] + 20)*PIXELS, pro[1]*PIXELS);
+            // CTX.closePath();
+            // CTX.stroke();
+            // CTX.beginPath();
+            // CTX.moveTo((pro[0] - 10)*PIXELS, pro[1]*PIXELS);
+            // CTX.lineTo((pro[0] - 20)*PIXELS, pro[1]*PIXELS);
+            // CTX.closePath();
+            // CTX.stroke();
+            // CTX.beginPath();
+            // CTX.moveTo(pro[0]*PIXELS, (pro[1] - 10)*PIXELS);
+            // CTX.lineTo(pro[0]*PIXELS, (pro[1] - 20)*PIXELS);
+            // CTX.closePath();
+            // CTX.stroke();
+            //
+            // // retrograde symbol
+            // CTX.translate(retro[0]*PIXELS, retro[1]*PIXELS);
+            // CTX.beginPath();
+            // CTX.strokeStyle = "red";
+            // CTX.lineWidth = 3*PIXELS;
+            // CTX.arc(0, 0, 10*PIXELS, 0, Math.PI*2);
+            // CTX.closePath();
+            // CTX.stroke();
+            // CTX.beginPath();
+            // CTX.moveTo(0, -10*PIXELS);
+            // CTX.lineTo(0, -20*PIXELS);
+            // CTX.closePath();
+            // CTX.stroke();
+            //
+            // CTX.rotate(2*Math.PI/3);
+            // CTX.beginPath();
+            // CTX.moveTo(0, -10*PIXELS);
+            // CTX.lineTo(0, -20*PIXELS);
+            // CTX.closePath();
+            // CTX.stroke();
+            //
+            // CTX.rotate(2*Math.PI/3);
+            // CTX.beginPath();
+            // CTX.moveTo(0, -10*PIXELS);
+            // CTX.lineTo(0, -20*PIXELS);
+            // CTX.closePath();
+            // CTX.stroke();
+            //
+            // CTX.rotate(2*Math.PI/3 + Math.PI/4);
+            // CTX.beginPath();
+            // CTX.moveTo(0, -10*PIXELS);
+            // CTX.lineTo(0, 10*PIXELS);
+            // CTX.closePath();
+            // CTX.stroke();
+            //
+            // CTX.rotate(Math.PI/2);
+            // CTX.beginPath();
+            // CTX.moveTo(0, -10*PIXELS);
+            // CTX.lineTo(0, 10*PIXELS);
+            // CTX.closePath();
+            // CTX.stroke();
+
             CTX.restore();
         }
     }

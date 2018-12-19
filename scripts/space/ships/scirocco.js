@@ -65,6 +65,10 @@ function Scirocco(pos, theta)
             -5*Math.PI/6, this, range, SCIROCCO_PDC_RANGE),
     ];
 
+    this.railguns = [
+        new RailgunLauncher([20, 0], 0, this, [-2, 2])
+    ];
+
     this.gray = "#555555";
     this.orange = "#CC5500";
 }
@@ -103,92 +107,49 @@ Scirocco.prototype.launchTorpedo = function(target)
 
 Scirocco.prototype.fireRailgun = function()
 {
-    if (this.railgun_reload > 0)
-    {
-        throwAlert("Cannot fire railgun -- still charging.",
-            ALERT_DISPLAY_TIME);
-        return;
-    }
-    this.railgun_reload = RAILGUN_COOLDOWN/4;
-    let angle = angle2d([1, 0], sub2d([MOUSEX, MOUSEY], this.pos));
-    let vel = rot2d([RAILGUN_VEL, 0], this.gamma);
-    vel[0] += this.vel[0];
-    vel[1] += this.vel[1];
-    let r = new Railgun(this.pos.slice(), vel, angle, 12);
-    r.origin = this;
-    WORLD.push(r);
-    WORLD.push(new Explosion(this.pos.slice(),
-        this.vel.slice(), TORPEDO_EXPLOSION_RADIUS));
+    for (let rg of this.railguns) rg.fire();
+    // if (this.railgun_reload > 0)
+    // {
+    //     throwAlert("Cannot fire railgun -- still charging.",
+    //         ALERT_DISPLAY_TIME);
+    //     return;
+    // }
+    // this.railgun_reload = RAILGUN_COOLDOWN/4;
+    // let angle = angle2d([1, 0], sub2d([MOUSEX, MOUSEY], this.pos));
+    // let vel = rot2d([RAILGUN_VEL, 0], this.gamma);
+    // vel[0] += this.vel[0];
+    // vel[1] += this.vel[1];
+    // let r = new Railgun(this.pos.slice(), vel, angle, 12);
+    // r.origin = this;
+    // WORLD.push(r);
+    // WORLD.push(new Explosion(this.pos.slice(),
+    //     this.vel.slice(), TORPEDO_EXPLOSION_RADIUS));
 }
 
 Scirocco.prototype.control = function(dt)
 {
-    let angle = angle2d([1, 0], sub2d([MOUSEX, MOUSEY], this.pos));
-    while (angle < this.gamma - Math.PI) angle += Math.PI*2;
-    while (angle > this.gamma + Math.PI) angle -= Math.PI*2;
-
-    this.nu = (angle - this.gamma)*100 - this.epsilon*20;
-
-    this.epsilon += this.nu*dt;
-    this.epsilon = Math.max(-2, Math.min(this.epsilon, 2));
-    this.gamma += this.epsilon*dt;
-
-    this.railgun_reload -= dt;
+    // while (angle < this.gamma - Math.PI) angle += Math.PI*2;
+    // while (angle > this.gamma + Math.PI) angle -= Math.PI*2;
+    //
+    // this.nu = (angle - this.gamma)*100 - this.epsilon*20;
+    //
+    // this.epsilon += this.nu*dt;
+    // this.epsilon = Math.max(-2, Math.min(this.epsilon, 2));
+    // this.gamma += this.epsilon*dt;
+    //
+    // this.railgun_reload -= dt;
+    for (let rg of this.railguns)
+    {
+        let angle = angle2d([1, 0], sub2d([MOUSEX, MOUSEY], rg.globalPos()));
+        if (!PLAYER_WEAPON_SELECT) rg.seek(dt, angle);
+        else rg.seek(dt, this.theta + rg.theta);
+    }
 }
 
 Scirocco.prototype.skin = function()
 {
     CTX.save();
     CTX.translate(-this.pos[0]*PIXELS, -this.pos[1]*PIXELS);
-
-    if (!PLAYER_WEAPON_SELECT)
-    {
-        CTX.save();
-        CTX.rotate(-this.gamma);
-        CTX.globalAlpha = 0.2;
-        CTX.strokeStyle = "red";
-        if (this.railgun_reload > 0)
-            CTX.setLineDash([10*PIXELS, 20*PIXELS]);
-        CTX.beginPath();
-        CTX.moveTo(0, 0);
-        CTX.lineTo(2000*PIXELS, 0);
-        CTX.stroke();
-        CTX.restore();
-
-        if (TARGET_OBJECT != null && SLOW_TIME)
-        {
-            let rvel = sub2d(TARGET_OBJECT.vel, this.vel);
-            let theta = -interceptSolution(TARGET_OBJECT.pos,
-                rvel, this.pos, RAILGUN_VEL);
-            while (theta < this.gamma - Math.PI) theta += Math.PI*2;
-            while (theta > this.gamma + Math.PI) theta -= Math.PI*2;
-            CTX.save();
-            CTX.rotate(-theta);
-            CTX.globalAlpha = 0.2;
-            CTX.strokeStyle = "green";
-            if (this.railgun_reload > 0)
-                CTX.setLineDash([10*PIXELS, 20*PIXELS]);
-            CTX.beginPath();
-            CTX.moveTo(0, 0);
-            CTX.lineTo(2000*PIXELS, 0);
-            CTX.stroke();
-            CTX.beginPath();
-            let arclen = (theta - this.gamma)*32;
-            if (arclen > 0)
-            {
-                CTX.arc(0, 0, 500*PIXELS, 0, arclen, false);
-                CTX.arc(0, 0, 400*PIXELS, arclen, 0, true);
-            }
-            else
-            {
-                CTX.arc(0, 0, 500*PIXELS, arclen, 0, false);
-                CTX.arc(0, 0, 400*PIXELS, 0, arclen, true);
-            }
-            CTX.fill();
-            CTX.restore();
-        }
-    }
-
     CTX.rotate(-this.theta);
 
     let unit = this.length/50*PIXELS;
@@ -319,6 +280,7 @@ Scirocco.prototype.skin = function()
 
     CTX.restore();
     for (let pdc of this.pdcs) pdc.draw(CTX);
+    for (let railgun of this.railguns) railgun.draw(CTX);
 }
 
 Scirocco.prototype.explode = function()
