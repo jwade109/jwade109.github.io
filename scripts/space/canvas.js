@@ -1,6 +1,6 @@
 // canvas.js
 
-const VERSION = "2018.12.18b \"Mozart\""
+const VERSION = "2018.12.19a \"Indigo\""
 
 const PI = Math.PI;
 const RAD2DEG = 180/Math.PI;
@@ -49,7 +49,7 @@ var LEFT_KEY = false, RIGHT_KEY = false, UP_KEY = false, DOWN_KEY = false,
 var ONE_KEY = false, TWO_KEY = false;
 
 var ALERTS = [];
-const ALERT_DISPLAY_TIME = 3;
+const ALERT_DISPLAY_TIME = 6;
 var PLAYER_WEAPON_SELECT = true; // true - missiles, false - railgun
 
 var WIDTH = document.body.clientWidth;
@@ -67,10 +67,10 @@ var TARGET_OBJECT = null;
 var WORLD = [];
 const WORLD_RENDER_DISTANCE = 4000;
 
-var PLAYER_SHIP = new Corvette([0, 0], Math.PI/2);
+var PLAYER_SHIP = new Scirocco([0, 0], Math.PI/2);
 PLAYER_SHIP.is_enemy = false;
 WORLD.push(PLAYER_SHIP);
-PLAYER_SHIP.control = Controller.player;
+// PLAYER_SHIP.control = Controller.player;
 // PLAYER_SHIP.fireRailgun = function() { };
 
 // WORLD.push(new Donnager([0, -2000], -Math.PI/6));

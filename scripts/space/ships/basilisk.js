@@ -1,21 +1,24 @@
 // ship.js
 
-const SUPPLY_SHIP_LENGTH = 20*15;
-const SUPPLY_SHIP_WIDTH = 9*15;
-const SUPPLY_SHIP_HEALTH = 1000;
-const SUPPLY_SHIP_MASS = 500000;
-const SUPPLY_SHIP_IZZ = 50000000;
-const SUPPLY_SHIP_EXPLOSION_RADIUS = 600;
-const SUPPLY_SHIP_PDC_RANGE = 700;
+const BASILISK_LENGTH = 300;
+const BASILISK_WIDTH = 135;
+const BASILISK_HEALTH = 1000;
+const BASILISK_MASS = 500000;
+const BASILISK_IZZ = 50000000;
+const BASILISK_EXPLOSION_RADIUS = 600;
+const BASILISK_PDC_RANGE = 700;
 
-function SupplyShip()
+function Basilisk(pos, theta)
 {
-    Collidable.call(this, SUPPLY_SHIP_LENGTH,
-        SUPPLY_SHIP_WIDTH, SUPPLY_SHIP_HEALTH);
-    this.mass = SUPPLY_SHIP_MASS;
-    this.izz = SUPPLY_SHIP_IZZ;
-    this.name = "\"Arbitrage\"";
-    this.type = "Supply Ship";
+    Collidable.call(this, BASILISK_LENGTH,
+        BASILISK_WIDTH, BASILISK_HEALTH);
+    this.pos = pos.slice();
+    this.theta = theta;
+    this.mass = BASILISK_MASS;
+    this.izz = BASILISK_IZZ;
+    this.name = "\"" + NAMES[Math.floor(Math.random()*NAMES.length)] + "\"";
+    this.type = "Basilisk Class";
+    this.faction = "";
     this.box = new Hitbox([[-this.length/2, -this.width*3.5/9],
                            [this.length*8/20, -this.width*3.5/9],
                            [this.length/2, 0],
@@ -31,29 +34,29 @@ function SupplyShip()
     ];
     this.pdcs = [
         new PointDefenseCannon([this.length/10, this.width*3.5/9],
-            -Math.PI/2, this, [-Math.PI/3, Math.PI/3], SUPPLY_SHIP_PDC_RANGE),
+            -Math.PI/2, this, [-Math.PI/3, Math.PI/3], BASILISK_PDC_RANGE),
         new PointDefenseCannon([this.length/10, -this.width*3.5/9],
-            Math.PI/2, this, [-Math.PI/3, Math.PI/3], SUPPLY_SHIP_PDC_RANGE),
+            Math.PI/2, this, [-Math.PI/3, Math.PI/3], BASILISK_PDC_RANGE),
         new PointDefenseCannon([this.length*6.5/20, this.width*3/9],
-            -Math.PI/4, this, [-Math.PI/3, Math.PI/3], SUPPLY_SHIP_PDC_RANGE),
+            -Math.PI/4, this, [-Math.PI/3, Math.PI/3], BASILISK_PDC_RANGE),
         new PointDefenseCannon([this.length*6.5/20, -this.width*3/9],
-            Math.PI/4, this, [-Math.PI/3, Math.PI/3], SUPPLY_SHIP_PDC_RANGE),
+            Math.PI/4, this, [-Math.PI/3, Math.PI/3], BASILISK_PDC_RANGE),
         new PointDefenseCannon([-this.length/10, this.width*3.5/9],
-            -Math.PI/2, this, [-Math.PI/3, Math.PI/3], SUPPLY_SHIP_PDC_RANGE),
+            -Math.PI/2, this, [-Math.PI/3, Math.PI/3], BASILISK_PDC_RANGE),
         new PointDefenseCannon([-this.length/10, -this.width*3.5/9],
-            Math.PI/2, this, [-Math.PI/3, Math.PI/3], SUPPLY_SHIP_PDC_RANGE)
+            Math.PI/2, this, [-Math.PI/3, Math.PI/3], BASILISK_PDC_RANGE)
     ];
 }
 
-SupplyShip.prototype = Object.create(Collidable.prototype);
+Basilisk.prototype = Object.create(Collidable.prototype);
 
-SupplyShip.prototype.explode = function()
+Basilisk.prototype.explode = function()
 {
     WORLD.push(new Explosion(this.pos.slice(),
-        this.vel.slice(), SUPPLY_SHIP_EXPLOSION_RADIUS));
+        this.vel.slice(), BASILISK_EXPLOSION_RADIUS));
 }
 
-SupplyShip.prototype.handleCollision = function(other)
+Basilisk.prototype.handleCollision = function(other)
 {
     if (other instanceof Debris && other.radius > LARGE_DEBRIS)
     {
@@ -62,7 +65,7 @@ SupplyShip.prototype.handleCollision = function(other)
     }
 }
 
-SupplyShip.prototype.firePDC = function(target)
+Basilisk.prototype.firePDC = function(target)
 {
     for (let pdc of this.pdcs)
     {
@@ -73,7 +76,7 @@ SupplyShip.prototype.firePDC = function(target)
     }
 }
 
-SupplyShip.prototype.skin = function()
+Basilisk.prototype.skin = function()
 {
     CTX.save();
     CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
