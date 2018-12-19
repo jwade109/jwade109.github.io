@@ -14,9 +14,9 @@ static morrigan(dt)
 {
     if (PLAYER_SHIP.remove)
     {
-        this.alpha = -this.omega;
-        this.acc = rot2d([10, 0], this.theta);
-        this.engine.firing = true;
+        this.applyMoment(-this.omega*this.izz);
+        this.applyForce(rot2d([this.mass*3*9.81, 0], this.theta));
+        this.thrusters[0].firing = true;
         return;
     }
 
@@ -35,15 +35,15 @@ static morrigan(dt)
     let dx = PLAYER_SHIP.pos[0] - this.pos[0];
     let dy = PLAYER_SHIP.pos[1] - this.pos[1];
     let bodyacc = [-(600 - dist)/10, 0];
-    if (bodyacc[0] > 4) this.engine.firing = true;
-    else this.engine.firing = false;
-    this.acc = rot2d(bodyacc, this.theta);
-    this.acc[0] += (PLAYER_SHIP.vel[0] - this.vel[0])/3;
-    this.acc[1] += (PLAYER_SHIP.vel[1] - this.vel[1])/3;
+    if (bodyacc[0] > 4) this.thrusters[0].firing = true;
+    else this.thrusters[0].firing = false;
+    this.forces = rot2d(mult2d(bodyacc, this.mass), this.theta);
+    this.forces[0] += (PLAYER_SHIP.vel[0] - this.vel[0])/3*this.mass;
+    this.forces[1] += (PLAYER_SHIP.vel[1] - this.vel[1])/3*this.mass;
     let theta = angle2d(this.pos, PLAYER_SHIP.pos) - this.theta;
     while (theta > Math.PI) theta -= Math.PI*2;
     while (theta < -Math.PI) theta += Math.PI*2;
-    this.alpha = theta - this.omega;
+    this.moments = (theta - this.omega)*this.izz;
 }
 
 static amunRaEnemy(dt)
@@ -88,13 +88,13 @@ static amunRaEnemy(dt)
     let dx = PLAYER_SHIP.pos[0] - this.pos[0];
     let dy = PLAYER_SHIP.pos[1] - this.pos[1];
     let bodyacc = [-(1800 - dist)/10, 0];
-    this.acc = rot2d(bodyacc, this.theta);
-    this.acc[0] += (PLAYER_SHIP.vel[0] - this.vel[0])/3;
-    this.acc[1] += (PLAYER_SHIP.vel[1] - this.vel[1])/3;
+    this.forces = rot2d(mult2d(bodyacc, this.mass), this.theta);
+    this.forces[0] += (PLAYER_SHIP.vel[0] - this.vel[0])/3*this.mass;
+    this.forces[1] += (PLAYER_SHIP.vel[1] - this.vel[1])/3*this.mass;
     let theta = angle2d(this.pos, PLAYER_SHIP.pos) - this.theta;
     while (theta > Math.PI) theta -= Math.PI*2;
     while (theta < -Math.PI) theta += Math.PI*2;
-    this.alpha = theta - this.omega;
+    this.moments = (theta - this.omega)*this.izz;
 
     this.box.pos = this.pos.slice();
     this.box.theta = this.theta;

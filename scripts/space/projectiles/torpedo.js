@@ -8,7 +8,7 @@ const TORPEDO_WIDTH = 1;
 const TORPEDO_MAX_HEALTH = 1;
 const TORPEDO_EXPLOSION_RADIUS = 30;
 const TORPEDO_DRIFT_TIME = 0.4;
-const TORPEDO_FUEL_TIME = 2;
+const TORPEDO_FUEL_TIME = 5;
 const DRAW_TORPEDO_PATH = true;
 
 function Torpedo(pos, vel, theta)
@@ -25,16 +25,15 @@ function Torpedo(pos, vel, theta)
     this.target = null;
     this.name = "";
     this.type = "Torpedo";
-    this.thruster = new Thruster(
-        [0, -this.length/2], -Math.PI/2, TORPEDO_THRUST, this.width);
-    this.thruster.firing = false;
-    this.thruster.drawbell = false;
+    this.thrusters = [new Thruster(
+        [-this.length/2, 0], Math.PI, 0, this.width)];
 }
 
 Torpedo.prototype = Object.create(Collidable.prototype);
 
-Torpedo.prototype.step = function(dt)
+Torpedo.prototype.control = function(dt)
 {
+    this.pos_history.push(this.pos.slice());
     if (this.target != null && this.target.remove) this.tracking = false;
     this.time += dt;
 
@@ -52,32 +51,17 @@ Torpedo.prototype.step = function(dt)
     else if (this.tracking)
         this.theta += (theta - this.theta)*0.1;
 
-    let bodyacc = [0, 0];
-    if (this.time > this.drifttimer)
+    if (this.time > TORPEDO_DRIFT_TIME &&
+        this.time < TORPEDO_DRIFT_TIME + TORPEDO_FUEL_TIME)
     {
-        this.thruster.firing = true;
-        let thrustv =
-            [-this.thruster.thrust*Math.sin(this.thruster.theta),
-             -this.thruster.thrust*Math.cos(this.thruster.theta)];
-        bodyacc[0] = thrustv[0]/this.mass;
-        bodyacc[1] = thrustv[1]/this.mass;
+        this.thrusters[0].firing = true;
+        this.applyForce(rot2d([TORPEDO_THRUST, 0], this.theta));
     }
-    let acc = rot2d(bodyacc, this.theta);
-
-    if (this.time > TORPEDO_DRIFT_TIME + TORPEDO_FUEL_TIME)
+    else if (this.time > TORPEDO_DRIFT_TIME + TORPEDO_FUEL_TIME)
     {
-        acc = [0, 0];
-        this.thruster.firing = false;
+        this.thrusters[0].firing = false;
         this.tracking = false;
     }
-
-    this.pos_prev = this.pos.slice();
-    this.vel[0] += acc[0]*dt;
-    this.vel[1] += acc[1]*dt;
-    this.pos[0] += this.vel[0]*dt;
-    this.pos[1] += this.vel[1]*dt;
-
-    this.pos_history.push(this.pos.slice());
 }
 
 Torpedo.prototype.explode = function()
@@ -120,7 +104,6 @@ Torpedo.prototype.skin = function()
         CTX.restore();
     }
 
-    CTX.save();
     if (this.target === PLAYER_SHIP && this.tracking)
     {
         CTX.fillStyle = "red";
@@ -133,20 +116,24 @@ Torpedo.prototype.skin = function()
             50*PIXELS, theta + 0.2, theta - 0.2, true);
         CTX.fill();
     }
+
+    CTX.save();
     CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+
     CTX.save();
     CTX.rotate(Math.PI/4);
     CTX.strokeStyle = "blue";
     CTX.globalAlpha = 0.4;
     CTX.strokeRect(-5*PIXELS, -5*PIXELS, 10*PIXELS, 10*PIXELS);
     CTX.restore();
-    CTX.rotate(-this.theta - Math.PI/2);
+
+    CTX.rotate(-this.theta);
     CTX.strokeStyle = "black";
     CTX.fillStyle = "black";
     CTX.globalAlpha = 1;
-    CTX.fillRect(-this.width/2*PIXELS, -this.length/2*PIXELS,
-                 this.width*PIXELS, this.length*PIXELS);
-    this.thruster.draw(CTX);
+    CTX.fillRect(-this.length/2*PIXELS, -this.width/2*PIXELS,
+                 this.length*PIXELS, this.width*PIXELS);
+    this.thrusters[0].draw(CTX);
     CTX.restore();
 }
 

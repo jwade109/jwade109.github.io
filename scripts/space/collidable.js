@@ -9,6 +9,10 @@ function Collidable(length, width, max_health)
     this.theta = 0;
     this.omega = 0;
     this.alpha = 0;
+
+    this.forces = [0, 0];
+    this.moments = 0;
+
     this.length = length;
     this.width = width;
     this.max_health = max_health;
@@ -32,6 +36,12 @@ function Collidable(length, width, max_health)
     this.box.object = this;
 }
 
+Collidable.prototype.fullName = function()
+{
+    if (this.faction == "Neutral" || this.faction == "") return this.name;
+    return this.faction + " " + this.name;
+}
+
 Collidable.prototype.control = function(dt)
 {
     // no default control action
@@ -41,14 +51,16 @@ Collidable.prototype.physics = function(dt)
 {
     this.time += dt;
     this.pos_prev = this.pos.slice();
+    this.acc = div2d(this.forces, this.mass);
+    this.alpha = this.moments/this.izz;
     this.vel[0] += this.acc[0]*dt;
     this.vel[1] += this.acc[1]*dt;
     this.pos[0] += this.vel[0]*dt;
     this.pos[1] += this.vel[1]*dt;
     this.omega += this.alpha*dt;
     this.theta += this.omega*dt;
-    this.acc = [0, 0];
-    this.alpha = 0;
+    this.forces = [0, 0];
+    this.moments = 0;
 
     if (this.hasOwnProperty("box"))
     {
@@ -65,12 +77,12 @@ Collidable.prototype.step = function(dt)
 
 Collidable.prototype.applyMoment = function(moment)
 {
-    this.alpha += moment/this.izz;
+    this.moments += moment;
 }
 
 Collidable.prototype.applyForce = function(force)
 {
-    this.acc = add2d(this.acc, div2d(force, this.mass));
+    this.forces = add2d(this.forces, force);
 }
 
 Collidable.prototype.draw = function()

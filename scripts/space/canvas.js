@@ -1,6 +1,6 @@
 // canvas.js
 
-const VERSION = "2018.12.17b Harpy"
+const VERSION = "2018.12.18a \"Rufus\""
 
 const PI = Math.PI;
 const RAD2DEG = 180/Math.PI;
@@ -34,7 +34,7 @@ var TIME = 0;
 var CANVAS = document.getElementById("canvas");
 var CTX = CANVAS.getContext("2d");
 
-var AUDIO = new Audio("scripts/space/sounds/Mii Channel Jazz Theme.mp3");
+var AUDIO = new Audio("scripts/space/sounds/Wii Shop Channel Music.mp3");
 
 var LEFT_KEY = false, RIGHT_KEY = false, UP_KEY = false, DOWN_KEY = false,
     space = false,
@@ -65,9 +65,12 @@ var WORLD = [];
 const WORLD_RENDER_DISTANCE = 4000;
 
 var PLAYER_SHIP = new Corvette([0, 0], Math.PI/2);
+PLAYER_SHIP.is_enemy = false;
 WORLD.push(PLAYER_SHIP);
+PLAYER_SHIP.control = Controller.player;
+// PLAYER_SHIP.fireRailgun = function() { };
 
-WORLD.push(new Donnager([0, -2000], -Math.PI/6));
+// WORLD.push(new Donnager([0, -2000], -Math.PI/6));
 
 let current = new Date().getTime(), last = current, dt = 0;
 
@@ -106,7 +109,6 @@ document.addEventListener('mousewheel', function(event)
 
 document.addEventListener('mousemove', function(event)
 {
-    // if (!AUDIO.ispaused && AUDIO.readyState > 0) AUDIO.play();
     MOUSE_SCREEN_POS = [event.clientX, event.clientY];
     updateMouse();
 });
@@ -342,6 +344,7 @@ function physics(dt)
         TARGET_OBJECT = null;
     if (NEAREST_OBJECT != null && NEAREST_OBJECT.remove)
         NEAREST_OBJECT = null;
+    if (PLAYER_SHIP.remove) GAME_OVER = true;
 
     let collided = [];
     for (let obj1 of WORLD)
@@ -422,34 +425,13 @@ function physics(dt)
         {
             PLAYER_SHIP.health += PASSIVE_REGEN*dt;
             PLAYER_SHIP.health =
-                Math.min(PLAYER_SHIP.health, CORVETTE_MAX_HEALTH);
+                Math.min(PLAYER_SHIP.health, PLAYER_SHIP.max_health);
         }
     }
     if (!GAME_OVER)
     {
-        // if (wkey)
-        // {
-        //     // PLAYER_SHIP.thrusters[5].firing = true;
-        //     // PLAYER_SHIP.thrusters[6].firing = true;
-        // }
-        // if (qkey)
-        // {
-        //     // PLAYER_SHIP.thrusters[0].firing = true;
-        //     // PLAYER_SHIP.thrusters[7].firing = true;
-        // }
-        // if (ekey)
-        // {
-        //     // PLAYER_SHIP.thrusters[3].firing = true;
-        //     // PLAYER_SHIP.thrusters[4].firing = true;
-        // }
-        // if (skey)
-        // {
-        //     PLAYER_SHIP.thrusters[1].firing = true;
-        //     PLAYER_SHIP.thrusters[2].firing = true;
-        // }
         if (shift)
         {
-            // PLAYER_SHIP.thrusters[8].firing = true;
             PLAYER_SHIP.applyForce(rot2d([CORVETTE_MAIN_THRUST, 0],
                 PLAYER_SHIP.theta));
         }
@@ -466,21 +448,13 @@ function physics(dt)
 
         if (akey)
         {
-            // PLAYER_SHIP.thrusters[2].firing = true;
-            // PLAYER_SHIP.thrusters[6].firing = true;
-            // PLAYER_SHIP.thrusters[0].firing = true;
-            // PLAYER_SHIP.thrusters[4].firing = true;
             PLAYER_SHIP.applyMoment(50000000);
         }
         else if (dkey)
         {
-            // PLAYER_SHIP.thrusters[1].firing = true;
-            // PLAYER_SHIP.thrusters[5].firing = true;
-            // PLAYER_SHIP.thrusters[3].firing = true;
-            // PLAYER_SHIP.thrusters[7].firing = true;
             PLAYER_SHIP.applyMoment(-50000000);
         }
-        else PLAYER_SHIP.applyMoment(-PLAYER_SHIP.omega*CORVETTE_MOMENT_INERTIA);
+        else PLAYER_SHIP.applyMoment(-PLAYER_SHIP.omega*PLAYER_SHIP.izz);
 
         TIME += dt;
     }
@@ -583,15 +557,10 @@ function draw()
         CTX.globalAlpha = 1;
         CTX.font = "15px Helvetica";
         CTX.textAlign = "center";
-        if (typeof NEAREST_OBJECT.type != "undefined")
-            CTX.fillText(NEAREST_OBJECT.type.toUpperCase(),
-                0, -20*PIXELS);
-        else
-            CTX.fillText(NEAREST_OBJECT.constructor.name.toUpperCase(),
-                0, -20*PIXELS);
+        CTX.fillText(NEAREST_OBJECT.type.toUpperCase(),
+            0, -20*PIXELS);
         CTX.font = "10px Helvetica";
-        if (typeof NEAREST_OBJECT.name != 'undefined')
-            CTX.fillText(NEAREST_OBJECT.name, 0, -20*PIXELS - 15);
+        CTX.fillText(NEAREST_OBJECT.fullName(), 0, -20*PIXELS - 15);
         CTX.restore();
     }
     if (TARGET_OBJECT != null)
@@ -605,18 +574,20 @@ function draw()
                           TARGET_OBJECT.pos[1]*PIXELS);
             if (LOCK_CAMERA) CTX.rotate(-PLAYER_SHIP.theta + Math.PI/2);
             CTX.globalAlpha = 0.6;
+
             CTX.strokeRect(-10*PIXELS, -10*PIXELS, 20*PIXELS, 20*PIXELS);
             CTX.globalAlpha = 1;
             CTX.font = "15px Helvetica";
             CTX.textAlign = "center";
-            if (typeof TARGET_OBJECT.type != "undefined")
-                CTX.fillText(TARGET_OBJECT.type.toUpperCase(), 0, -20*PIXELS);
-            else
-                CTX.fillText(TARGET_OBJECT.constructor.name.toUpperCase(),
-                    0, -20*PIXELS);
+            CTX.fillText(TARGET_OBJECT.type.toUpperCase(), 0, -20*PIXELS);
             CTX.font = "10px Helvetica";
-            if (typeof TARGET_OBJECT.name != 'undefined')
-                CTX.fillText(TARGET_OBJECT.name, 0, -20*PIXELS - 15);
+            CTX.fillText(TARGET_OBJECT.fullName(), 0, -20*PIXELS - 15);
+
+            let health_percent = Math.max(0, TARGET_OBJECT.health/
+                TARGET_OBJECT.max_health);
+            CTX.fillRect(-20, -20*PIXELS - 30,
+                40*health_percent, 5);
+
             CTX.restore();
         }
         else
@@ -643,7 +614,7 @@ function draw()
         let border = 10;
         let spacing = 5;
         let hh = Math.max(0, PLAYER_SHIP.health)/
-            CORVETTE_MAX_HEALTH*(HEIGHT - 2*border);
+            PLAYER_SHIP.max_health*(HEIGHT - 2*border);
         let rh = (HEIGHT - 2*border) - Math.max(0, PLAYER_SHIP.railgun_reload)/
             RAILGUN_COOLDOWN*(HEIGHT - 2*border);
 
@@ -683,6 +654,7 @@ function draw()
         let dist = Math.round(distance(PLAYER_SHIP.pos, TARGET_OBJECT.pos));
         let rvel = Math.round(norm2d(
             sub2d(TARGET_OBJECT.vel, PLAYER_SHIP.vel)));
+        let racc = norm2d(sub2d(PLAYER_SHIP.acc, TARGET_OBJECT.acc));
 
         let dstr = Math.round(dist).toLocaleString("en",
             {useGrouping: false, minimumFractionDigits: 0}) + " M";
@@ -694,15 +666,12 @@ function draw()
         if (rvel >= 1000)
             vstr = (Math.round(rvel/100)/10).toLocaleString("en",
                 {useGrouping: false, minimumFractionDigits: 1}) + " KM/S";
+        let astr = (Math.round(racc/0.981)/10).toLocaleString("en",
+                {useGrouping: false, minimumFractionDigits: 0}) + " G";
 
-        if (typeof TARGET_OBJECT.type != "undefined")
-            CTX.fillText("TARGET LOCKED: " +
-                TARGET_OBJECT.type.toUpperCase() + " (" +
-                dstr + ", " + vstr + ")", 800, HEIGHT - 10);
-        else
-            CTX.fillText("TARGET LOCKED: " +
-                TARGET_OBJECT.constructor.name.toUpperCase() + " (" +
-                dstr + ", " + vstr + ")", 800, HEIGHT - 10);
+        CTX.fillText("TARGET LOCKED: " +
+            TARGET_OBJECT.type.toUpperCase() + " (" +
+            dstr + ", " + vstr + ", " + astr + ")", 680, HEIGHT - 10);
     }
     CTX.textAlign = "right";
     let ftime = (Math.round(TIME*100)/100).toLocaleString("en",
@@ -722,49 +691,8 @@ function draw()
 
     CTX.fillStyle = "gray";
     CTX.font = "12px Helvetica";
-    CTX.fillText("BUILD: " + VERSION.toUpperCase(), 720, HEIGHT - 10);
+    CTX.fillText("BUILD: " + VERSION.toUpperCase(), 70, HEIGHT - 30);
 
-    // if (GAME_PAUSED && SHOW_HELP)
-    // {
-    //     CTX.globalAlpha = 0.9;
-    //     CTX.fillStyle = "white";
-    //     // CTX.fillRect(0, 0, width, height);
-    //     CTX.font = "24px Helvetica";
-    //     CTX.globalAlpha = 0.6;
-    //     CTX.beginPath();
-    //     let border = 40, line = 30;
-    //     CTX.rect(0, 0, WIDTH, HEIGHT);
-    //     CTX.fill();
-    //     CTX.globalAlpha = 1;
-    //     CTX.fillStyle = "black";
-    //     CTX.fillText("You are the captain of a stolen Martian corvette.",
-    //         1.3*border, 1.5*border);
-    //     CTX.fillText("(\"It's legitimate salvage!\", you insist " +
-    //         "every chance you get.)", 1.3*border, 1.5*border + line);
-    //     CTX.fillText("Destroy all the destroyers before " +
-    //         "they destroy you.", 1.3*border, 1.5*border + 3*line);
-    //     CTX.fillText("You can zoom out and in with keys [1] and [2].",
-    //         1.3*border, 1.5*border + 4*line);
-    //     CTX.fillText("To fire the MAIN ENGINE, just press the [SHIFT] key;",
-    //         1.3*border, 1.5*border + 6*line);
-    //     CTX.fillText("Fire MANEUVERING THRUSTERS with " +
-    //         "[W], [A], [S], [D], [Q], and [E].",
-    //         1.3*border, 1.5*border + 7*line);
-    //     CTX.fillText("Hit [SPACE] to fire your PRIMARY WEAPON;",
-    //         1.3*border, 1.5*border + 9*line);
-    //     CTX.fillText("Use [F] to switch between TORPEDOES and RAILGUN.",
-    //         1.3*border, 1.5*border + 10*line);
-    //     CTX.fillText("Fire POINT DEFENSE CANNONS with just a MOUSE CLICK;",
-    //         1.3*border, 1.5*border + 12*line);
-    //     CTX.fillText("You can shoot down enemy torpedoes if you're quick!",
-    //         1.3*border, 1.5*border + 13*line);
-    //     CTX.fillText("If you need HELP again, press [H] for some tips,",
-    //         1.3*border, 1.5*border + 15*line);
-    //     CTX.fillText("or press [ESC] to PAUSE, so you can eat chips.",
-    //         1.3*border, 1.5*border + 16*line);
-    //     CTX.fillText("Please send any bug reports to my fax machine.",
-    //         1.3*border, 1.5*border + 18*line);
-    // }
     if (PLAYER_SHIP.remove)
     {
         CTX.font = "100px Helvetica";
@@ -813,7 +741,7 @@ function draw()
         CTX.globalAlpha = 0.2;
         CTX.fillRect(0, 0, WIDTH, HEIGHT);
     }
-    if (BETWEEN_WAVES && RESPAWN_TIMER > 0 && !GAME_PAUSED)
+    if (BETWEEN_WAVES && RESPAWN_TIMER > 0 && !GAME_PAUSED && SPAWN_ENEMIES)
     {
         CTX.font = "30px Helvetica";
         CTX.globalAlpha = 0.4;
@@ -839,13 +767,13 @@ function start()
     }
 
     if (document.hidden) GAME_PAUSED = true;
-    if (GAME_PAUSED) AUDIO.playbackRate = 0;
-    else
-    {
-        if (!AUDIO.ispaused) AUDIO.play();
-        AUDIO.playbackRate = 1;
-        AUDIO.volume = 0.015;
-    }
+    // if (GAME_PAUSED) AUDIO.playbackRate = 0;
+    // else
+    // {
+    //     if (!AUDIO.ispaused) AUDIO.play();
+    //     AUDIO.playbackRate = 1;
+    //     AUDIO.volume = 0.03;
+    // }
 
     current = new Date().getTime();
     draw();

@@ -27,7 +27,6 @@ function Corvette(pos, theta)
     this.name = "\"Rocinante\"";
     this.type = "Corvette Class";
     this.gray = "#909090";
-    this.trackable = false;
     this.box = new Hitbox([[this.length/2, this.width/3],
                            [-this.length/2, this.width/2],
                            [-this.length/2, -this.width/2],
@@ -76,7 +75,6 @@ Corvette.prototype.launchTorpedo = function()
     // }
     if (this.torpedo_reload > 0) return;
     this.torpedo_reload = 0.12;
-    this.side = !this.side;
 
     let poff = rot2d([this.length/2, 0], this.theta);
     let voff = rot2d([100, 0], this.theta);

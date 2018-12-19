@@ -1,6 +1,6 @@
 // pdc.js
 
-const PDC_SPREAD = 0*1.5*Math.PI/180;
+const PDC_SPREAD = 1*Math.PI/180;
 const PDC_VELOCITY = 2000;
 const PDC_COOLDOWN = 1/10;
 var DRAW_FIRING_ARC = false;
@@ -79,7 +79,8 @@ class PointDefenseCannon
         while (theta > gun_orient + Math.PI) theta -= Math.PI*2;
         if (theta > max || theta < min) return;
 
-        if (TIME - this.last_fired < PDC_COOLDOWN) return;
+        if (TIME - this.last_fired < PDC_COOLDOWN && Math.random() < 0.99)
+            return;
         this.last_fired = TIME;
 
         let gpos = this.globalPos();
@@ -135,13 +136,13 @@ class PointDefenseCannon
             ctx.strokeStyle = "black";
             ctx.fillStyle = this.baseColor;
             ctx.globalAlpha = 1;
-            ctx.fillRect(-0.2*PIXELS, -0.6*PIXELS, 0.4*PIXELS, 1.2*PIXELS);
-            ctx.strokeRect(-0.2*PIXELS, -0.6*PIXELS, 0.4*PIXELS, 1.2*PIXELS);
+            ctx.fillRect(-0.3*PIXELS, -0.8*PIXELS, 0.6*PIXELS, 1.4*PIXELS);
+            ctx.strokeRect(-0.3*PIXELS, -0.8*PIXELS, 0.6*PIXELS, 1.4*PIXELS);
 
             ctx.fillStyle = this.barrelColor;
             ctx.beginPath();
             ctx.moveTo(0, 0);
-            ctx.rect(-0.1*PIXELS, -0.1*PIXELS, 1.2*PIXELS, 0.2*PIXELS);
+            ctx.rect(-0.15*PIXELS, -0.15*PIXELS, 1.3*PIXELS, 0.3*PIXELS);
             ctx.fill();
             ctx.stroke();
 

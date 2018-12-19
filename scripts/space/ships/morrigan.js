@@ -15,24 +15,23 @@ function Morrigan(pos, theta)
     this.mass = MORRIGAN_MASS;
     this.izz = MORRIGAN_MOMENT_INERTIA;
     this.torpedo_reload = 0;
-    this.name = "MCRN \"" +
-        NAMES[Math.floor(Math.random()*NAMES.length)] + "\"";
+    this.name = "\"" + NAMES[Math.floor(Math.random()*NAMES.length)] + "\"";
     this.type = "Morrigan Class";
+    this.faction = "MCRN";
     this.permanent = true;
     this.is_enemy = true;
 
-    this.engine = new Thruster([0, -this.length/2], -Math.PI/2,
-        this.mass, this.width);
-    this.engine.drawbell = false;
+    this.thrusters = [new Thruster([-this.length/2, 0], Math.PI,
+        0, this.width*7/9)
+    ];
 
-    let range = [-Math.PI/2.2, Math.PI/2.2];
     this.pdcs =
         [new PointDefenseCannon(
-            [-this.length/6, -this.width*0.5], Math.PI/2.5,
-             this, range, MORRIGAN_PDC_RANGE),
+            [-this.length/62, -this.width*0.4], Math.PI/2.5,
+             this, [-Math.PI/2.2, Math.PI/2.2], MORRIGAN_PDC_RANGE),
          new PointDefenseCannon(
-            [-this.length/6, this.width*0.5], -Math.PI/2.5,
-             this, range, MORRIGAN_PDC_RANGE)];
+            [-this.length/62, this.width*0.4], -Math.PI/2.5,
+             this, [-Math.PI/2.2, Math.PI/2.2], MORRIGAN_PDC_RANGE)];
 
     this.gray = "#606060";
     this.orange = "#8D3F32";
@@ -74,67 +73,44 @@ Morrigan.prototype.skin = function()
     CTX.rotate(-this.theta);
     // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE FRAME
 
-    let x0 = -0.50*this.length*PIXELS;
-    let x1 = -0.40*this.length*PIXELS;
-    let x2 = -0.37*this.length*PIXELS;
-    let x3 = -0.32*this.length*PIXELS;
-    let x4 = -0.25*this.length*PIXELS;
-    let x5 = -0.10*this.length*PIXELS;
-    let x6 =  0.10*this.length*PIXELS;
-    let x7 =  0.20*this.length*PIXELS;
-    let x8 =  0.25*this.length*PIXELS;
-    let x9 =  0.3*this.length*PIXELS;
-    let x10 = 0.50*this.length*PIXELS;
-    let x11 = 0.65*this.length*PIXELS;
+    if (norm2d(this.acc) > 0)
+        for (let thruster of this.thrusters)
+        {
+            thruster.firing = true;
+            thruster.draw(CTX);
+        }
 
-    let y0 = 0.05*this.width*PIXELS;
-    let y1 = 0.15*this.width*PIXELS;
-    let y2 = 0.25*this.width*PIXELS;
-    let y3 = 0.35*this.width*PIXELS;
-    let y4 = 0.50*this.width*PIXELS;
+    let unit = this.length/31*PIXELS;
 
-    CTX.globalAlpha = 1;
     CTX.strokeStyle = "black";
+    CTX.globalAlpha = 1;
     CTX.fillStyle = this.gray;
-    CTX.beginPath();
-    CTX.moveTo(x0, y3);
-    CTX.lineTo(x1, y1);
-    CTX.lineTo(x1, y3);
-    CTX.lineTo(x3, y4);
-    CTX.lineTo(x5, y4);
-    CTX.lineTo(x6, y3);
-    CTX.lineTo(x7, y4);
-    CTX.lineTo(x10, y3);
-    CTX.lineTo(x10, -y3);
-    CTX.lineTo(x7, -y4);
-    CTX.lineTo(x6, -y3);
-    CTX.lineTo(x5, -y4);
-    CTX.lineTo(x3, -y4);
-    CTX.lineTo(x1, -y3);
-    CTX.lineTo(x1, -y1);
-    CTX.lineTo(x0, -y3);
-    CTX.lineTo(x0, y3);
-    CTX.fill();
-    CTX.stroke();
-
+    CTX.fillRect(-this.length/2*PIXELS, -3.5*unit, 2*unit, 7*unit);
+    CTX.strokeRect(-this.length/2*PIXELS, -3.5*unit, 2*unit, 7*unit);
     CTX.fillStyle = this.orange;
+    CTX.fillRect(-13.5*unit, -4.5*unit, 11*unit, 4.5*unit);
+    CTX.strokeRect(-13.5*unit, -4.5*unit, 11*unit, 4.5*unit);
+    CTX.fillRect(-13.5*unit, 0, 11*unit, 4.5*unit);
+    CTX.strokeRect(-13.5*unit, 0, 11*unit, 4.5*unit);
+    CTX.fillStyle = this.gray;
+    CTX.fillRect(-2.5*unit, -4.5*unit, 4*unit, 9*unit);
+    CTX.strokeRect(-2.5*unit, -4.5*unit, 4*unit, 9*unit);
+    CTX.fillStyle = this.orange;
+    CTX.fillRect(1.5*unit, -3.5*unit, 14*unit, 7*unit);
+    CTX.strokeRect(1.5*unit, -3.5*unit, 14*unit, 7*unit);
+    CTX.fillStyle = this.gray;
+    CTX.fillRect(-10.5*unit, -1.5*unit, 21*unit, 3*unit);
+    CTX.strokeRect(-10.5*unit, -1.5*unit, 21*unit, 3*unit);
+
     CTX.beginPath();
-    // CTX.rect(x5, y2, x4 - x2, y4 - y2);
-    // CTX.rect(x5, -y2 - (y4 - y2), x4 - x2, y4 - y2);
-    CTX.rect(-0.3*this.length*PIXELS, -0.15*this.width*PIXELS,
-                    0.6*this.length*PIXELS, 0.3*this.width*PIXELS);
-    CTX.rect(-0.3*this.length*PIXELS, -0.15*this.width*PIXELS,
-                    0.6*this.length*PIXELS, 0.3*this.width*PIXELS);
-    CTX.fill();
+    CTX.moveTo(this.length/2*PIXELS, unit);
+    CTX.lineTo(this.length/2*PIXELS + 3*unit, unit);
+    CTX.stroke();
+    CTX.beginPath();
+    CTX.moveTo(this.length/2*PIXELS, 2*unit);
+    CTX.lineTo(this.length/2*PIXELS + 6*unit, 2*unit);
     CTX.stroke();
 
-    CTX.moveTo(x10, y1);
-    CTX.lineTo(x11, y1);
-    CTX.stroke();
-
-
-    CTX.rotate(-Math.PI/2);
-    this.engine.draw(CTX);
     CTX.restore();
     for (let pdc of this.pdcs) pdc.draw(CTX);
 }

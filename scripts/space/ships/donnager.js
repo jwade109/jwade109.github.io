@@ -4,7 +4,8 @@ const DONNAGER_LENGTH = 475.5;
 const DONNAGER_WIDTH = 150;
 const DONNAGER_MAX_HEALTH = 10000;
 const DONNAGER_EXPLOSION_RADIUS = 600;
-const DONNAGER_MASS = 150000000;
+const DONNAGER_MASS = 1500000;
+const DONNAGER_IZZ = 90000000;
 const DONNAGER_PDC_RANGE = 900;
 
 function Donnager(pos, theta)
@@ -14,12 +15,12 @@ function Donnager(pos, theta)
     this.theta = theta;
     this.vel = [50*Math.cos(theta), -50*Math.sin(theta)];
     this.mass = DONNAGER_MASS;
-    this.name = "MCRN \"" +
-        NAMES[Math.floor(Math.random()*NAMES.length)] + "\"";
+    this.izz = DONNAGER_IZZ;
+    this.name = "\"" + NAMES[Math.floor(Math.random()*NAMES.length)] + "\"";
     this.type = "Donnager Class";
+    this.faction = "MCRN";
     this.trackable = true;
     this.permanent = true;
-    // this.is_enemy = true;
 
     this.box = new Hitbox([[this.length/2, this.width/6, ],
                            [this.length/2, -this.width/6, ],
@@ -51,10 +52,15 @@ function Donnager(pos, theta)
              this, range, DONNAGER_PDC_RANGE),
          new PointDefenseCannon(
             [this.length/2, 0], 0,
-             this, range, DONNAGER_PDC_RANGE),
-         new PointDefenseCannon(
-            [-this.length/2, 0], Math.PI,
-             this, range, DONNAGER_PDC_RANGE)];
+             this, range, DONNAGER_PDC_RANGE)
+    ];
+
+    this.thrusters = [
+        new Thruster([-this.length/2, -4*this.length/36],
+            Math.PI, 0, 4*this.length/36),
+        new Thruster([-this.length/2, 4*this.length/36],
+            Math.PI, 0, 4*this.length/36)
+    ];
 }
 
 Donnager.prototype = Object.create(Collidable.prototype);
@@ -84,39 +90,69 @@ Donnager.prototype.control = function(dt)
         if (best != null) pdc.intercept(best);
         else pdc.intercept(PLAYER_SHIP);
     }
+
+    if (this !== PLAYER_SHIP)
+    {
+        this.applyForce(rot2d([this.mass*9.81, 0], this.theta));
+        for (let thruster of this.thrusters) thruster.firing = true;
+    }
 }
 
 Donnager.prototype.skin = function()
 {
-    if (DRAW_TRACE)
-    {
-        CTX.globalAlpha = 0.6;
-        CTX.strokeStyle = "red";
-        CTX.beginPath();
-        CTX.moveTo(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
-        CTX.lineTo(this.pos_prev[0]*PIXELS, this.pos_prev[1]*PIXELS);
-        CTX.stroke();
-    }
     CTX.save();
     CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
     CTX.rotate(-this.theta);
 
+    for (let thruster of this.thrusters)
+    {
+        if (this === PLAYER_SHIP)
+            thruster.firing = norm2d(this.acc) > 0;
+        thruster.draw(CTX);
+    }
+
+    let unit = this.length/36*PIXELS;
+
     CTX.globalAlpha = 1;
-    CTX.fillStyle = "brown";
     CTX.strokeStyle = "black";
+
+    CTX.fillStyle = "#444444";
+    CTX.fillRect(8*unit, -3*unit, 5*unit, 6*unit);
+    CTX.strokeRect(8*unit, -3*unit, 5*unit, 6*unit);
+
+    CTX.fillStyle = "#8D3F32";
+    CTX.fillRect(-16*unit, -2*unit, 34*unit, 4*unit);
+    CTX.strokeRect(-16*unit, -2*unit, 34*unit, 4*unit);
+
+    CTX.fillStyle = "#444444";
     CTX.beginPath();
-    CTX.moveTo(this.length/2*PIXELS, this.width/6*PIXELS);
-    CTX.lineTo(this.length/2*PIXELS, -this.width/6*PIXELS);
-    CTX.lineTo(0, -this.width/6*PIXELS);
-    CTX.lineTo(-this.length/2*PIXELS, -this.width/2*PIXELS);
-    CTX.lineTo(-this.length/2*PIXELS, this.width/2*PIXELS);
-    CTX.lineTo(0, this.width/6*PIXELS);
+    CTX.moveTo(-this.length/2*PIXELS, -2*unit);
+    CTX.lineTo(-this.length/2*PIXELS, -5*unit);
+    CTX.lineTo(-8*unit, -5*unit);
+    CTX.lineTo(4*unit, -2*unit);
     CTX.closePath();
     CTX.fill();
     CTX.stroke();
 
+    CTX.fillStyle = "#8D3F32";
+    CTX.fillRect(-this.length/2*PIXELS, -6*unit, 10*unit, unit);
+    CTX.strokeRect(-this.length/2*PIXELS, -6*unit, 10*unit, unit);
+
+    CTX.fillStyle = "#444444";
+    CTX.beginPath();
+    CTX.moveTo(-this.length/2*PIXELS, 2*unit);
+    CTX.lineTo(-this.length/2*PIXELS, 5*unit);
+    CTX.lineTo(-8*unit, 5*unit);
+    CTX.lineTo(4*unit, 2*unit);
+    CTX.closePath();
+    CTX.fill();
+    CTX.stroke();
+
+    CTX.fillStyle = "#8D3F32";
+    CTX.fillRect(-this.length/2*PIXELS, 5*unit, 10*unit, unit);
+    CTX.strokeRect(-this.length/2*PIXELS, 5*unit, 10*unit, unit);
+
     CTX.restore();
-    if (DRAW_HITBOX) this.box.draw(CTX);
     for (let pdc of this.pdcs) pdc.draw(CTX);
 }
 

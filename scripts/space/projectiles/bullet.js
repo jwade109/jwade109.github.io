@@ -22,7 +22,7 @@ Bullet.prototype.handleCollision = function(other)
 {
     if (other === this.origin) return;
     if (other instanceof Bullet) return;
-    if (other instanceof Torpedo) return;
+    // if (other instanceof Torpedo) return;
     other.damage(BULLET_DAMAGE);
     this.remove = true;
 }
