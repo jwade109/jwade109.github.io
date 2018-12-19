@@ -45,8 +45,8 @@ function Corvette(pos, theta)
         new Thruster([-tx, -ty], 3*Math.PI/2, CORVETTE_RCS_THRUST, sw),
         new Thruster([tx, -ty], 3*Math.PI/2, CORVETTE_RCS_THRUST, sw),
         new Thruster([tx, -ty], 0, CORVETTE_RCS_THRUST, sw),
-        new Thruster([0, -this.length/2],
-            -Math.PI/2, CORVETTE_MAIN_THRUST, this.width)];
+        new Thruster([-this.length/2, 0],
+            Math.PI, CORVETTE_MAIN_THRUST, this.width*0.7)];
     for (let t of this.thrusters) t.drawbell = false;
 
     this.pdcs =
@@ -89,6 +89,8 @@ Corvette.prototype.launchTorpedo = function()
     let torp = new Torpedo(tpos, tvel, this.theta, TORPEDO_THRUST);
     torp.target = TARGET_OBJECT;
     torp.origin = this;
+    torp.name = this.name;
+    torp.faction = this.faction;
     WORLD.push(torp);
 }
 
@@ -176,7 +178,11 @@ Corvette.prototype.skin = function()
     CTX.rotate(-this.theta)
     // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE FRAME
 
-    for (let t of this.thrusters) t.draw(CTX);
+    if (norm2d(this.acc) > 0)
+    {
+        this.thrusters[8].firing = true;
+        this.thrusters[8].draw(CTX);
+    }
 
     CTX.save();
 
@@ -301,7 +307,7 @@ Corvette.prototype.damage = function(d)
             let deb = new Debris(pos.slice(), vel,
                 this.theta,
                 this.omega + Math.random()*5 - 2.5, size);
-            deb.name = this.name;
+            deb.name = this.fullName();
             deb.color = "#909090";
             if (Math.random() < 0.2)
                 deb.color = "#CCCCCC";
@@ -323,7 +329,7 @@ Corvette.prototype.explode = function()
         let deb = new Debris(pos, vel,
             this.theta,
             this.omega + Math.random()*5 - 2.5, size);
-        deb.name = this.name;
+        deb.name = this.fullName();
         deb.color = "#909090";
         if (Math.random() < 0.2)
             deb.color = "#CCCCCC";
@@ -331,13 +337,13 @@ Corvette.prototype.explode = function()
     }
     WORLD.push(new Explosion(this.pos.slice(), this.vel.slice(),
         CORVETTE_EXPLOSION_RADIUS));
-    this.acc = [0, 0];
-    this.alpha = 0;
-    this.omega = 0;
-    this.health = -Infinity;
+    // this.acc = [0, 0];
+    // this.alpha = 0;
+    // this.omega = 0;
+    // this.health = -Infinity;
     this.remove = true;
     // for (let t of this.thrusters) t.firing = false;
     GAME_OVER = true;
-    TARGET_OBJECT = null;
+    // TARGET_OBJECT = null;
     throwAlert(this.name + " was lost with all hands.", Infinity);
 }

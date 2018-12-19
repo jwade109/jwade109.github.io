@@ -55,6 +55,8 @@ Amun_Ra.prototype.launchTorpedo = function()
     let torp = new Torpedo(tpos, tvel, this.theta, TORPEDO_THRUST);
     torp.origin = this;
     torp.target = PLAYER_SHIP;
+    torp.name = this.name;
+    torp.faction = this.faction;
     WORLD.push(torp);
 }
 
@@ -105,7 +107,7 @@ Amun_Ra.prototype.explode = function()
         let size = Math.random()*this.width/2;
         let deb = new Debris(pos, vel,
             this.theta, this.omega + Math.random()*5 - 2.5, size);
-        deb.name = this.name;
+        deb.name = this.fullName();
         deb.color = "black";
         WORLD.push(deb);
     }
@@ -133,7 +135,7 @@ Amun_Ra.prototype.damage = function(d)
             let deb = new Debris(pos.slice(), vel,
                 this.theta,
                 this.omega + Math.random()*5 - 2.5, size);
-            deb.name = this.name;
+            deb.name = this.fullName();
             deb.color = this.gray;
             if (Math.random() < 0.4)
                 deb.color = this.orange;

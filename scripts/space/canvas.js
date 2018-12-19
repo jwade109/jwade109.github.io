@@ -1,15 +1,15 @@
 // canvas.js
 
-const VERSION = "2018.12.18a \"Rufus\""
+const VERSION = "2018.12.18b \"Mozart\""
 
 const PI = Math.PI;
 const RAD2DEG = 180/Math.PI;
 
 var DRAW_TRACE = false;
 var LOCK_CAMERA = false;
-var CAMERA_INERTIA = 1;
 var MATCH_VELOCITY = false;
 var SPAWN_ENEMIES = true;
+var NUMBER_OF_ENEMIES = 0;
 var MAX_ENEMIES = 3;
 var GAME_PAUSED = true;
 var PAUSE_TIME = 0;
@@ -20,8 +20,8 @@ var PLAYER_SCORE = 0;
 var PLAYER_VEL = [0, 0];
 
 var SPAWN_DEBRIS = true;
-var RESPAWN_DELAY = 10;
-var RESPAWN_TIMER = 25;
+var RESPAWN_DELAY = 15;
+var RESPAWN_TIMER = 30;
 var BETWEEN_WAVES = true;
 
 var PAN = [0, 0];
@@ -34,7 +34,10 @@ var TIME = 0;
 var CANVAS = document.getElementById("canvas");
 var CTX = CANVAS.getContext("2d");
 
-var AUDIO = new Audio("scripts/space/sounds/Wii Shop Channel Music.mp3");
+var UNDERTRACK = new Audio("scripts/space/sounds/undertrack.wav");
+var OVERTRACK = new Audio("scripts/space/sounds/overtrack.wav");
+UNDERTRACK.volume = 0.15;
+OVERTRACK.volume = 0;
 
 var LEFT_KEY = false, RIGHT_KEY = false, UP_KEY = false, DOWN_KEY = false,
     space = false,
@@ -97,7 +100,8 @@ canvas.oncontextmenu = function(e)
 document.addEventListener('visibilitychange', function(event)
 {
     if (document.hidden) GAME_PAUSED = true;
-    AUDIO.ispaused = true;
+    UNDERTRACK.ispaused = true;
+    OVERTRACK.ispaused = true;
 });
 
 document.addEventListener('mousewheel', function(event)
@@ -175,6 +179,7 @@ document.addEventListener('keydown', function(event)
         case 74: if (GAME_PAUSED) physics(-SLOW_DT);
                  break;
         case 75: if (GAME_PAUSED) physics(SLOW_DT);
+                 else if (BETWEEN_WAVES) RESPAWN_TIMER = 0;
                  break;
         case 77: DRAW_TRACE = !DRAW_TRACE;
                  str = DRAW_TRACE ? "enabled." : "disabled."
@@ -367,10 +372,10 @@ function physics(dt)
         if (WORLD[i].remove == true) WORLD.splice(i, 1);
     }
 
-    let enemy_count = 0;
+    NUMBER_OF_ENEMIES = 0;
     for (let obj of WORLD)
     {
-        if (obj.is_enemy) ++enemy_count;
+        if (obj.is_enemy) ++NUMBER_OF_ENEMIES;
         obj.step(dt);
     }
 
@@ -394,7 +399,8 @@ function physics(dt)
         WORLD.push(deb);
     }
 
-    if (enemy_count == 0 && SPAWN_ENEMIES && !GAME_OVER && RESPAWN_TIMER < 0)
+    if (NUMBER_OF_ENEMIES == 0 && SPAWN_ENEMIES &&
+        !GAME_OVER && RESPAWN_TIMER < 0)
     {
         BETWEEN_WAVES = false;
         ++PLAYER_SCORE;
@@ -414,12 +420,9 @@ function physics(dt)
         }
         RESPAWN_TIMER = RESPAWN_DELAY;
     }
-    else if (enemy_count == 0)
+    else if (NUMBER_OF_ENEMIES == 0)
     {
         BETWEEN_WAVES = true;
-        if (RESPAWN_TIMER == RESPAWN_DELAY)
-            throwAlert("Enemy vessels inbound in " + RESPAWN_DELAY +
-                " seconds.", RESPAWN_DELAY);
         RESPAWN_TIMER -= dt;
         if (RESPAWN_TIMER > 0)
         {
@@ -680,10 +683,10 @@ function draw()
     CTX.textAlign = "left";
 
     CTX.fillStyle = "black";
+    CTX.font = "14px Helvetica";
     for (let i in ALERTS)
     {
-        let opacity = Math.min(2/3, 1);
-        CTX.globalAlpha = 1;
+        CTX.globalAlpha = Math.max(0, Math.min(1, ALERTS[i][1]));
         CTX.fillText(ALERTS[i][0].toUpperCase(),
             70, 30 + 20*(ALERTS.length - i - 1));
     }
@@ -748,14 +751,29 @@ function draw()
         CTX.fillStyle = "darkgray";
         let rtime = (Math.round(RESPAWN_TIMER*100)/100).toLocaleString("en",
             {useGrouping: false, minimumFractionDigits: 2});
-        CTX.fillText("WAVE " + (PLAYER_SCORE + 1) + " IN",
-            WIDTH/2 + 20, HEIGHT/2 - 60);
-        CTX.fillText("T-" + rtime + "s", WIDTH/2 + 20, HEIGHT/2 - 20);
+        if (PLAYER_SCORE > 0)
+        {
+            CTX.textAlign = "right";
+            CTX.fillText("WAVE " + PLAYER_SCORE + " CLEARED",
+                WIDTH/2 - 20, HEIGHT/2 - 20);
+            CTX.textAlign = "left";
+        }
+        CTX.fillText("WAVE " + (PLAYER_SCORE + 1) + " IN T-" + rtime + "s",
+            WIDTH/2 + 20, HEIGHT/2 - 20);
+        CTX.fillText("PRESS [K] to ADVANCE", WIDTH/2 + 20, HEIGHT/2 + 40);
     }
     CTX.font = "30px Helvetica";
     CTX.globalAlpha = 0.4;
     CTX.fillStyle = "darkgray";
-    CTX.fillText("WAVE " + PLAYER_SCORE, WIDTH - 200, HEIGHT - 10);
+    CTX.textAlign = "right";
+    CTX.fillText("WAVE " + PLAYER_SCORE, WIDTH - 20, 40);
+    CTX.font = "12px Helvetica";
+    CTX.globalAlpha = 0.8;
+    if (NUMBER_OF_ENEMIES == 1)
+        CTX.fillText("1 ENEMY REMAINS", WIDTH - 20, 60);
+    else
+        CTX.fillText(NUMBER_OF_ENEMIES + " ENEMIES REMAIN", WIDTH - 20, 60);
+    CTX.textAlign = "left";
 }
 
 function start()
@@ -767,13 +785,56 @@ function start()
     }
 
     if (document.hidden) GAME_PAUSED = true;
-    // if (GAME_PAUSED) AUDIO.playbackRate = 0;
-    // else
-    // {
-    //     if (!AUDIO.ispaused) AUDIO.play();
-    //     AUDIO.playbackRate = 1;
-    //     AUDIO.volume = 0.03;
-    // }
+    if (UNDERTRACK.currentTime > UNDERTRACK.duration - 0.10)
+    {
+        console.log("https://i.ytimg.com/vi/XFFmw-HDiRE/maxresdefault.jpg");
+        UNDERTRACK.currentTime = 1.45;
+        OVERTRACK.currentTime = 1.45;
+    }
+    if (GAME_PAUSED)
+    {
+        UNDERTRACK.volume = BETWEEN_WAVES ? 0.05 : 0;
+        OVERTRACK.volume = BETWEEN_WAVES ? 0 : 0.05;
+    }
+    else
+    {
+        if (!UNDERTRACK.ispaused) UNDERTRACK.play();
+        if (!OVERTRACK.ispaused) OVERTRACK.play();
+        UNDERTRACK.playbackRate = 1;
+        OVERTRACK.playbackRate = 1;
+
+        let fade = function(control, setpoint)
+        {
+            let dv = 0.05*dt;
+            if (control > setpoint)
+            {
+                control -= dv;
+                if (control < setpoint) return setpoint;
+                return control;
+            }
+            else if (control < setpoint)
+            {
+                control += dv;
+                if (control > setpoint) return setpoint;
+                return control;
+            }
+            return setpoint;
+        }
+
+        if (BETWEEN_WAVES)
+        {
+            UNDERTRACK.volume = fade(UNDERTRACK.volume, 0.15);
+            OVERTRACK.volume = fade(OVERTRACK.volume, 0);
+        }
+        else
+        {
+            if (PLAYER_SCORE < 3)
+                UNDERTRACK.volume = fade(UNDERTRACK.volume, 0);
+            else
+                UNDERTRACK.volume = fade(UNDERTRACK.volume, 0.1);
+            OVERTRACK.volume = fade(OVERTRACK.volume, 0.2);
+        }
+    }
 
     current = new Date().getTime();
     draw();

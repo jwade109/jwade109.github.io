@@ -175,7 +175,7 @@ Donnager.prototype.explode = function()
             this.theta,
             this.omega + Math.random()*5 - 2.5, size);
         deb.color = "brown";
-        deb.name = this.name;
+        deb.name = this.fullName();
         WORLD.push(deb);
 
         if (Math.random() < 0.1)
@@ -204,7 +204,7 @@ Donnager.prototype.damage = function(d)
             let deb = new Debris(pos.slice(), vel,
                 this.theta,
                 this.omega + Math.random()*5 - 2.5, size);
-            deb.name = this.name;
+            deb.name = this.fullName();
             deb.color = "#909090";
             if (Math.random() < 0.2)
                 deb.color = "#CCCCCC";

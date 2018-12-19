@@ -58,6 +58,8 @@ Morrigan.prototype.launchTorpedo = function(target)
         TORPEDO_THRUST, TORPEDO_LENGTH);
     torp.origin = this;
     torp.target = target;
+    torp.name = this.name;
+    torp.faction = this.faction;
     WORLD.push(torp);
 }
 
@@ -130,7 +132,7 @@ Morrigan.prototype.explode = function()
         let size = Math.random()*this.width/2 + this.width/2;
         let deb = new Debris(pos, vel,
             this.theta, this.omega + Math.random()*5 - 2.5, size);
-        deb.name = this.name;
+        deb.name = this.fullName();
         deb.color = this.gray;
         if (Math.random() < 0.4) deb.color = this.orange;
         WORLD.push(deb);
@@ -159,7 +161,7 @@ Morrigan.prototype.damage = function(d)
             let deb = new Debris(pos.slice(), vel,
                 this.theta,
                 this.omega + Math.random()*5 - 2.5, size);
-            deb.name = this.name;
+            deb.name = this.fullName();
             deb.color = this.gray;
             if (Math.random() < 0.4)
                 deb.color = this.orange;

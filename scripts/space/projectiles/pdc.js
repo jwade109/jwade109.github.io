@@ -24,7 +24,7 @@ class PointDefenseCannon
 
         this.audio = new Audio("scripts/space/sounds/" +
             "Weapon Gun Rifle M16 Single Shot Interior Shooting Range 01.wav");
-        this.audio.volume = 0.005;
+        this.audio.volume = 0.02;
         this.audio.playbackRate = 2;
     }
 
