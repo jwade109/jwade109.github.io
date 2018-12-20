@@ -1,6 +1,6 @@
 // canvas.js
 
-const VERSION = "2018.12.19b \"Ballistic\""
+const VERSION = "2018.12.20a \"Tempo\""
 
 const PI = Math.PI;
 const RAD2DEG = 180/Math.PI;
@@ -70,8 +70,6 @@ const WORLD_RENDER_DISTANCE = 4000;
 var PLAYER_SHIP = new Scirocco([0, 0], Math.PI/2);
 PLAYER_SHIP.is_enemy = false;
 WORLD.push(PLAYER_SHIP);
-// PLAYER_SHIP.control = Controller.player;
-// PLAYER_SHIP.fireRailgun = function() { };
 
 WORLD.push(new Donnager([0, -2000], -Math.PI/6));
 
@@ -699,14 +697,14 @@ function draw()
         let spacing = 5;
         let hh = Math.max(0, PLAYER_SHIP.health)/
             PLAYER_SHIP.max_health*(HEIGHT - 2*border);
-        let rh = (HEIGHT - 2*border) - Math.max(0, PLAYER_SHIP.railgun_reload)/
-            RAILGUN_COOLDOWN*(HEIGHT - 2*border);
+        // let rh = (HEIGHT - 2*border) - Math.max(0, PLAYER_SHIP.railgun_reload)/
+        //     RAILGUN_COOLDOWN*(HEIGHT - 2*border);
 
         CTX.globalAlpha = 0.3;
         CTX.fillStyle = "green";
         CTX.fillRect(border, (HEIGHT - border) - hh, cw, hh);
-        CTX.fillStyle = "gray";
-        CTX.fillRect(border + cw + spacing, (HEIGHT - border) - rh, cw, rh);
+        // CTX.fillStyle = "gray";
+        // CTX.fillRect(border + cw + spacing, (HEIGHT - border) - rh, cw, rh);
 
         CTX.textAlign = "left";
         CTX.font = "15px Consolas";
@@ -717,12 +715,49 @@ function draw()
         CTX.rotate(-Math.PI/2);
         let percent = Math.round(PLAYER_SHIP.health/CORVETTE_MAX_HEALTH*100);
         CTX.fillText("HULL (" + percent + "%)", 0, -3);
-        let railgun_status = "(READY TO FIRE)";
-        if (PLAYER_SHIP.railgun_reload > 0) railgun_status = "(CHARGING)";
-        CTX.fillText("RAILGUN " + railgun_status, 0, cw + spacing - 3);
+        // let railgun_status = "(READY TO FIRE)";
+        // if (PLAYER_SHIP.railgun_reload > 0) railgun_status = "(CHARGING)";
+        // CTX.fillText("RAILGUN " + railgun_status, 0, cw + spacing - 3);
         CTX.restore();
+
+        if (PLAYER_SHIP.hasOwnProperty("railguns"))
+        {
+            CTX.fillStyle = "gray";
+            CTX.globalAlpha = 0.3;
+            let num_guns = PLAYER_SHIP.railguns.length;
+            let height = (HEIGHT - 2*border -
+                spacing*(num_guns - 1))/num_guns;
+            for (let i = 0; i < num_guns; ++i)
+            {
+                let gun = PLAYER_SHIP.railguns[i];
+                let percent = Math.min(1, (TIME -
+                    gun.lastFired)/gun.cooldown);
+                CTX.fillRect(border + cw + spacing,
+                    border + height*(i + 1 - percent) + spacing*i,
+                    cw, height*percent);
+            }
+        }
+
+        if (PLAYER_SHIP.hasOwnProperty("tubes"))
+        {
+            CTX.fillStyle = "gray";
+            CTX.globalAlpha = 0.3;
+            let num_tubes = PLAYER_SHIP.tubes.length;
+            let height = (HEIGHT - 2*border -
+                spacing*(num_tubes - 1))/num_tubes;
+            for (let i = 0; i < num_tubes; ++i)
+            {
+                let tube = PLAYER_SHIP.tubes[i];
+                let percent = Math.min(1, (TIME -
+                    tube.lastFired)/tube.cooldown);
+                CTX.fillRect(border + 2*cw + 2*spacing,
+                    border + height*(i + 1 - percent) + spacing*i,
+                    cw, height*percent);
+            }
+        }
     }
 
+    CTX.globalAlpha = 1;
     CTX.fillStyle = "gray";
     CTX.font = "12px Helvetica";
     let weapon = PLAYER_WEAPON_SELECT ? "TORPEDOES" : "RAILGUN";
@@ -859,13 +894,17 @@ function draw()
 
 function start()
 {
+    if (UNDERTRACK.volume == 0)
+        UNDERTRACK.currentTime = OVERTRACK.currentTime;
+    if (OVERTRACK.volume == 0)
+        OVERTRACK.currentTime = UNDERTRACK.currentTime;
+
     for (let i in ALERTS)
     {
         ALERTS[i][1] -= dt;
         if (ALERTS[i][1] < 0) ALERTS.splice(i, 1);
     }
 
-    if (document.hidden) GAME_PAUSED = true;
     if (UNDERTRACK.currentTime > UNDERTRACK.duration - 0.10)
     {
         console.log("https://i.ytimg.com/vi/XFFmw-HDiRE/maxresdefault.jpg");

@@ -69,6 +69,15 @@ function Scirocco(pos, theta)
         new RailgunLauncher([20, 0], 0, this, [-2, 2])
     ];
 
+    this.tubes = [
+        new TorpedoTube([this.length/2, -7.5], 0, this),
+        new TorpedoTube([this.length/2, -4.5], 0, this),
+        new TorpedoTube([this.length/2, -1.5], 0, this),
+        new TorpedoTube([this.length/2, 1.5], 0, this),
+        new TorpedoTube([this.length/2, 4.5], 0, this),
+        new TorpedoTube([this.length/2, 7.5], 0, this),
+    ]
+
     this.gray = "#555555";
     this.orange = "#CC5500";
 }
@@ -88,56 +97,25 @@ Scirocco.prototype.firePDC = function(target)
 
 Scirocco.prototype.launchTorpedo = function(target)
 {
-    let poff = rot2d([0, this.length/2], this.theta + Math.PI/2);
-    let voff = rot2d([0, 150], this.theta + Math.PI/2);
-    let tpos = this.pos.slice();
-    let tvel = this.vel.slice();
-    tpos[0] += poff[0];
-    tpos[1] += poff[1];
-    tvel[0] += voff[0];
-    tvel[1] += voff[1];
-    let torp = new Torpedo(tpos, tvel, this.theta,
-        TORPEDO_THRUST, TORPEDO_LENGTH);
-    torp.origin = this;
-    torp.target = target;
-    torp.name = this.name;
-    torp.faction = this.faction;
-    WORLD.push(torp);
+    let min = Infinity, oldest;
+    for (let tube of this.tubes)
+    {
+        if (tube.lastFired < min)
+        {
+            oldest = tube;
+            min = tube.lastFired;
+        }
+    }
+    oldest.fire(target);
 }
 
 Scirocco.prototype.fireRailgun = function()
 {
     for (let rg of this.railguns) rg.fire();
-    // if (this.railgun_reload > 0)
-    // {
-    //     throwAlert("Cannot fire railgun -- still charging.",
-    //         ALERT_DISPLAY_TIME);
-    //     return;
-    // }
-    // this.railgun_reload = RAILGUN_COOLDOWN/4;
-    // let angle = angle2d([1, 0], sub2d([MOUSEX, MOUSEY], this.pos));
-    // let vel = rot2d([RAILGUN_VEL, 0], this.gamma);
-    // vel[0] += this.vel[0];
-    // vel[1] += this.vel[1];
-    // let r = new Railgun(this.pos.slice(), vel, angle, 12);
-    // r.origin = this;
-    // WORLD.push(r);
-    // WORLD.push(new Explosion(this.pos.slice(),
-    //     this.vel.slice(), TORPEDO_EXPLOSION_RADIUS));
 }
 
 Scirocco.prototype.control = function(dt)
 {
-    // while (angle < this.gamma - Math.PI) angle += Math.PI*2;
-    // while (angle > this.gamma + Math.PI) angle -= Math.PI*2;
-    //
-    // this.nu = (angle - this.gamma)*100 - this.epsilon*20;
-    //
-    // this.epsilon += this.nu*dt;
-    // this.epsilon = Math.max(-2, Math.min(this.epsilon, 2));
-    // this.gamma += this.epsilon*dt;
-    //
-    // this.railgun_reload -= dt;
     for (let rg of this.railguns)
     {
         let angle = angle2d([1, 0], sub2d([MOUSEX, MOUSEY], rg.globalPos()));
@@ -281,6 +259,7 @@ Scirocco.prototype.skin = function()
     CTX.restore();
     for (let pdc of this.pdcs) pdc.draw(CTX);
     for (let railgun of this.railguns) railgun.draw(CTX);
+    for (let tube of this.tubes) tube.draw();
 }
 
 Scirocco.prototype.explode = function()

@@ -48,8 +48,8 @@ Torpedo.prototype.control = function(dt)
     while (theta > this.theta + Math.PI) theta -= Math.PI*2;
     if (this.tracking && this.time > this.drifttimer)
         this.theta = theta;
-    else if (this.tracking)
-        this.theta += (theta - this.theta)*0.1;
+    else if (this.tracking && this.time > this.drifttimer/2)
+        this.theta += (theta - this.theta)*0.05;
 
     if (this.time > TORPEDO_DRIFT_TIME &&
         this.time < TORPEDO_DRIFT_TIME + TORPEDO_FUEL_TIME)

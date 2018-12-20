@@ -22,8 +22,6 @@ function Corvette(pos, theta)
     this.theta = theta;
     this.mass = CORVETTE_MASS;
     this.izz = CORVETTE_MOMENT_INERTIA;
-    this.torpedo_reload = 0;
-    this.railgun_reload = 0;
     this.name = "\"Rocinante\"";
     this.type = "Corvette Class";
     this.gray = "#909090";
@@ -36,6 +34,7 @@ function Corvette(pos, theta)
     let tx = this.width*0.45;
     let ty = this.width*0.7;
     let sw = 3;
+
     this.thrusters = [
         new Thruster([tx, ty], 0, CORVETTE_RCS_THRUST, sw),
         new Thruster([tx, ty], Math.PI/2, CORVETTE_RCS_THRUST, sw),
@@ -62,58 +61,37 @@ function Corvette(pos, theta)
          new PointDefenseCannon(
             [-this.length/6, this.width*0.44], -Math.PI/2, this,
             [-Math.PI/1.8, Math.PI/2.2], CORVETTE_PDC_RANGE)];
+
+    this.tubes = [
+        new TorpedoTube([this.length/2, 3], 0, this),
+        new TorpedoTube([this.length/2, 0], 0, this),
+        new TorpedoTube([this.length/2, -3], 0, this)
+    ];
+
+    this.railguns = [
+        new RailgunLauncher([this.length/2, 0], 0, this, [0, 0])
+    ]
 }
 
 Corvette.prototype = Object.create(Collidable.prototype);
 
-Corvette.prototype.launchTorpedo = function()
+Corvette.prototype.launchTorpedo = function(target)
 {
-    // if (TARGET_OBJECT == null)
-    // {
-    //     throwAlert("Torpedoes require target lock.", ALERT_DISPLAY_TIME);
-    //     return;
-    // }
-    if (this.torpedo_reload > 0) return;
-    this.torpedo_reload = 0.12;
-
-    let poff = rot2d([this.length/2, 0], this.theta);
-    let voff = rot2d([100, 0], this.theta);
-    let vspin = rot2d([0, -this.omega*this.length/2], this.theta);
-
-    let tpos = this.pos.slice();
-    let tvel = this.vel.slice();
-    tpos[0] += poff[0];
-    tpos[1] += poff[1];
-    tvel[0] += voff[0] + vspin[0];
-    tvel[1] += voff[1] + vspin[1];
-    let torp = new Torpedo(tpos, tvel, this.theta, TORPEDO_THRUST);
-    torp.target = TARGET_OBJECT;
-    torp.origin = this;
-    torp.name = this.name;
-    torp.faction = this.faction;
-    WORLD.push(torp);
+    let min = Infinity, oldest;
+    for (let tube of this.tubes)
+    {
+        if (tube.lastFired < min)
+        {
+            oldest = tube;
+            min = tube.lastFired;
+        }
+    }
+    oldest.fire(target);
 }
 
 Corvette.prototype.fireRailgun = function()
 {
-    if (this.railgun_reload > 0)
-    {
-        throwAlert("Cannot fire railgun -- still charging.",
-            ALERT_DISPLAY_TIME);
-        return;
-    }
-    this.railgun_reload = RAILGUN_COOLDOWN;
-    let vel = rot2d([RAILGUN_VEL, 0], this.theta);
-    let dv = rot2d([-60, 0], this.theta);
-    vel[0] += this.vel[0];
-    vel[1] += this.vel[1];
-    let r = new Railgun(this.pos.slice(), vel, this.theta, 12);
-    r.origin = this;
-    WORLD.push(r);
-    this.vel[0] += dv[0];
-    this.vel[1] += dv[1];
-    WORLD.push(new Explosion(this.pos.slice(),
-        this.vel.slice(), TORPEDO_EXPLOSION_RADIUS));
+    for (let rg of this.railguns) rg.fire();
 }
 
 Corvette.prototype.firePDC = function(target)
@@ -191,7 +169,7 @@ Corvette.prototype.skin = function()
         CTX.save();
         CTX.globalAlpha = 0.2;
         CTX.strokeStyle = "red";
-        if (this.railgun_reload > 0)
+        if (!this.railguns[0].canFire())
             CTX.setLineDash([10*PIXELS, 20*PIXELS]);
         CTX.beginPath();
         CTX.moveTo(0, 0);
@@ -276,6 +254,8 @@ Corvette.prototype.skin = function()
     CTX.restore();
 
     for (let pdc of this.pdcs) pdc.draw(CTX);
+    // for (let railgun of this.railguns) railgun.draw(CTX);
+    for (let tube of this.tubes) tube.draw();
 }
 
 Corvette.prototype.damage = function(d)

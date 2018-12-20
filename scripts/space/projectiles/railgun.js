@@ -1,7 +1,5 @@
 // railgun.js
 
-const RAILGUN_VEL = 20000;
-const RAILGUN_COOLDOWN = 5;
 const RAILGUN_DAMAGE = 500;
 const RAILGUN_LENGTH = 1;
 const RAILGUN_WIDTH = 0.2;

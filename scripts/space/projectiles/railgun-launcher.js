@@ -1,5 +1,7 @@
 // railgun-launcher.js
 
+const RAILGUN_VEL = 20000;
+const RAILGUN_COOLDOWN = 5;
 const RAILGUN_SPREAD = 0;
 
 function RailgunLauncher(pos, theta, object, range)
@@ -13,8 +15,8 @@ function RailgunLauncher(pos, theta, object, range)
     this.omega = 0;
     this.alpha = 0;
 
-    this.cooldown = 1; // RAILGUN_COOLDOWN;
-    this.last_fired = -Infinity;
+    this.cooldown = RAILGUN_COOLDOWN; // RAILGUN_COOLDOWN;
+    this.lastFired = -Infinity;
     this.barrelColor = "gray";
     this.baseColor = "gray";
     this.nodraw = false;
@@ -48,6 +50,11 @@ RailgunLauncher.prototype.seek = function(dt, setpoint)
 
 }
 
+RailgunLauncher.prototype.canFire = function()
+{
+    return TIME - this.lastFired >= this.cooldown;
+}
+
 RailgunLauncher.prototype.fire = function()
 {
     let gun_orient = this.object.theta + this.theta;
@@ -59,8 +66,8 @@ RailgunLauncher.prototype.fire = function()
     while (theta > gun_orient + Math.PI) theta -= Math.PI*2;
     if (theta > max || theta < min) return;
 
-    if (TIME - this.last_fired < this.cooldown) return;
-    this.last_fired = TIME;
+    if (TIME - this.lastFired < this.cooldown) return;
+    this.lastFired = TIME;
 
     let angle = this.object.theta + this.theta + this.gamma;
     let vel = rot2d([RAILGUN_VEL, 0], angle);
@@ -106,7 +113,7 @@ RailgunLauncher.prototype.draw = function(ctx)
         ctx.rotate(-this.gamma);
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        if (TIME - this.last_fired < this.cooldown)
+        if (TIME - this.lastFired < this.cooldown)
             CTX.setLineDash([10*PIXELS, 20*PIXELS]);
         ctx.lineTo(2000*PIXELS, 0);
         ctx.stroke();
@@ -124,7 +131,7 @@ RailgunLauncher.prototype.draw = function(ctx)
             CTX.rotate(-theta + this.object.theta);
             CTX.globalAlpha = 0.2;
             CTX.strokeStyle = "green";
-            if (TIME - this.last_fired < this.cooldown)
+            if (TIME - this.lastFired < this.cooldown)
                 CTX.setLineDash([10*PIXELS, 20*PIXELS]);
             CTX.beginPath();
             CTX.moveTo(0, 0);
@@ -179,7 +186,7 @@ RailgunLauncher.prototype.draw = function(ctx)
     ctx.fillRect(6*PIXELS, -1*PIXELS, 7*PIXELS, 2*PIXELS);
     ctx.strokeRect(6*PIXELS, -1*PIXELS, 7*PIXELS, 2*PIXELS);
 
-    if (TIME - this.last_fired < this.cooldown) ctx.fillStyle = "red";
+    if (TIME - this.lastFired < this.cooldown) ctx.fillStyle = "red";
     else ctx.fillStyle = "green";
     ctx.fillRect(-4*PIXELS, -2*PIXELS, PIXELS, PIXELS);
     ctx.restore();
