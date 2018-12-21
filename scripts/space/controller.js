@@ -5,42 +5,56 @@ class Controller
 
 static player(dt)
 {
-    if (this.torpedo_reload > 0) this.torpedo_reload -= dt;
-    if (this.railgun_reload > 0) this.railgun_reload -= dt;
-    // for (let thruster of this.thrusters) thruster.firing = false;
+
 }
 
 static morrigan(dt)
 {
-    if (PLAYER_SHIP.remove)
+    let candidates = [];
+    for (let obj of WORLD)
+    {
+        if (obj instanceof Debris) continue;
+        if (obj instanceof Torpedo) continue;
+        if (!obj.trackable) continue;
+        if (obj.faction == this.faction) continue;
+        candidates.push(obj);
+    }
+
+    if (candidates.length == 0)
     {
         this.applyMoment(-this.omega*this.izz);
-        this.applyForce(rot2d([this.mass*3*9.81, 0], this.theta));
-        this.thrusters[0].firing = true;
+        this.applyForce(rot2d([this.max_acc*this.mass, 0], this.theta));
         return;
     }
 
-    let dist = distance(PLAYER_SHIP.pos, this.pos);
+    let dist = Infinity, target;
+    for (let c of candidates)
+    {
+        let d = distance(c.pos, this.pos);
+        if (d < dist)
+        {
+            dist = d;
+            target = c;
+        }
+    }
+
     if (this.torpedo_reload > 0) this.torpedo_reload -= dt;
     else if (dist < WORLD_RENDER_DISTANCE)
     {
-        this.launchTorpedo(PLAYER_SHIP);
+        this.launchTorpedo(target);
         this.torpedo_reload = Math.random()*4 + 2;
     }
 
-    if (this.pdc_reload > 0) this.pdc_reload -= dt;
     if (Math.random() < 0.5)
-        this.firePDC(PLAYER_SHIP);
+        this.firePDC(target);
 
-    let dx = PLAYER_SHIP.pos[0] - this.pos[0];
-    let dy = PLAYER_SHIP.pos[1] - this.pos[1];
     let bodyacc = [-(600 - dist)/10, 0];
-    if (bodyacc[0] > 4) this.thrusters[0].firing = true;
+    if (bodyacc[0] > 0) this.thrusters[0].firing = true;
     else this.thrusters[0].firing = false;
     this.forces = rot2d(mult2d(bodyacc, this.mass), this.theta);
-    this.forces[0] += (PLAYER_SHIP.vel[0] - this.vel[0])/3*this.mass;
-    this.forces[1] += (PLAYER_SHIP.vel[1] - this.vel[1])/3*this.mass;
-    let theta = angle2d(this.pos, PLAYER_SHIP.pos) - this.theta;
+    this.forces[0] += (target.vel[0] - this.vel[0])/3*this.mass;
+    this.forces[1] += (target.vel[1] - this.vel[1])/3*this.mass;
+    let theta = angle2d(this.pos, target.pos) - this.theta;
     while (theta > Math.PI) theta -= Math.PI*2;
     while (theta < -Math.PI) theta += Math.PI*2;
     this.moments = (theta - this.omega)*this.izz;
@@ -50,8 +64,8 @@ static amunRaEnemy(dt)
 {
     if (PLAYER_SHIP.remove)
     {
-        this.alpha = -this.omega;
-        this.acc = rot2d([10, 0], this.theta);
+        this.applyMoment(-this.omega*this.izz);
+        this.applyForce(rot2d([this.max_acc*this.mass, 0], this.theta));
         return;
     }
 

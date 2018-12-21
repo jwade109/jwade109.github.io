@@ -4,6 +4,8 @@ const SCIROCCO_LENGTH = 200;
 const SCIROCCO_WIDTH = 72;
 const SCIROCCO_HEALTH = 5000;
 const SCIROCCO_MASS = 200000;
+const SCIROCCO_MAX_ACCEL = 12*9.81;
+const SCIROCCO_MAX_ALPHA = 2;
 const SCIROCCO_IZZ = 50000000;
 const SCIROCCO_EXPLOSION_RADIUS = 500;
 const SCIROCCO_PDC_RANGE = 1200;
@@ -15,10 +17,12 @@ function Scirocco(pos, theta)
     this.theta = theta;
     this.mass = SCIROCCO_MASS;
     this.izz = SCIROCCO_IZZ;
+    this.max_acc = SCIROCCO_MAX_ACCEL;
+    this.max_alpha = SCIROCCO_MAX_ALPHA;
     this.name = "\"" + NAMES[Math.floor(Math.random()*NAMES.length)] + "\"";
     this.type = "Scirocco Class";
     this.faction = "MCRN";
-    this.railgun_reload = 0;
+    this.permanent = true;
 
     this.gamma = 0;
     this.epsilon = 0;
@@ -119,7 +123,8 @@ Scirocco.prototype.control = function(dt)
     for (let rg of this.railguns)
     {
         let angle = angle2d([1, 0], sub2d([MOUSEX, MOUSEY], rg.globalPos()));
-        if (!PLAYER_WEAPON_SELECT) rg.seek(dt, angle);
+        if (!PLAYER_WEAPON_SELECT && this === PLAYER_SHIP)
+            rg.seek(dt, angle);
         else rg.seek(dt, this.theta + rg.theta);
     }
 }
@@ -127,7 +132,7 @@ Scirocco.prototype.control = function(dt)
 Scirocco.prototype.skin = function()
 {
     CTX.save();
-    CTX.translate(-this.pos[0]*PIXELS, -this.pos[1]*PIXELS);
+    CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
     CTX.rotate(-this.theta);
 
     let unit = this.length/50*PIXELS;

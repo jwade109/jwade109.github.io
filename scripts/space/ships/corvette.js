@@ -11,7 +11,8 @@ const CORVETTE_EXPLOSION_RADIUS = 180;
 const CORVETTE_LENGTH = 42;
 const CORVETTE_WIDTH = 11;
 const CORVETTE_MASS = 120000;
-const CORVETTE_MAIN_THRUST = 20*9.81*CORVETTE_MASS;
+const CORVETTE_MAX_ACCEL = 20*9.81;
+const CORVETTE_MAX_ALPHA = 12;
 const CORVETTE_RCS_THRUST = 9.81*CORVETTE_MASS;
 const CORVETTE_PDC_RANGE = Infinity; // 500;
 
@@ -22,8 +23,11 @@ function Corvette(pos, theta)
     this.theta = theta;
     this.mass = CORVETTE_MASS;
     this.izz = CORVETTE_MOMENT_INERTIA;
+    this.max_acc = CORVETTE_MAX_ACCEL;
+    this.max_alpha = CORVETTE_MAX_ALPHA;
     this.name = "\"Rocinante\"";
     this.type = "Corvette Class";
+    this.permanent = true;
     this.gray = "#909090";
     this.box = new Hitbox([[this.length/2, this.width/3],
                            [-this.length/2, this.width/2],
@@ -45,7 +49,7 @@ function Corvette(pos, theta)
         new Thruster([tx, -ty], 3*Math.PI/2, CORVETTE_RCS_THRUST, sw),
         new Thruster([tx, -ty], 0, CORVETTE_RCS_THRUST, sw),
         new Thruster([-this.length/2, 0],
-            Math.PI, CORVETTE_MAIN_THRUST, this.width*0.7)];
+            Math.PI, 0, this.width*0.7)];
     for (let t of this.thrusters) t.drawbell = false;
 
     this.pdcs =

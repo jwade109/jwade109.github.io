@@ -1,11 +1,9 @@
 // canvas.js
 
-const VERSION = "2018.12.20a \"Tempo\""
-
-const PI = Math.PI;
-const RAD2DEG = 180/Math.PI;
+const VERSION = "2018.12.20a \"Puppet\"";
 
 var DRAW_TRACE = false;
+var DRAW_ACCEL = false;
 var LOCK_CAMERA = false;
 var MATCH_VELOCITY = false;
 var SPAWN_ENEMIES = true;
@@ -59,7 +57,7 @@ var MOUSE_SCREEN_POS = [WIDTH/2, HEIGHT/2];
 
 const MIN_ZOOM = 30;
 const MAX_ZOOM = 3000;
-var VIEW_RADIUS; zoom(900);
+var VIEW_RADIUS;
 
 var NEAREST_OBJECT = null;
 var TARGET_OBJECT = null;
@@ -69,7 +67,23 @@ const WORLD_RENDER_DISTANCE = 4000;
 
 var PLAYER_SHIP = new Scirocco([0, 0], Math.PI/2);
 PLAYER_SHIP.is_enemy = false;
+PLAYER_SHIP.faction = "";
 WORLD.push(PLAYER_SHIP);
+zoom(PLAYER_SHIP.length*10);
+
+// let m = new Morrigan([500, 0], 0);
+// m.control = function(dt)
+// {
+//     this.brachArrive([MOUSEX, MOUSEY], 500);
+// }
+// WORLD.push(m);
+//
+// let n = new Scirocco([500, 0], 0);
+// n.control = function(dt)
+// {
+//     this.brachArrive([MOUSEX, MOUSEY], 500);
+// }
+// WORLD.push(n);
 
 WORLD.push(new Donnager([0, -2000], -Math.PI/6));
 
@@ -174,6 +188,10 @@ document.addEventListener('keydown', function(event)
                      "Switched active weapon to railgun.";
                  throwAlert(str, ALERT_DISPLAY_TIME);
                  break;
+        case 72: DRAW_ACCEL = !DRAW_ACCEL;
+                 str = DRAW_ACCEL ? "enabled." : "disabled."
+                 throwAlert("DRAW_ACCEL " + str, ALERT_DISPLAY_TIME);
+                 break;
         case 74: if (GAME_PAUSED) physics(-SLOW_DT);
                  break;
         case 75: if (GAME_PAUSED) physics(SLOW_DT);
@@ -187,6 +205,8 @@ document.addEventListener('keydown', function(event)
                  str = DRAW_HITBOX ? "enabled." : "disabled."
                  throwAlert("DRAW_HITBOX " + str, ALERT_DISPLAY_TIME);
                  break;
+        case 79: --PLAYER_SCORE; break;
+        case 80: ++PLAYER_SCORE; break;
         case 81: qkey = true; break;
         case 82: SLOW_TIME = !SLOW_TIME; break;
         case 86: LOCK_CAMERA = !LOCK_CAMERA;
@@ -433,8 +453,8 @@ function physics(dt)
     {
         if (shift)
         {
-            PLAYER_SHIP.applyForce(rot2d([CORVETTE_MAIN_THRUST, 0],
-                PLAYER_SHIP.theta));
+            PLAYER_SHIP.applyForce(rot2d([PLAYER_SHIP.max_acc*
+                PLAYER_SHIP.mass, 0], PLAYER_SHIP.theta));
         }
         if (space)
         {
@@ -449,11 +469,11 @@ function physics(dt)
 
         if (akey)
         {
-            PLAYER_SHIP.applyMoment(50000000);
+            PLAYER_SHIP.applyMoment(PLAYER_SHIP.max_alpha*PLAYER_SHIP.izz);
         }
         else if (dkey)
         {
-            PLAYER_SHIP.applyMoment(-50000000);
+            PLAYER_SHIP.applyMoment(-PLAYER_SHIP.max_alpha*PLAYER_SHIP.izz);
         }
         else PLAYER_SHIP.applyMoment(-PLAYER_SHIP.omega*PLAYER_SHIP.izz);
 
@@ -480,10 +500,6 @@ function draw()
     HEIGHT = CTX.canvas.height;
     updateMouse();
 
-    // CTX.fillStyle = "#222222";
-    // CTX.globalAlpha = 1;
-    // CTX.fillRect(0, 0, WIDTH, HEIGHT);
-
     CTX.save();
     CTX.translate(WIDTH/2, HEIGHT/2);
     if (LOCK_CAMERA) CTX.rotate(PLAYER_SHIP.theta - Math.PI/2);
@@ -492,7 +508,8 @@ function draw()
 
     CTX.strokeStyle = "black";
     CTX.fillStyle = "black";
-    let interval = 500;
+    let interval = Math.round(Math.max(WIDTH, HEIGHT)/(PIXELS*5000))*500;
+    if (interval == 0) interval = 500;
     for (let i = 0; interval*(i + 1)*PIXELS < Math.max(WIDTH, HEIGHT); ++i)
     {
         CTX.beginPath();

@@ -67,12 +67,13 @@ Donnager.prototype = Object.create(Collidable.prototype);
 
 Donnager.prototype.control = function(dt)
 {
-    let candidates = [PLAYER_SHIP];
+    let candidates = [];
     for (let obj of WORLD)
     {
-        if (!(obj instanceof Torpedo)) continue;
-        let dist = distance(this.pos, obj.pos);
-        if (dist < 3000) candidates.push(obj);
+        if (obj instanceof Debris) continue;
+        if (!obj.trackable) continue;
+        if (obj.faction == this.faction) continue;
+        candidates.push(obj);
     }
 
     for (let pdc of this.pdcs)
@@ -88,14 +89,9 @@ Donnager.prototype.control = function(dt)
             }
         }
         if (best != null) pdc.intercept(best);
-        else pdc.intercept(PLAYER_SHIP);
     }
 
-    if (this !== PLAYER_SHIP)
-    {
-        this.applyForce(rot2d([this.mass*9.81, 0], this.theta));
-        for (let thruster of this.thrusters) thruster.firing = true;
-    }
+    this.applyForce(rot2d([9.81*this.mass, 0], this.theta));
 }
 
 Donnager.prototype.skin = function()
@@ -104,10 +100,10 @@ Donnager.prototype.skin = function()
     CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
     CTX.rotate(-this.theta);
 
+    let firing = norm2d(this.acc) > 0;
     for (let thruster of this.thrusters)
     {
-        if (this === PLAYER_SHIP)
-            thruster.firing = norm2d(this.acc) > 0;
+        thruster.firing = firing;
         thruster.draw(CTX);
     }
 

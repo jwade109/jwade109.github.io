@@ -105,7 +105,7 @@ RailgunLauncher.prototype.draw = function(ctx)
         ctx.restore();
     }
 
-    if (!PLAYER_WEAPON_SELECT)
+    if (!PLAYER_WEAPON_SELECT && this.object == PLAYER_SHIP)
     {
         ctx.save();
         ctx.strokeStyle = "red";
@@ -167,21 +167,24 @@ RailgunLauncher.prototype.draw = function(ctx)
     ctx.fillRect(-7*PIXELS, -5*PIXELS, 14*PIXELS, 10*PIXELS);
     ctx.strokeRect(-7*PIXELS, -5*PIXELS, 14*PIXELS, 10*PIXELS);
 
+    ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(-7*PIXELS, -5*PIXELS);
     ctx.lineTo(-5*PIXELS, -3*PIXELS);
-    ctx.lineTo(5*PIXELS, -3*PIXELS);
-    ctx.lineTo(7*PIXELS, -5*PIXELS);
     ctx.moveTo(5*PIXELS, -3*PIXELS);
-    ctx.lineTo(5*PIXELS, 3*PIXELS);
-    ctx.lineTo(7*PIXELS, 5*PIXELS);
+    ctx.lineTo(7*PIXELS, -5*PIXELS);
+    // ctx.moveTo(5*PIXELS, -3*PIXELS);
     ctx.moveTo(5*PIXELS, 3*PIXELS);
-    ctx.lineTo(-5*PIXELS, 3*PIXELS);
-    ctx.lineTo(-7*PIXELS, 5*PIXELS);
+    ctx.lineTo(7*PIXELS, 5*PIXELS);
+    // ctx.moveTo(5*PIXELS, 3*PIXELS);
     ctx.moveTo(-5*PIXELS, 3*PIXELS);
-    ctx.lineTo(-5*PIXELS, -3*PIXELS);
+    ctx.lineTo(-7*PIXELS, 5*PIXELS);
+    // ctx.moveTo(-5*PIXELS, 3*PIXELS);
+    // ctx.lineTo(-5*PIXELS, -3*PIXELS);
     ctx.stroke();
+    ctx.strokeRect(-5*PIXELS, -3*PIXELS, 10*PIXELS, 6*PIXELS);
 
+    ctx.lineWidth = 1;
     ctx.fillStyle = this.barrelColor;
     ctx.fillRect(6*PIXELS, -1*PIXELS, 7*PIXELS, 2*PIXELS);
     ctx.strokeRect(6*PIXELS, -1*PIXELS, 7*PIXELS, 2*PIXELS);

@@ -7,6 +7,8 @@ const AMUN_RA_EXPLOSION_RADIUS = 240;
 const AMUN_RA_LENGTH = 61.5;
 const AMUN_RA_WIDTH = 24.2;
 const AMUN_RA_PDC_RANGE = 250;
+const AMUN_RA_MAX_ACCEL = 18*9.81;
+const AMUN_RA_MAX_ALPHA = 14;
 
 function Amun_Ra(pos, theta)
 {
@@ -17,6 +19,9 @@ function Amun_Ra(pos, theta)
     this.torpedo_reload = 0;
     this.name = "\"" + NAMES[Math.floor(Math.random()*NAMES.length)] + "\"";
     this.type = "Amun-Ra Class";
+    this.faction = "MCRN";
+    this.max_acc = AMUN_RA_MAX_ACCEL;
+    this.max_alpha = AMUN_RA_MAX_ALPHA;
     this.box = new Hitbox([[this.length/2, 0],
                            [-this.length/4, this.width/2],
                            [-this.length/2, 0],

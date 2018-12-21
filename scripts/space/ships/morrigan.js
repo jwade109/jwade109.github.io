@@ -4,6 +4,8 @@ const MORRIGAN_LENGTH = 31;
 const MORRIGAN_WIDTH = 9;
 const MORRIGAN_MAX_HEALTH = 350;
 const MORRIGAN_MASS = 80000;
+const MORRIGAN_MAX_ACCEL = 25*9.81;
+const MORRIGAN_MAX_ALPHA = 14;
 const MORRIGAN_MOMENT_INERTIA = 4000000;
 const MORRIGAN_EXPLOSION_RADIUS = 120;
 const MORRIGAN_PDC_RANGE = 350;
@@ -14,6 +16,8 @@ function Morrigan(pos, theta)
     this.pos = pos;
     this.mass = MORRIGAN_MASS;
     this.izz = MORRIGAN_MOMENT_INERTIA;
+    this.max_acc = MORRIGAN_MAX_ACCEL;
+    this.max_alpha = MORRIGAN_MAX_ALPHA;
     this.torpedo_reload = 0;
     this.name = "\"" + NAMES[Math.floor(Math.random()*NAMES.length)] + "\"";
     this.type = "Morrigan Class";
@@ -75,7 +79,7 @@ Morrigan.prototype.skin = function()
     CTX.rotate(-this.theta);
     // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE FRAME
 
-    if (norm2d(this.acc) > 0)
+    if (norm2d(this.acc) > 9.81)
         for (let thruster of this.thrusters)
         {
             thruster.firing = true;
