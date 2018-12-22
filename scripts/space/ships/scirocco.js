@@ -21,8 +21,9 @@ function Scirocco(pos, theta)
     this.max_alpha = SCIROCCO_MAX_ALPHA;
     this.name = "\"" + NAMES[Math.floor(Math.random()*NAMES.length)] + "\"";
     this.type = "Scirocco Class";
-    this.faction = "MCRN";
+    this.faction = MCRN;
     this.permanent = true;
+    this.isShip = true;
 
     this.gamma = 0;
     this.epsilon = 0;
@@ -146,7 +147,7 @@ Scirocco.prototype.skin = function()
     CTX.strokeRect(20*unit, -6*unit, 6*unit, unit/10);
 
     // bow cowling
-    CTX.fillStyle = this.gray;
+    CTX.fillStyle = this.faction.c4;
     CTX.beginPath();
     CTX.moveTo(19*unit, -9*unit);
     CTX.lineTo(20*unit, -9*unit);
@@ -161,49 +162,49 @@ Scirocco.prototype.skin = function()
     CTX.stroke();
 
     // engine base
-    CTX.fillStyle = this.gray;
+    CTX.fillStyle = this.faction.c4;
     CTX.fillRect(-23*unit, -4*unit, 10*unit, 8*unit);
     CTX.strokeRect(-23*unit, -4*unit, 10*unit, 8*unit);
 
     // main body midline
-    CTX.fillStyle = this.gray;
+    CTX.fillStyle = this.faction.c4;
     CTX.fillRect(-13*unit, -4*unit, 36*unit, 8*unit);
-    CTX.fillStyle = this.orange;
+    CTX.fillStyle = this.faction.c1;
     CTX.fillRect(21*unit, -4*unit, unit, 8*unit);
     CTX.strokeRect(-13*unit, -4*unit, 36*unit, 8*unit);
 
     // port engine
-    CTX.fillStyle = this.gray;
+    CTX.fillStyle = this.faction.c4;
     CTX.fillRect(-this.length/2*PIXELS, -8*unit, 11*unit, 4*unit);
-    CTX.fillStyle = this.orange;
+    CTX.fillStyle = this.faction.c1;
     CTX.fillRect(-17*unit, -8*unit, unit, 4*unit);
     CTX.strokeRect(-this.length/2*PIXELS, -8*unit, 11*unit, 4*unit);
 
     // midboard engine
-    CTX.fillStyle = this.gray;
+    CTX.fillStyle = this.faction.c4;
     CTX.fillRect(-this.length/2*PIXELS, -2*unit, 11*unit, 4*unit);
-    CTX.fillStyle = this.orange;
+    CTX.fillStyle = this.faction.c1;
     CTX.fillRect(-17*unit, -2*unit, unit, 4*unit);
     CTX.strokeRect(-this.length/2*PIXELS, -2*unit, 11*unit, 4*unit);
 
     // starboard engine
-    CTX.fillStyle = this.gray;
+    CTX.fillStyle = this.faction.c4;
     CTX.fillRect(-this.length/2*PIXELS, 4*unit, 11*unit, 4*unit);
-    CTX.fillStyle = this.orange;
+    CTX.fillStyle = this.faction.c1;
     CTX.fillRect(-17*unit, 4*unit, unit, 4*unit);
     CTX.strokeRect(-this.length/2*PIXELS, 4*unit, 11*unit, 4*unit);
 
     // port main body
-    CTX.fillStyle = this.gray;
+    CTX.fillStyle = this.faction.c4;
     CTX.fillRect(-3*unit, -9*unit, 23*unit, 5*unit);
-    CTX.fillStyle = this.orange;
+    CTX.fillStyle = this.faction.c1;
     CTX.fillRect(-3*unit, -5*unit, 23*unit, unit);
     CTX.strokeRect(-3*unit, -9*unit, 23*unit, 5*unit);
 
     // starboard main body
-    CTX.fillStyle = this.gray;
+    CTX.fillStyle = this.faction.c4;
     CTX.fillRect(-3*unit, 4*unit, 23*unit, 5*unit);
-    CTX.fillStyle = this.orange;
+    CTX.fillStyle = this.faction.c1;
     CTX.fillRect(-3*unit, 4*unit, 23*unit, unit);
     CTX.strokeRect(-3*unit, 4*unit, 23*unit, 5*unit);
 
@@ -214,9 +215,9 @@ Scirocco.prototype.skin = function()
     CTX.lineTo(-11*unit, -9*unit);
     CTX.lineTo(-13*unit, -4*unit);
     CTX.closePath();
-    CTX.fillStyle = this.gray;
+    CTX.fillStyle = this.faction.c4;
     CTX.fill();
-    CTX.fillStyle = this.orange;
+    CTX.fillStyle = this.faction.c1;
     CTX.fillRect(-11*unit, -8*unit, 6*unit, 2*unit);
     CTX.stroke();
     CTX.strokeRect(-11*unit, -9*unit, 6*unit, 5*unit);
@@ -228,9 +229,9 @@ Scirocco.prototype.skin = function()
     CTX.lineTo(-11*unit, 9*unit);
     CTX.lineTo(-13*unit, 4*unit);
     CTX.closePath();
-    CTX.fillStyle = this.gray;
+    CTX.fillStyle = this.faction.c4;
     CTX.fill();
-    CTX.fillStyle = this.orange;
+    CTX.fillStyle = this.faction.c1;
     CTX.fillRect(-11*unit, 6*unit, 6*unit, 2*unit);
     CTX.stroke();
     CTX.strokeRect(-11*unit, 4*unit, 6*unit, 5*unit);

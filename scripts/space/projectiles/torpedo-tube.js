@@ -2,6 +2,7 @@
 
 const TORPEDO_KICK_VEL = 200;
 const TORPEDO_COOLDOWN = 3;
+var DRAW_TORPEDO_TUBES = false;
 
 function TorpedoTube(pos, theta, object)
 {
@@ -46,7 +47,7 @@ TorpedoTube.prototype.fire = function(target)
 
 TorpedoTube.prototype.draw = function()
 {
-    if (!DRAW_FIRING_ARC) return;
+    if (!DRAW_TORPEDO_TUBES) return;
     CTX.save();
     let pos = this.globalPos();
     CTX.translate(pos[0]*PIXELS, pos[1]*PIXELS);

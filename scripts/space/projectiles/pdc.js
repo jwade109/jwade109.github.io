@@ -90,9 +90,8 @@ class PointDefenseCannon
         vel[1] += this.object.vel[1];
         let b = new Bullet(gpos.slice(), vel, noisy);
         b.origin = this.object;
+        b.faction = this.object.faction;
         WORLD.push(b);
-        // WORLD.push(new Explosion(gpos,
-        //     this.object.vel.slice(), Math.random()*2 + 5));
         this.gamma = theta - this.theta - this.object.theta;
 
         if (this.object === PLAYER_SHIP)
@@ -112,6 +111,11 @@ class PointDefenseCannon
         if (DRAW_FIRING_ARC)
         {
             ctx.save();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(this.radius*PIXELS, 0);
+            ctx.strokeStyle = "red";
+            ctx.globalAlpha = 0.4;
+            ctx.stroke();
             ctx.rotate(-this.gamma);
             ctx.fillStyle = "orange";
             ctx.strokeStyle = "black";

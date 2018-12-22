@@ -7,6 +7,8 @@ const BASILISK_MASS = 500000;
 const BASILISK_IZZ = 50000000;
 const BASILISK_EXPLOSION_RADIUS = 600;
 const BASILISK_PDC_RANGE = 700;
+const BASILISK_MAX_ACCEL = 3*9.81;
+const BASILISK_MAX_ALPHA = 0.2;
 
 function Basilisk(pos, theta)
 {
@@ -16,9 +18,13 @@ function Basilisk(pos, theta)
     this.theta = theta;
     this.mass = BASILISK_MASS;
     this.izz = BASILISK_IZZ;
+    this.max_acc = BASILISK_MAX_ACCEL;
+    this.max_alpha = BASILISK_MAX_ALPHA;
     this.name = "\"" + NAMES[Math.floor(Math.random()*NAMES.length)] + "\"";
     this.type = "Basilisk Class";
-    this.faction = "";
+    this.faction = MCRN;
+    this.isShip = true;
+    
     this.box = new Hitbox([[-this.length/2, -this.width*3.5/9],
                            [this.length*8/20, -this.width*3.5/9],
                            [this.length/2, 0],
@@ -54,6 +60,8 @@ Basilisk.prototype.explode = function()
 {
     WORLD.push(new Explosion(this.pos.slice(),
         this.vel.slice(), BASILISK_EXPLOSION_RADIUS));
+    throwAlert(this.fullName() + " (" + this.type +
+        ") was destroyed.", ALERT_DISPLAY_TIME);
 }
 
 Basilisk.prototype.handleCollision = function(other)
@@ -67,13 +75,7 @@ Basilisk.prototype.handleCollision = function(other)
 
 Basilisk.prototype.firePDC = function(target)
 {
-    for (let pdc of this.pdcs)
-    {
-        if (target == null)
-            pdc.fireAt([MOUSEX, MOUSEY]);
-        else if (isNaN(pdc.intercept(target)))
-            pdc.fireAt([MOUSEX, MOUSEY]);
-    }
+    for (let pdc of this.pdcs) pdc.intercept(target);
 }
 
 Basilisk.prototype.skin = function()

@@ -8,7 +8,7 @@ static player(dt)
 
 }
 
-static morrigan(dt)
+static morriganEnemy(dt)
 {
     let candidates = [];
     for (let obj of WORLD)
@@ -39,7 +39,7 @@ static morrigan(dt)
     }
 
     if (this.torpedo_reload > 0) this.torpedo_reload -= dt;
-    else if (dist < WORLD_RENDER_DISTANCE)
+    else if (dist < WORLD_RENDER_DISTANCE/2)
     {
         this.launchTorpedo(target);
         this.torpedo_reload = Math.random()*4 + 2;
@@ -87,7 +87,7 @@ static amunRaEnemy(dt)
     if (this.torpedo_reload > 0) this.torpedo_reload -= dt;
     else if (dist > AMUN_RA_PDC_RANGE && dist < WORLD_RENDER_DISTANCE)
     {
-        this.launchTorpedo();
+        this.launchTorpedo(PLAYER_SHIP);
         this.torpedo_reload = Math.random()*1.2;
         if (Math.random() < 0.4)
             this.torpedo_reload = Math.random()*4 + 8;
@@ -121,6 +121,35 @@ static amunRaEnemy(dt)
         throwAlert("Cannot maintain lock on cloaked vessel.",
             ALERT_DISPLAY_TIME);
     }
+}
+
+static donnagerEnemy(dt)
+{
+    let candidates = [];
+    for (let obj of WORLD)
+    {
+        if (obj instanceof Debris) continue;
+        if (!obj.trackable) continue;
+        if (obj.faction == this.faction) continue;
+        candidates.push(obj);
+    }
+
+    for (let pdc of this.pdcs)
+    {
+        let best = null, min = Infinity;
+        for (let obj of candidates)
+        {
+            let dist = distance(obj.pos, pdc.globalPos());
+            if (dist < min)
+            {
+                best = obj;
+                min = dist;
+            }
+        }
+        if (best != null) pdc.intercept(best);
+    }
+
+    this.applyForce(rot2d([9.81*this.mass, 0], this.theta));
 }
 
 }

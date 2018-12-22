@@ -1,6 +1,6 @@
 // canvas.js
 
-const VERSION = "2018.12.20a \"Puppet\"";
+const VERSION = "2018.12.22a \"Picasso\"";
 
 var DRAW_TRACE = false;
 var DRAW_ACCEL = false;
@@ -14,15 +14,10 @@ var PAUSE_TIME = 0;
 var SLOW_TIME = false;
 var GAME_OVER = false;
 var PLAYER_SCORE = 0;
-
-var PLAYER_VEL = [0, 0];
-
 var SPAWN_DEBRIS = true;
 var RESPAWN_DELAY = 15;
 var RESPAWN_TIMER = 30;
 var BETWEEN_WAVES = true;
-
-var PAN = [0, 0];
 
 var FPS = 60;
 var NOMINAL_DT = 1/FPS;
@@ -65,11 +60,67 @@ var TARGET_OBJECT = null;
 var WORLD = [];
 const WORLD_RENDER_DISTANCE = 4000;
 
-var PLAYER_SHIP = new Scirocco([0, 0], Math.PI/2);
-PLAYER_SHIP.is_enemy = false;
-PLAYER_SHIP.faction = "";
-WORLD.push(PLAYER_SHIP);
-zoom(PLAYER_SHIP.length*10);
+let PLAYER_SHIP;
+// WORLD.push(new Morrigan([-100, 100], 0));
+// WORLD.push(new Amun_Ra([100, 100], 0));
+// WORLD.push(new Corvette([0, 100], 0));
+// WORLD.push(new Donnager([0, -200], 0));
+// WORLD.push(new Scirocco([200, 200], 0));
+// WORLD.push(new Basilisk([-200, 200], 0));
+
+respawn(2);
+zoom(1000);
+
+function respawn(choice)
+{
+    let newship;
+    switch (choice)
+    {
+        case 0: newship = new Morrigan([0, 0], 0);
+                break;
+        case 1: newship = new Corvette([0, 0], 0);
+                break;
+        case 2: newship = new Amun_Ra([0, 0], 0);
+                break;
+        case 3: newship = new Scirocco([0, 0], 0);
+                break;
+        case 4: newship = new Basilisk([0, 0], 0);
+                break;
+        case 5: newship = new Donnager([0, 0], 0);
+                break;
+    }
+
+    newship.firePDC = function(target)
+    {
+        for (let pdc of this.pdcs)
+        {
+            if (target == null)
+                pdc.fireAt([MOUSEX, MOUSEY]);
+            else if (isNaN(pdc.intercept(target)))
+                pdc.fireAt([MOUSEX, MOUSEY]);
+        }
+    }
+
+    if (typeof newship.fireRailgun !== 'function')
+    {
+        newship.fireRailgun = function()
+        {
+            throwAlert("Railgun not equipped for this vessel.",
+                ALERT_DISPLAY_TIME);
+        }
+    }
+
+    if (typeof PLAYER_SHIP !== 'undefined')
+    {
+        newship.theta = PLAYER_SHIP.theta;
+        newship.omega = PLAYER_SHIP.omega;
+        WORLD.splice(WORLD.indexOf(PLAYER_SHIP), 1);
+    }
+
+    newship.faction = UNN;
+    PLAYER_SHIP = newship;
+    WORLD.push(PLAYER_SHIP);
+}
 
 // let m = new Morrigan([500, 0], 0);
 // m.control = function(dt)
@@ -85,7 +136,6 @@ zoom(PLAYER_SHIP.length*10);
 // }
 // WORLD.push(n);
 
-WORLD.push(new Donnager([0, -2000], -Math.PI/6));
 
 let current = new Date().getTime(), last = current, dt = 0;
 
@@ -176,6 +226,12 @@ document.addEventListener('keydown', function(event)
         case 40: DOWN_KEY = true; break;
         case 49: ONE_KEY = true; break
         case 50: TWO_KEY = true; break;
+        case 51: respawn(0); break;
+        case 52: respawn(1); break;
+        case 53: respawn(2); break;
+        case 54: respawn(3); break;
+        case 55: respawn(4); break;
+        case 56: respawn(5); break;
         case 65: akey = true; break;
         case 66: DRAW_FIRING_ARC = !DRAW_FIRING_ARC;
                  str = DRAW_FIRING_ARC ? "enabled." : "disabled."
@@ -196,6 +252,10 @@ document.addEventListener('keydown', function(event)
                  break;
         case 75: if (GAME_PAUSED) physics(SLOW_DT);
                  else if (BETWEEN_WAVES) RESPAWN_TIMER = 0;
+                 break;
+        case 76: DRAW_TORPEDO_TUBES = !DRAW_TORPEDO_TUBES;
+                 str = DRAW_TORPEDO_TUBES ? "enabled." : "disabled."
+                 throwAlert("DRAW_TORPEDO_TUBES " + str, ALERT_DISPLAY_TIME);
                  break;
         case 77: DRAW_TRACE = !DRAW_TRACE;
                  str = DRAW_TRACE ? "enabled." : "disabled."
@@ -336,14 +396,8 @@ function collide(obj1, obj2)
 
 function handleCollision(obj1, obj2)
 {
-    if (typeof obj1.handleCollision === 'function')
-    {
-        obj1.handleCollision(obj2);
-    }
-    if (typeof obj2.handleCollision === 'function')
-    {
-        obj2.handleCollision(obj1);
-    }
+    obj1.handleCollision(obj2);
+    obj2.handleCollision(obj1);
 }
 
 function isOffScreen(coords)
@@ -393,7 +447,8 @@ function physics(dt)
     NUMBER_OF_ENEMIES = 0;
     for (let obj of WORLD)
     {
-        if (obj.is_enemy) ++NUMBER_OF_ENEMIES;
+        if (obj.isShip && obj.faction.name != PLAYER_SHIP.faction.name)
+            ++NUMBER_OF_ENEMIES;
         obj.step(dt);
     }
 
@@ -431,9 +486,14 @@ function physics(dt)
                        Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
             let vel = [PLAYER_SHIP.vel[0], PLAYER_SHIP.vel[1]];
             let enemy = new Morrigan(pos, 0);
+            enemy.control = Controller.morriganEnemy;
             if (PLAYER_SCORE > 2 && i == 0 || i == 5)
+            {
                 enemy = new Amun_Ra(pos, 0);
+                enemy.control = Controller.amunRaEnemy;
+            }
             enemy.vel = vel;
+            enemy.faction = MCRN;
             WORLD.push(enemy);
         }
         RESPAWN_TIMER = RESPAWN_DELAY;
@@ -522,18 +582,6 @@ function draw()
             (PLAYER_SHIP.pos[0] + interval*(i + 1))*PIXELS + 3,
             PLAYER_SHIP.pos[1]*PIXELS - 3);
     }
-
-    // CTX.save();
-    // CTX.globalAlpha = 0.4;
-    // CTX.moveTo(PLAYER_SHIP.pos[0]*PIXELS, PLAYER_SHIP.pos[1]*PIXELS);
-    // CTX.textAlign = "center";
-    // CTX.beginPath();
-    // CTX.strokeStyle = CTX.fillStyle = "orange";
-    // CTX.setLineDash([20*PIXELS, 30*PIXELS]);
-    // CTX.arc(0, 0, CORVETTE_PDC_RANGE*PIXELS, 0, Math.PI*2);
-    // CTX.stroke();
-    // CTX.fillText("PDC MAX RANGE", 0, -CORVETTE_PDC_RANGE*PIXELS - 2);
-    // CTX.restore();
 
     CTX.globalAlpha = 0.06;
     CTX.moveTo(PLAYER_SHIP.pos[0]*PIXELS,
@@ -730,30 +778,10 @@ function draw()
         CTX.save();
         CTX.translate(border + cw, HEIGHT - border);
         CTX.rotate(-Math.PI/2);
-        let percent = Math.round(PLAYER_SHIP.health/CORVETTE_MAX_HEALTH*100);
+        let percent = Math.round(PLAYER_SHIP.health/
+            PLAYER_SHIP.max_health*100);
         CTX.fillText("HULL (" + percent + "%)", 0, -3);
-        // let railgun_status = "(READY TO FIRE)";
-        // if (PLAYER_SHIP.railgun_reload > 0) railgun_status = "(CHARGING)";
-        // CTX.fillText("RAILGUN " + railgun_status, 0, cw + spacing - 3);
         CTX.restore();
-
-        if (PLAYER_SHIP.hasOwnProperty("railguns"))
-        {
-            CTX.fillStyle = "gray";
-            CTX.globalAlpha = 0.3;
-            let num_guns = PLAYER_SHIP.railguns.length;
-            let height = (HEIGHT - 2*border -
-                spacing*(num_guns - 1))/num_guns;
-            for (let i = 0; i < num_guns; ++i)
-            {
-                let gun = PLAYER_SHIP.railguns[i];
-                let percent = Math.min(1, (TIME -
-                    gun.lastFired)/gun.cooldown);
-                CTX.fillRect(border + cw + spacing,
-                    border + height*(i + 1 - percent) + spacing*i,
-                    cw, height*percent);
-            }
-        }
 
         if (PLAYER_SHIP.hasOwnProperty("tubes"))
         {
@@ -767,6 +795,24 @@ function draw()
                 let tube = PLAYER_SHIP.tubes[i];
                 let percent = Math.min(1, (TIME -
                     tube.lastFired)/tube.cooldown);
+                CTX.fillRect(border + cw + spacing,
+                    border + height*(i + 1 - percent) + spacing*i,
+                    cw, height*percent);
+            }
+        }
+
+        if (PLAYER_SHIP.hasOwnProperty("railguns"))
+        {
+            CTX.fillStyle = "gray";
+            CTX.globalAlpha = 0.3;
+            let num_guns = PLAYER_SHIP.railguns.length;
+            let height = (HEIGHT - 2*border -
+                spacing*(num_guns - 1))/num_guns;
+            for (let i = 0; i < num_guns; ++i)
+            {
+                let gun = PLAYER_SHIP.railguns[i];
+                let percent = Math.min(1, (TIME -
+                    gun.lastFired)/gun.cooldown);
                 CTX.fillRect(border + 2*cw + 2*spacing,
                     border + height*(i + 1 - percent) + spacing*i,
                     cw, height*percent);

@@ -25,11 +25,11 @@ function Collidable(length, width, max_health)
 
     this.trackable = true;
     this.permanent = false;
-    this.is_enemy = false;
+    this.isShip = false;
 
     this.name = "Todd";
     this.type = "Platonic Solid";
-    this.faction = "Neutral";
+    this.faction = NEUTRAL;
 
     this.box = new Hitbox([[length/2, width/2],
                            [-length/2, width/2],
@@ -40,8 +40,9 @@ function Collidable(length, width, max_health)
 
 Collidable.prototype.fullName = function()
 {
-    if (this.faction == "Neutral" || this.faction == "") return this.name;
-    return this.faction + " " + this.name;
+    if (this.faction.name == "Neutral" ||
+        this.faction.name == "") return this.name;
+    return this.faction.name + " " + this.name;
 }
 
 Collidable.prototype.control = function(dt)

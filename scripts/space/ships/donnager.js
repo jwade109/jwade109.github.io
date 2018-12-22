@@ -1,97 +1,145 @@
 // donnager.js
 
-const DONNAGER_LENGTH = 475.5;
+const DONNAGER_LENGTH = 475;
 const DONNAGER_WIDTH = 150;
 const DONNAGER_MAX_HEALTH = 10000;
 const DONNAGER_EXPLOSION_RADIUS = 600;
 const DONNAGER_MASS = 1500000;
 const DONNAGER_IZZ = 90000000;
-const DONNAGER_PDC_RANGE = 900;
+const DONNAGER_PDC_RANGE = 1500;
+const DONNAGER_MAX_ACCEL = 8*9.81;
+const DONNAGER_MAX_ALPHA = 0.5;
 
 function Donnager(pos, theta)
 {
     Collidable.call(this, DONNAGER_LENGTH, DONNAGER_WIDTH, DONNAGER_MAX_HEALTH);
     this.pos = pos.slice();
     this.theta = theta;
-    this.vel = [50*Math.cos(theta), -50*Math.sin(theta)];
     this.mass = DONNAGER_MASS;
     this.izz = DONNAGER_IZZ;
+    this.max_acc = DONNAGER_MAX_ACCEL;
+    this.max_alpha = DONNAGER_MAX_ALPHA;
     this.name = "\"" + NAMES[Math.floor(Math.random()*NAMES.length)] + "\"";
     this.type = "Donnager Class";
-    this.faction = "MCRN";
+    this.faction = MCRN;
     this.trackable = true;
     this.permanent = true;
+    this.isShip = true;
 
-    this.box = new Hitbox([[this.length/2, this.width/6, ],
-                           [this.length/2, -this.width/6, ],
-                           [0, -this.width/6],
-                           [-this.length/2, -this.width/2],
-                           [-this.length/2, this.width/2],
-                           [0, this.width/6]]);
+    this.box = new Hitbox([[this.length/2, this.width*4/24],
+                           [this.length*22/76, this.width*4/24],
+                           [this.length*20/76, this.width*7/24],
+                           [this.length*10/76, this.width*7/24],
+                           [this.length*8/76, this.width*4/24],
+                           [this.length*2/76, this.width*4/24],
+                           [-this.length*17/76, this.width*7/24],
+                           [-this.length*17/76, this.width*10/24],
+                           [-this.length*26/76, this.width*10/24],
+                           [-this.length*26/76, this.width*12/24],
+                           [-this.length*36/76, this.width*12/24],
+                           [-this.length*36/76, this.width*10/24],
+                           [-this.length*37/76, this.width*10/24],
+                           [-this.length*37/76, this.width*9/24],
+                           [-this.length*38/76, this.width*9/24],
+                           [-this.length*38/76, this.width*4/24],
+                           [-this.length*34/76, this.width*4/24],
+                           [-this.length*34/76, -this.width*4/24],
+                           [-this.length*38/76, -this.width*4/24],
+                           [-this.length*38/76, -this.width*9/24],
+                           [-this.length*37/76, -this.width*9/24],
+                           [-this.length*37/76, -this.width*10/24],
+                           [-this.length*36/76, -this.width*10/24],
+                           [-this.length*36/76, -this.width*12/24],
+                           [-this.length*26/76, -this.width*12/24],
+                           [-this.length*26/76, -this.width*10/24],
+                           [-this.length*17/76, -this.width*10/24],
+                           [-this.length*17/76, -this.width*7/24],
+                           [this.length*2/76, -this.width*4/24],
+                           [this.length*8/76, -this.width*4/24],
+                           [this.length*10/76, -this.width*7/24],
+                           [this.length*20/76, -this.width*7/24],
+                           [this.length*22/76, -this.width*4/24],
+                           [this.length/2, -this.width*4/24]]);
     this.box.object = this;
 
-    let range = [-Math.PI/2.2, Math.PI/2.2];
-    this.pdcs =
-        [new PointDefenseCannon(
-            [this.length/4, this.width*0.25], -Math.PI/2.4,
-             this, range, DONNAGER_PDC_RANGE),
-         new PointDefenseCannon(
-            [this.length/4, -this.width*0.25], Math.PI/2.4,
-             this, range, DONNAGER_PDC_RANGE),
-         new PointDefenseCannon(
-            [-this.length/6, -this.width*0.25], Math.PI/2,
-             this, range, DONNAGER_PDC_RANGE),
-         new PointDefenseCannon(
-            [-this.length/6, this.width*0.25], -Math.PI/2,
-             this, range, DONNAGER_PDC_RANGE),
-         new PointDefenseCannon(
-            [-0, -this.width*0.25], Math.PI/2,
-             this, range, DONNAGER_PDC_RANGE),
-         new PointDefenseCannon(
-            [-0, this.width*0.25], -Math.PI/2,
-             this, range, DONNAGER_PDC_RANGE),
-         new PointDefenseCannon(
-            [this.length/2, 0], 0,
-             this, range, DONNAGER_PDC_RANGE)
+    this.thrusters = [
+        new Thruster([-this.length/2, this.width*6.5/24],
+            Math.PI, 0, this.width*5/24),
+        new Thruster([-this.length/2, -this.width*6.5/24],
+            Math.PI, 0, this.width*5/24)
     ];
 
-    this.thrusters = [
-        new Thruster([-this.length/2, -4*this.length/36],
-            Math.PI, 0, 4*this.length/36),
-        new Thruster([-this.length/2, 4*this.length/36],
-            Math.PI, 0, 4*this.length/36)
+    let range = [-Math.PI/3, Math.PI/3];
+    this.pdcs = [
+        new PointDefenseCannon([this.length*37/76, -this.width*3/24],
+            Math.PI/4, this, range, DONNAGER_PDC_RANGE),
+        new PointDefenseCannon([this.length*37/76, this.width*3/24],
+            -Math.PI/4, this, range, DONNAGER_PDC_RANGE),
+        new PointDefenseCannon([this.length*30/76, -this.width*3/24],
+            Math.PI/2, this, range, DONNAGER_PDC_RANGE),
+        new PointDefenseCannon([this.length*30/76, this.width*3/24],
+            -Math.PI/2, this, range, DONNAGER_PDC_RANGE),
+        new PointDefenseCannon([this.length*20/76, -this.width*6/24],
+            Math.PI/2, this, range, DONNAGER_PDC_RANGE),
+        new PointDefenseCannon([this.length*20/76, this.width*6/24],
+            -Math.PI/2, this, range, DONNAGER_PDC_RANGE),
+        new PointDefenseCannon([this.length*10/76, -this.width*6/24],
+            Math.PI/2, this, range, DONNAGER_PDC_RANGE),
+        new PointDefenseCannon([this.length*10/76, this.width*6/24],
+            -Math.PI/2, this, range, DONNAGER_PDC_RANGE),
+        new PointDefenseCannon([0, -this.width*3/24],
+            Math.PI/2, this, range, DONNAGER_PDC_RANGE),
+        new PointDefenseCannon([0, this.width*3/24],
+            -Math.PI/2, this, range, DONNAGER_PDC_RANGE),
+    ];
+
+    this.railguns = [
+        new RailgunLauncher([15*this.length/76, -5*this.width/24],
+            0, this, [-Math.PI, 0]),
+        new RailgunLauncher([15*this.length/76, 5*this.width/24],
+            0, this, [0, Math.PI]),
+    ];
+
+    this.tubes = [
+        new TorpedoTube([this.length/2, -16.5], 0, this),
+        new TorpedoTube([this.length/2, -13.5], 0, this),
+        new TorpedoTube([this.length/2, -10.5], 0, this),
+        new TorpedoTube([this.length/2, -7.5], 0, this),
+        new TorpedoTube([this.length/2, -4.5], 0, this),
+        new TorpedoTube([this.length/2, -1.5], 0, this),
+        new TorpedoTube([this.length/2, 1.5], 0, this),
+        new TorpedoTube([this.length/2, 4.5], 0, this),
+        new TorpedoTube([this.length/2, 7.5], 0, this),
+        new TorpedoTube([this.length/2, 10.5], 0, this),
+        new TorpedoTube([this.length/2, 13.5], 0, this),
+        new TorpedoTube([this.length/2, 16.5], 0, this),
     ];
 }
 
 Donnager.prototype = Object.create(Collidable.prototype);
 
-Donnager.prototype.control = function(dt)
+Donnager.prototype.firePDC = function(target)
 {
-    let candidates = [];
-    for (let obj of WORLD)
-    {
-        if (obj instanceof Debris) continue;
-        if (!obj.trackable) continue;
-        if (obj.faction == this.faction) continue;
-        candidates.push(obj);
-    }
+    for (let pdc of this.pdcs) pdc.intercept(target);
+}
 
-    for (let pdc of this.pdcs)
+Donnager.prototype.launchTorpedo = function(target)
+{
+    let min = Infinity, oldest;
+    for (let tube of this.tubes)
     {
-        let best = null, min = Infinity;
-        for (let obj of candidates)
+        if (tube.lastFired < min)
         {
-            let dist = distance(obj.pos, pdc.globalPos());
-            if (dist < min)
-            {
-                best = obj;
-                min = dist;
-            }
+            oldest = tube;
+            min = tube.lastFired;
         }
-        if (best != null) pdc.intercept(best);
     }
+    oldest.fire(target);
+}
 
-    this.applyForce(rot2d([9.81*this.mass, 0], this.theta));
+Donnager.prototype.fireRailgun = function()
+{
+    for (let gun of this.railguns) gun.fire();
 }
 
 Donnager.prototype.skin = function()
@@ -107,49 +155,109 @@ Donnager.prototype.skin = function()
         thruster.draw(CTX);
     }
 
-    let unit = this.length/36*PIXELS;
+    let unit = this.length/76*PIXELS; // 6.25 meters
 
     CTX.globalAlpha = 1;
     CTX.strokeStyle = "black";
 
-    CTX.fillStyle = "#444444";
-    CTX.fillRect(8*unit, -3*unit, 5*unit, 6*unit);
-    CTX.strokeRect(8*unit, -3*unit, 5*unit, 6*unit);
+    // main body
+    CTX.fillStyle = this.faction.c4;
+    CTX.fillRect(-this.length/2*PIXELS + 4*unit, -4*unit, 72*unit, 8*unit);
+    CTX.fillStyle = this.faction.c2;
+    CTX.fillRect(2*unit, -4*unit, 18*unit, 1*unit);
+    CTX.fillRect(2*unit, 3*unit, 18*unit, 1*unit);
+    CTX.fillRect(29*unit, -4*unit, 2*unit, 8*unit);
+    CTX.strokeRect(-this.length/2*PIXELS + 4*unit, -4*unit, 72*unit, 8*unit);
 
-    CTX.fillStyle = "#8D3F32";
-    CTX.fillRect(-16*unit, -2*unit, 34*unit, 4*unit);
-    CTX.strokeRect(-16*unit, -2*unit, 34*unit, 4*unit);
-
-    CTX.fillStyle = "#444444";
+    // port winglet
+    CTX.fillStyle = this.faction.c4;
     CTX.beginPath();
-    CTX.moveTo(-this.length/2*PIXELS, -2*unit);
-    CTX.lineTo(-this.length/2*PIXELS, -5*unit);
-    CTX.lineTo(-8*unit, -5*unit);
-    CTX.lineTo(4*unit, -2*unit);
+    CTX.moveTo(8*unit, -4*unit);
+    CTX.lineTo(10*unit, -7*unit);
+    CTX.lineTo(20*unit, -7*unit);
+    CTX.lineTo(22*unit, -4*unit);
     CTX.closePath();
+    CTX.fill();
+    CTX.fillStyle = this.faction.c2;
+    CTX.fillRect(10*unit, -7*unit, 10*unit, unit);
+    CTX.stroke();
+
+    // starboard winglet
+    CTX.fillStyle = this.faction.c4;
+    CTX.beginPath();
+    CTX.moveTo(8*unit, 4*unit);
+    CTX.lineTo(10*unit, 7*unit);
+    CTX.lineTo(20*unit, 7*unit);
+    CTX.lineTo(22*unit, 4*unit);
+    CTX.closePath();
+    CTX.fill();
+    CTX.fillStyle = this.faction.c2;
+    CTX.fillRect(10*unit, 6*unit, 10*unit, unit);
+    CTX.stroke();
+
+    // box accents
+    CTX.fillStyle = this.faction.c2;
+    CTX.fillRect(-12*unit, -2*unit, 12*unit, 4*unit);
+    CTX.fillStyle = this.faction.c4;
+    CTX.fillRect(-11*unit, -unit, 10*unit, 2*unit);
+    CTX.fillStyle = this.faction.c2;
+    CTX.fillRect(-26*unit, -3*unit, 10*unit, 2*unit);
+    CTX.fillRect(-26*unit, 1*unit, 10*unit, 2*unit);
+    CTX.fillRect(-33*unit, -3*unit, 6*unit, 2*unit);
+    CTX.fillRect(-33*unit, 1*unit, 6*unit, 2*unit);
+
+    // port triangle
+    CTX.beginPath();
+    CTX.moveTo(2*unit, -4*unit);
+    CTX.lineTo(-17*unit, -4*unit);
+    CTX.lineTo(-17*unit, -7*unit);
+    CTX.closePath();
+    CTX.fillStyle = this.faction.c3;
     CTX.fill();
     CTX.stroke();
 
-    CTX.fillStyle = "#8D3F32";
-    CTX.fillRect(-this.length/2*PIXELS, -6*unit, 10*unit, unit);
-    CTX.strokeRect(-this.length/2*PIXELS, -6*unit, 10*unit, unit);
-
-    CTX.fillStyle = "#444444";
+    // starboard triangle
     CTX.beginPath();
-    CTX.moveTo(-this.length/2*PIXELS, 2*unit);
-    CTX.lineTo(-this.length/2*PIXELS, 5*unit);
-    CTX.lineTo(-8*unit, 5*unit);
-    CTX.lineTo(4*unit, 2*unit);
+    CTX.moveTo(2*unit, 4*unit);
+    CTX.lineTo(-17*unit, 4*unit);
+    CTX.lineTo(-17*unit, 7*unit);
     CTX.closePath();
+    CTX.fillStyle = this.faction.c3;
     CTX.fill();
     CTX.stroke();
 
-    CTX.fillStyle = "#8D3F32";
-    CTX.fillRect(-this.length/2*PIXELS, 5*unit, 10*unit, unit);
-    CTX.strokeRect(-this.length/2*PIXELS, 5*unit, 10*unit, unit);
+    // port engine
+    CTX.fillStyle = this.faction.c4;
+    CTX.fillRect(-37*unit, -7*unit, 20*unit, 3*unit);
+    CTX.fillStyle = this.faction.c2;
+    CTX.fillRect(-37*unit, -10*unit, 20*unit, 2*unit);
+    CTX.fillStyle = this.faction.c3;
+    CTX.fillRect(-37*unit, -8*unit, 20*unit, unit);
+    CTX.fillStyle = this.faction.c4;
+    CTX.fillRect(-36*unit, -12*unit, 10*unit, 2*unit);
+    CTX.strokeRect(-36*unit, -12*unit, 10*unit, 2*unit);
+    CTX.strokeRect(-37*unit, -10*unit, 20*unit, 6*unit);
+    CTX.fillRect(-38*unit, -9*unit, unit, 5*unit);
+    CTX.strokeRect(-38*unit, -9*unit, unit, 5*unit);
+
+    // starboard engine cowling
+    CTX.fillStyle = this.faction.c4;
+    CTX.fillRect(-37*unit, 4*unit, 20*unit, 3*unit);
+    CTX.fillStyle = this.faction.c2;
+    CTX.fillRect(-37*unit, 8*unit, 20*unit, 2*unit);
+    CTX.fillStyle = this.faction.c3;
+    CTX.fillRect(-37*unit, 7*unit, 20*unit, unit);
+    CTX.fillStyle = this.faction.c4;
+    CTX.fillRect(-36*unit, 10*unit, 10*unit, 2*unit);
+    CTX.strokeRect(-36*unit, 10*unit, 10*unit, 2*unit);
+    CTX.strokeRect(-37*unit, 4*unit, 20*unit, 6*unit);
+    CTX.fillRect(-38*unit, 4*unit, unit, 5*unit);
+    CTX.strokeRect(-38*unit, 4*unit, unit, 5*unit);
 
     CTX.restore();
     for (let pdc of this.pdcs) pdc.draw(CTX);
+    for (let railgun of this.railguns) railgun.draw(CTX);
+    for (let tube of this.tubes) tube.draw();
 }
 
 Donnager.prototype.explode = function()
