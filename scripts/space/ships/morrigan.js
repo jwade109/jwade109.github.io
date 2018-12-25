@@ -72,7 +72,7 @@ Morrigan.prototype.skin = function()
     CTX.rotate(-this.theta);
     // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE FRAME
 
-    let firing = norm2d(this.acc);
+    let firing = norm2d(this.acc) > MAX_LATERAL_ACCEL;
     for (let thruster of this.thrusters)
     {
         thruster.firing = firing;

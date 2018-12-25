@@ -1,5 +1,7 @@
 // collidable.js
 
+const MAX_LATERAL_ACCEL = 2*9.81;
+
 function Collidable(length, width, max_health)
 {
     this.pos = [0, 0];
@@ -55,9 +57,12 @@ Collidable.prototype.physics = function(dt)
     this.time += dt;
     this.pos_prev = this.pos.slice();
 
-    this.acc = div2d(this.forces, this.mass);
-    if (norm2d(this.acc) > this.max_acc)
-        this.acc = mult2d(unit2d(this.acc), this.max_acc);
+    let bacc = rot2d(div2d(this.forces, this.mass), -this.theta);
+    if (bacc[0] > this.max_acc) bacc[0] = this.max_acc;
+    else if (bacc[0] < -2*9.81) bacc[0] = -2*9.81;
+    if (bacc[1] > 2*9.81) bacc[1] = 2*9.81;
+    else if (bacc[1] < -2*9.81) bacc[1] = -2*9.81;
+    this.acc = rot2d(bacc, this.theta);
 
     this.alpha = this.moments/this.izz;
     this.alpha = Math.max(-this.max_alpha,
@@ -113,10 +118,16 @@ Collidable.prototype.draw = function()
     {
         CTX.save();
         CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+        CTX.rotate(-this.theta);
         CTX.globalAlpha = 0.3;
         CTX.strokeStyle = "blue";
+        CTX.strokeRect(-MAX_LATERAL_ACCEL*PIXELS, -MAX_LATERAL_ACCEL*PIXELS,
+            (MAX_LATERAL_ACCEL + this.max_acc)*PIXELS,
+            2*MAX_LATERAL_ACCEL*PIXELS);
+        CTX.strokeRect(-MAX_LATERAL_ACCEL*PIXELS, -MAX_LATERAL_ACCEL*PIXELS,
+            2*MAX_LATERAL_ACCEL*PIXELS, 2*MAX_LATERAL_ACCEL*PIXELS);
+        CTX.rotate(this.theta);
         CTX.beginPath();
-        CTX.arc(0, 0, 10*9.81*PIXELS, 0, Math.PI*2);
         CTX.moveTo(0, 0);
         CTX.lineTo(this.acc[0]*PIXELS, this.acc[1]*PIXELS);
         CTX.stroke();
@@ -197,13 +208,22 @@ Collidable.prototype.seek = function(pos, weight)
     this.applyForce(mult2d(steering, weight));
 }
 
-Collidable.prototype.separate = function(pos, radius, weight)
+Collidable.prototype.separate = function(pos, weight)
 {
     let dist = distance(this.pos, pos);
-    if (dist > radius) return;
-    let desired = mult2d(sub2d(this.pos, pos), radius - dist);
+    if (dist == 0) return;
+    let desired = mult2d(unit2d(sub2d(this.pos, pos)), 1/dist);
     let steering = sub2d(desired, this.vel);
     this.applyForce(mult2d(steering, weight));
+}
+
+Collidable.prototype.seekVelocity = function(desired)
+{
+    let steering = sub2d(desired, this.vel);
+    let angle = angle2d([1, 0], steering);
+    if (norm2d(steering) < MAX_LATERAL_ACCEL) angle = this.theta;
+    this.align(angle, this.izz*100, this.izz*30);
+    this.applyForce(mult2d(steering, this.mass));
 }
 
 Collidable.prototype.brachArrive = function(pos, radius)
