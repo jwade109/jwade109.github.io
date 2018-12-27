@@ -226,45 +226,6 @@ Collidable.prototype.seekVelocity = function(desired)
     this.applyForce(mult2d(steering, this.mass));
 }
 
-Collidable.prototype.brachArrive = function(pos, radius)
-{
-    let w1 = 100, w2 = 70;
-    let dist = distance(this.pos, pos);
-    if (dist < radius)
-    {
-        this.seek(pos, this.mass);
-        this.align(angle2d([1,0], this.acc), this.izz*w1, this.izz*w2);
-        return;
-    }
-
-    let midtime = 0;
-    let a = this.max_acc;
-    let b = midtime*this.max_acc;
-    let c = -dist;
-
-    let t0 = (-b + Math.sqrt(b*b - 4*a*c))/(2*a);
-    let vmax = this.max_acc*t0;
-    let goodvel = dot2d(this.vel, unit2d(sub2d(pos, this.pos)));
-
-    let angle = angle2d([1, 0], sub2d(pos, this.pos));
-    if (goodvel < vmax)
-    {
-        this.align(angle, this.izz*w1, this.izz*w2);
-        if (Math.abs(this.omega) < 0.05)
-        {
-            this.applyForce(rot2d([this.max_acc*this.mass, 0], this.theta));
-        }
-    }
-    else
-    {
-        this.align(angle + Math.PI, this.izz*w1, this.izz*w2);
-        if (Math.abs(this.omega) < 0.05)
-        {
-            this.applyForce(rot2d([this.max_acc*this.mass, 0], this.theta));
-        }
-    }
-}
-
 function conserveMomentum(obj1, obj2)
 {
     if (obj1.mass >= obj2.mass)

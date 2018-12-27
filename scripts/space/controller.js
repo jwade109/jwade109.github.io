@@ -38,26 +38,17 @@ static morriganEnemy(dt)
         }
     }
 
-    if (this.torpedo_reload > 0) this.torpedo_reload -= dt;
-    else if (dist < WORLD_RENDER_DISTANCE/2)
-    {
-        this.launchTorpedo(target);
-        this.torpedo_reload = Math.random()*4 + 2;
-    }
+    if (dist < WORLD_RENDER_DISTANCE/2) this.launchTorpedo(target);
+    if (Math.random() < 0.5) this.firePDC(target);
 
-    if (Math.random() < 0.5)
-        this.firePDC(target);
-
-    let bodyacc = [-(600 - dist)/10, 0];
-    if (bodyacc[0] > 0) this.thrusters[0].firing = true;
-    else this.thrusters[0].firing = false;
-    this.forces = rot2d(mult2d(bodyacc, this.mass), this.theta);
-    this.forces[0] += (target.vel[0] - this.vel[0])/3*this.mass;
-    this.forces[1] += (target.vel[1] - this.vel[1])/3*this.mass;
-    let theta = angle2d(this.pos, target.pos) - this.theta;
+    let bodyacc = [-(600 - dist)*2, 0];
+    this.applyForce(rot2d(mult2d(bodyacc, this.mass), this.theta));
+    this.applyForce([(target.vel[0] - this.vel[0])*this.mass*10,
+                    (target.vel[1] - this.vel[1])*this.mass*10]);
+    let theta = angle2d(this.pos, target.pos);
     while (theta > Math.PI) theta -= Math.PI*2;
     while (theta < -Math.PI) theta += Math.PI*2;
-    this.moments = (theta - this.omega)*this.izz;
+    this.align(theta, this.izz*10, this.izz*6);
 }
 
 static amunRaEnemy(dt)

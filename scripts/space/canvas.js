@@ -1,14 +1,12 @@
 // canvas.js
 
-const VERSION = "2018.12.22a \"Picasso\"";
+const VERSION = "2018.12.26a";
 
 var DRAW_TRACE = false;
 var DRAW_ACCEL = false;
 var LOCK_CAMERA = false;
-var MATCH_VELOCITY = false;
 var SPAWN_ENEMIES = true;
 var NUMBER_OF_ENEMIES = 0;
-var MAX_ENEMIES = 3;
 var GAME_PAUSED = true;
 var PAUSE_TIME = 0;
 var SLOW_TIME = false;
@@ -61,14 +59,7 @@ var WORLD = [];
 const WORLD_RENDER_DISTANCE = 4000;
 
 let PLAYER_SHIP;
-// WORLD.push(new Morrigan([-100, 100], 0));
-// WORLD.push(new Amun_Ra([100, 100], 0));
-// WORLD.push(new Corvette([0, 100], 0));
-// WORLD.push(new Donnager([0, -200], 0));
-// WORLD.push(new Scirocco([200, 200], 0));
-// WORLD.push(new Basilisk([-200, 200], 0));
-
-respawn(2);
+respawn(3);
 zoom(1000);
 
 function respawn(choice)
@@ -118,6 +109,7 @@ function respawn(choice)
     }
 
     newship.faction = UNN;
+    newship.health = newship.max_health = 10000000;
     PLAYER_SHIP = newship;
     WORLD.push(PLAYER_SHIP);
 }
@@ -478,6 +470,7 @@ function physics(dt)
         BETWEEN_WAVES = false;
         ++PLAYER_SCORE;
         throwAlert("Enemy vessels incoming.", ALERT_DISPLAY_TIME*3);
+
         for (let i = 0; i < PLAYER_SCORE; ++i)
         {
             let r = WORLD_RENDER_DISTANCE*2;
@@ -489,8 +482,8 @@ function physics(dt)
             enemy.control = Controller.morriganEnemy;
             if (PLAYER_SCORE > 2 && i == 0 || i == 5)
             {
-                enemy = new Amun_Ra(pos, 0);
-                enemy.control = Controller.amunRaEnemy;
+                enemy = new Corvette(pos, 0);
+                enemy.control = Controller.morriganEnemy;
             }
             enemy.vel = vel;
             enemy.faction = MCRN;
