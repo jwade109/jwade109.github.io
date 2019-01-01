@@ -2,7 +2,6 @@
 
 const PLAYER_INVINCIBLE = false;
 const CORVETTE_MAX_HEALTH = 600;
-const PASSIVE_REGEN = 2*CORVETTE_MAX_HEALTH/100;
 const INFINITE_FUEL = true;
 const INFINITE_AMMO = false;
 

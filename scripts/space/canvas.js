@@ -1,6 +1,6 @@
 // canvas.js
 
-const VERSION = "2019.1.1b";
+const VERSION = "2019.1.1c";
 
 var DRAW_TRACE = false;
 var DRAW_ACCEL = false;
@@ -18,6 +18,10 @@ var SHOW_OVERLAY = true;
 const RESPAWN_DELAY = 15;
 var RESPAWN_TIMER = 30;
 var BETWEEN_WAVES = true;
+const TARGETING_MAX = 8;
+var TARGETING_STAMINA = TARGETING_MAX;
+const PASSIVE_REGEN = 0.02; // percent per second
+var TARGETING_LOCKOUT = false;
 
 const FPS = 60;
 const NOMINAL_DT = 1/FPS;
@@ -257,7 +261,7 @@ document.addEventListener('keydown', function(event)
                  break;
         case 79: --PLAYER_SCORE; break;
         case 80: ++PLAYER_SCORE; break;
-        case 82: SLOW_TIME = !SLOW_TIME; break;
+        case 82: if (!TARGETING_LOCKOUT) SLOW_TIME = !SLOW_TIME; break;
         case 85: SHOW_ALL_ALERTS = !SHOW_ALL_ALERTS;
                  str = SHOW_ALL_ALERTS ? "enabled." : "disabled."
                  throwAlert("SHOW_ALL_ALERTS " + str, ALERT_DISPLAY_TIME);
@@ -473,7 +477,7 @@ function physics(dt)
         RESPAWN_TIMER -= dt;
         if (RESPAWN_TIMER > 0)
         {
-            PLAYER_SHIP.repair(PASSIVE_REGEN*dt);
+            PLAYER_SHIP.repair(PASSIVE_REGEN*dt*PLAYER_SHIP.max_health);
             // if (Math.random() < dt*13 &&
             //     PLAYER_SHIP.health < PLAYER_SHIP.max_health)
             // {
@@ -946,9 +950,23 @@ function draw()
 
     CTX.globalAlpha = 1;
     CTX.strokeStyle = "black";
+    CTX.fillStyle = "lightgreen";
+    if (TARGETING_LOCKOUT) CTX.fillStyle = "red";
     CTX.beginPath();
     CTX.arc(MOUSE_SCREEN_POS[0], MOUSE_SCREEN_POS[1], 4, 0, Math.PI*2);
     CTX.stroke();
+    if (TARGETING_STAMINA < TARGETING_MAX && TARGETING_STAMINA > 0)
+    {
+        CTX.beginPath();
+        CTX.arc(MOUSE_SCREEN_POS[0], MOUSE_SCREEN_POS[1], 8, -Math.PI/2,
+            Math.PI*2*TARGETING_STAMINA/TARGETING_MAX - Math.PI/2, false);
+        CTX.arc(MOUSE_SCREEN_POS[0], MOUSE_SCREEN_POS[1], 4,
+            Math.PI*2*TARGETING_STAMINA/TARGETING_MAX - Math.PI/2,
+            -Math.PI/2, true);
+        CTX.lineTo(MOUSE_SCREEN_POS[0], MOUSE_SCREEN_POS[1] - 8);
+        CTX.fill();
+        CTX.stroke();
+    }
 
     if (PLAYER_SHIP.remove)
     {
@@ -989,15 +1007,15 @@ function draw()
         // CTX.fillText("[B][N][M] FOR DEBUG", WIDTH/2 + 50, HEIGHT/2 + 310);
     }
 
-    if (SLOW_TIME)
+    if (TARGETING_STAMINA < TARGETING_MAX)
     {
         let grd = CTX.createRadialGradient(
-            WIDTH/2, HEIGHT/2, Math.min(WIDTH, HEIGHT)*0.5,
-            WIDTH/2, HEIGHT/2, Math.min(WIDTH, HEIGHT)*0.8);
-        grd.addColorStop(0, "rgba(255, 255, 255, 0)");
+            WIDTH/2, HEIGHT/2, Math.min(WIDTH, HEIGHT)*0.4,
+            WIDTH/2, HEIGHT/2, Math.min(WIDTH, HEIGHT));
+        grd.addColorStop(0, "rgba(0, 0, 0, 0)");
         grd.addColorStop(1, "black");
         CTX.fillStyle = grd;
-        CTX.globalAlpha = 0.2;
+        CTX.globalAlpha = (1 - TARGETING_STAMINA/TARGETING_MAX);
         CTX.fillRect(0, 0, WIDTH, HEIGHT);
     }
     if (BETWEEN_WAVES && RESPAWN_TIMER > 0 && !GAME_PAUSED && SPAWN_ENEMIES)
@@ -1096,8 +1114,22 @@ function start()
     CURRENT = new Date().getTime();
     draw();
     let time_passed = 0;
-    if (!GAME_PAUSED && !SLOW_TIME && PAUSE_TIME <= 0) physics(DT);
-    else if (!GAME_PAUSED && PAUSE_TIME <= 0) physics(SLOW_DT);
+    if (!GAME_PAUSED && !SLOW_TIME && PAUSE_TIME <= 0)
+    {
+        physics(DT);
+        TARGETING_STAMINA += DT*2;
+        if (TARGETING_STAMINA > TARGETING_MAX)
+        {
+            TARGETING_STAMINA = TARGETING_MAX;
+            TARGETING_LOCKOUT = false;
+        }
+    }
+    else if (!GAME_PAUSED && PAUSE_TIME <= 0)
+    {
+        physics(SLOW_DT);
+        TARGETING_STAMINA -= DT;
+        if (TARGETING_STAMINA < 0) TARGETING_STAMINA = 0;
+    }
     requestAnimationFrame(start);
     DT = (CURRENT - LAST)/1000;
     LAST = CURRENT;
@@ -1112,6 +1144,12 @@ function start()
     if (DOWN_KEY) MOUSE_SCREEN_POS[1] += ds;
     if (LEFT_KEY) MOUSE_SCREEN_POS[0] -= ds;
     if (RIGHT_KEY) MOUSE_SCREEN_POS[0] += ds;
+
+    if (TARGETING_STAMINA <= 0 && SLOW_TIME)
+    {
+        SLOW_TIME = false;
+        TARGETING_LOCKOUT = true;
+    }
 }
 
 start();
