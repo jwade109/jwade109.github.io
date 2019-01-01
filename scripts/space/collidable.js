@@ -203,7 +203,8 @@ Collidable.prototype.explode = function()
 Collidable.prototype.align = function(theta, w1, w2)
 {
     let error = (theta - this.theta) % (Math.PI*2);
-    if (error > Math.PI) error -= Math.PI*2;
+    while (error > Math.PI) error -= Math.PI*2;
+    while (error < -Math.PI) error += Math.PI*2;
     this.applyMoment(error*w1 - this.omega*w2);
 }
 

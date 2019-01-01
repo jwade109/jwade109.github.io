@@ -1,6 +1,6 @@
 // canvas.js
 
-const VERSION = "2019.1.1a";
+const VERSION = "2019.1.1b";
 
 var DRAW_TRACE = false;
 var DRAW_ACCEL = false;
@@ -379,7 +379,7 @@ function isOffScreen(coords)
     hitbox.object.pos = PLAYER_SHIP.pos.slice();
     hitbox.object.theta = 0;
     if (LOCK_CAMERA) hitbox.object.theta = PLAYER_SHIP.theta + Math.PI/2;
-    if (DRAW_HITBOX) hitbox.draw(CTX);
+    // if (DRAW_HITBOX) hitbox.draw(CTX);
     return !hitbox.contains(coords);
 }
 
@@ -785,7 +785,7 @@ function draw()
     CTX.font = "12px Helvetica";
     CTX.fillText("BUILD: " + VERSION.toUpperCase(), 70, HEIGHT - 30);
 
-    if (SHOW_OVERLAY)
+    if (SHOW_OVERLAY || GAME_PAUSED)
     {
         function drawKey(x, y, w, h, key, desc)
         {
@@ -797,7 +797,7 @@ function draw()
             CTX.fillStyle = "white";
             CTX.fillRect(0, 0, w, h);
             CTX.globalAlpha = 0.5;
-            if (key == '') CTX.globalAlpha = 0.1;
+            if (desc == '') CTX.globalAlpha = 0.1;
             CTX.strokeRect(0, 0, w, h);
             CTX.font = "20px Helvetica";
             CTX.textAlign = "center";
@@ -809,16 +809,32 @@ function draw()
                 (SLOW_TIME || GAME_PAUSED) && desc != "")
             {
                 CTX.font = "16px Helvetica";
-                CTX.textAlign = "left";
                 CTX.beginPath();
-                CTX.moveTo(w, 0);
                 let len = y - (HEIGHT - 270);
-                CTX.lineTo(len/3 + w, -len);
                 let width = CTX.measureText(desc.toUpperCase()).width;
-                CTX.lineTo(len/3 + w + width, -len);
-                CTX.stroke();
-                CTX.globalAlpha = 0.8;
-                CTX.fillText(desc.toUpperCase(), len/3 + w, -len - 5);
+                if (x < WIDTH/2)
+                {
+                    CTX.moveTo(w, 0);
+                    CTX.lineTo(len/3 + w, -len);
+                    CTX.lineTo(len/3 + w + width, -len);
+                    CTX.stroke();
+                    CTX.globalAlpha = 0.8;
+                    CTX.textAlign = "left";
+                    CTX.fillText(desc.toUpperCase(), len/3 + w, -len - 5);
+                }
+                else
+                {
+                    CTX.moveTo(0, 0);
+                    CTX.lineTo(-len/3, -len);
+                    CTX.lineTo(-len/3 - width, -len);
+                    CTX.stroke();
+                    CTX.globalAlpha = 0.8;
+                    CTX.textAlign = "right";
+                    CTX.fillText(desc.toUpperCase(), -len/3, -len - 5);
+                }
+                CTX.globalAlpha = 0.1;
+                CTX.fillStyle = "black";
+                CTX.fillRect(0, 0, w, h);
             }
             CTX.restore();
         }
@@ -827,27 +843,105 @@ function draw()
         drawKey(beginx, beginy, w, h, '', '');
         drawKey(beginx + 35, beginy, w, h, '1', 'Zoom Out');
         drawKey(beginx + 70, beginy, w, h, '2', 'Zoom In');
-        drawKey(beginx + 105, beginy, w, h, '', '');
+
+        if (GAME_PAUSED)
+        {
+            drawKey(beginx + 105, beginy, w, h,
+                '3', 'Spawn as: Morrigan Class');
+            drawKey(beginx + 140, beginy, w, h,
+                '4', 'Spawn as: Corvette Class');
+            drawKey(beginx + 175, beginy, w, h,
+                '5', 'Spawn as: Amun-Ra Class');
+            drawKey(beginx + 210, beginy, w, h,
+                '6', 'Spawn as: Scirocco Class');
+            drawKey(beginx + 245, beginy, w, h,
+                '7', 'Spawn as: Basilisk Class');
+            drawKey(beginx + 280, beginy, w, h,
+                '8', 'Spawn as: Donnager Class');
+        }
 
         drawKey(beginx, beginy + 35, w*1.5, h, '', '');
         drawKey(beginx + w*1.5 + 5, beginy + 35, w, h, '', '');
         drawKey(beginx + w*2.5 + 10, beginy + 35, w, h, '', '');
         drawKey(beginx + w*3.5 + 15, beginy + 35, w, h, '', '');
-        drawKey(beginx + w*4.5 + 20, beginy + 35, w, h, 'R', 'Targeting mode');
+        drawKey(beginx + w*4.5 + 20, beginy + 35, w, h,
+            'R', 'Toggle targeting mode');
+
+        if (GAME_PAUSED)
+        {
+            drawKey(beginx + w*5.5 + 25, beginy + 35, w, h, '', '');
+            drawKey(beginx + w*6.5 + 30, beginy + 35, w, h, '', '');
+            drawKey(beginx + w*7.5 + 35, beginy + 35, w, h,
+                'U', 'Toggle display alerts (debug)');
+            drawKey(beginx + w*8.5 + 40, beginy + 35, w, h, '', '');
+            drawKey(beginx + w*9.5 + 45, beginy + 35, w, h,
+                'O', 'Decrement wave (debug)');
+            drawKey(beginx + w*10.5 + 50, beginy + 35, w, h,
+                'P', 'Increment wave (debug)');
+        }
 
         drawKey(beginx, beginy + 70, w*1.7, h, '', '');
         drawKey(beginx + w*1.7 + 5, beginy + 70, w, h, 'A', 'Turn left');
         drawKey(beginx + w*2.7 + 10, beginy + 70, w, h, '', '');
         drawKey(beginx + w*3.7 + 15, beginy + 70, w, h, 'D', 'Turn right');
-        drawKey(beginx + w*4.7 + 20, beginy + 70, w, h, 'F', 'Switch weapons');
+        drawKey(beginx + w*4.7 + 20, beginy + 70, w, h, 'F', 'Toggle weapons');
+
+        if (GAME_PAUSED)
+        {
+            drawKey(beginx + w*5.7 + 25, beginy + 70, w, h,
+                'G', 'Toggle keyboard overlay');
+            drawKey(beginx + w*6.7 + 30, beginy + 70, w, h,
+                'H', 'Toggle draw acceleration (debug)');
+            drawKey(beginx + w*7.7 + 35, beginy + 70, w, h,
+                'J', 'Step backward (debug)');
+            drawKey(beginx + w*8.7 + 40, beginy + 70, w, h,
+                'K', 'Step forward (debug)');
+            drawKey(beginx + w*9.7 + 45, beginy + 70, w, h,
+                'L', 'Toggle draw torpedo tubes (debug)');
+        }
 
         drawKey(beginx, beginy + 105, w*2.5, h, 'SHIFT', 'Accelerate');
         drawKey(beginx + w*2.5 + 5, beginy + 105, w, h, '', '');
         drawKey(beginx + w*3.5 + 10, beginy + 105, w, h, '', '');
+        drawKey(beginx + w*4.5 + 15, beginy + 105, w, h, '', '');
+        drawKey(beginx + w*5.5 + 20, beginy + 105, w, h,
+            'V', 'Toggle locked camera');
+
+        if (GAME_PAUSED)
+        {
+            drawKey(beginx + w*6.5 + 25, beginy + 105, w, h,
+                'B', 'Toggle draw firing arcs (debug)');
+            drawKey(beginx + w*7.5 + 30, beginy + 105, w, h,
+                'N', 'Toggle draw hitboxes (debug)');
+            drawKey(beginx + w*8.5 + 35, beginy + 105, w, h,
+                'M', 'Toggle draw velocity (debug)');
+        }
 
         drawKey(beginx + w*2.7 + 10, beginy + 140, w, h, '', '');
         drawKey(beginx + w*3.7 + 15, beginy + 140, w, h, '', '');
-        drawKey(beginx + w*4.7 + 20, beginy + 140, w*5, h, 'SPACE', 'Fire');
+        drawKey(beginx + w*4.7 + 20, beginy + 140, w*5, h,
+            'SPACE', 'Fire weapon');
+
+        if (GAME_PAUSED)
+        {
+            let mbeginx = WIDTH - 150;
+            let mw = 40;
+            drawKey(mbeginx, beginy, mw, h,
+                'L', 'Fire Point Defense Cannons');
+            drawKey(mbeginx + mw + 5, beginy, mw, h,
+                'R', 'Select target lock');
+            drawKey(mbeginx, beginy + h + 5, 2*mw + 5, 100, '', '');
+            drawKey(mbeginx + mw*0.9, beginy + h*0.6,
+                mw*0.2 + 5, h*0.8 + 5, '', 'Zoom In/Out');
+
+            CTX.font = "30px Helvetica";
+            CTX.textAlign = "left";
+            CTX.globalAlpha = 0.7;
+            CTX.fillStyle = "darkgray";
+            CTX.fillText("KEYBOARD", beginx, beginy - 100);
+            CTX.textAlign = "right";
+            CTX.fillText("MOUSE", mbeginx + 5 + 2*mw, beginy - 100);
+        }
     }
 
     CTX.globalAlpha = 1;
@@ -858,6 +952,7 @@ function draw()
 
     if (PLAYER_SHIP.remove)
     {
+        CTX.textAlign = "left";
         CTX.font = "100px Helvetica";
         CTX.globalAlpha = 1;
         CTX.fillStyle = "darkgray";
@@ -868,6 +963,7 @@ function draw()
     }
     else if (GAME_PAUSED)
     {
+        CTX.textAlign = "left";
         CTX.font = "100px Helvetica";
         CTX.globalAlpha = 0.4;
         CTX.fillStyle = "darkgray";
@@ -909,6 +1005,7 @@ function draw()
         CTX.font = "30px Helvetica";
         CTX.globalAlpha = 0.4;
         CTX.fillStyle = "darkgray";
+        CTX.textAlign = "left";
         let rtime = (Math.round(RESPAWN_TIMER*100)/100).toLocaleString("en",
             {useGrouping: false, minimumFractionDigits: 2});
         if (PLAYER_SCORE > 0)

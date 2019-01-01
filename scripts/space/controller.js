@@ -38,7 +38,7 @@ static morriganEnemy(dt)
         }
     }
 
-    if (dist < WORLD_RENDER_DISTANCE/2 && Math.random() < dt/3)
+    if (dist < WORLD_RENDER_DISTANCE/2 && Math.random() < dt/1.7)
         this.launchTorpedo(target);
     if (Math.random() < 0.5) this.firePDC(target);
 

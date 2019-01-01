@@ -95,9 +95,9 @@ function Donnager(pos, theta)
 
     this.railguns = [
         new RailgunLauncher([15*this.length/76, -5*this.width/24],
-            0, this, [-Math.PI, 0]),
+            Math.PI/2, this, [-Math.PI/2, Math.PI/2]),
         new RailgunLauncher([15*this.length/76, 5*this.width/24],
-            0, this, [0, Math.PI]),
+            -Math.PI/2, this, [-Math.PI/2, Math.PI/2]),
     ];
 
     this.tubes = [
@@ -139,7 +139,37 @@ Donnager.prototype.launchTorpedo = function(target)
 
 Donnager.prototype.fireRailgun = function()
 {
-    for (let gun of this.railguns) gun.fire();
+    if (this === PLAYER_SHIP)
+    {
+        let mouseAngle = angle2d([1, 0],
+            sub2d([MOUSEX, MOUSEY], this.pos));
+        let min = Infinity, best;
+        for (let gun of this.railguns)
+        {
+            let gunAngle = this.theta + gun.theta + gun.gamma;
+            let error = gunAngle - mouseAngle;
+            while (error > Math.PI) error -= Math.PI*2;
+            while (error < -Math.PI) error += Math.PI*2;
+            if (Math.abs(error) < min)
+            {
+                min = Math.abs(error);
+                best = gun;
+            }
+        }
+        best.fire();
+    }
+    else for (let gun of this.railguns) gun.fire();
+}
+
+Donnager.prototype.control = function(dt)
+{
+    for (let rg of this.railguns)
+    {
+        let angle = angle2d([1, 0], sub2d([MOUSEX, MOUSEY], rg.globalPos()));
+        if (!PLAYER_WEAPON_SELECT && this === PLAYER_SHIP)
+            rg.seek(dt, angle);
+        else rg.seek(dt, this.theta + rg.theta);
+    }
 }
 
 Donnager.prototype.skin = function()

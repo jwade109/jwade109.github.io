@@ -33,7 +33,9 @@ TorpedoTube.prototype.fire = function(target)
     if (!this.canFire()) return;
     this.lastFired = TIME;
     let vkick = rot2d([this.kickVelocity, 0], this.object.theta + this.theta);
-    // let vspin = rot2d([0, -this.omega*this.length/2], this.theta);
+    let vspin = rot2d([0, -this.object.omega*this.object.length/2],
+        this.object.theta);
+    vkick = add2d(vkick, vspin);
 
     let torp = new Torpedo(this.globalPos(),
         add2d(vkick, this.object.vel),
