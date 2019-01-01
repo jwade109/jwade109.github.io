@@ -114,17 +114,10 @@ class PointDefenseCannon
             ctx.moveTo(0, 0);
             ctx.lineTo(this.radius*PIXELS, 0);
             ctx.strokeStyle = "red";
-            ctx.globalAlpha = 0.4;
-            ctx.stroke();
-            ctx.rotate(-this.gamma);
-            ctx.fillStyle = "orange";
-            ctx.strokeStyle = "black";
             ctx.globalAlpha = 0.2;
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(this.radius*PIXELS, 0);
-            ctx.stroke();
-            ctx.rotate(this.gamma);
+            // ctx.stroke();
+            ctx.fillStyle = "orange";
+            ctx.beginPath()
             ctx.moveTo(0, 0);
             ctx.arc(0, 0, this.radius*PIXELS,
                 this.range[0], this.range[1], false);

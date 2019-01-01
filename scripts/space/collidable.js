@@ -118,15 +118,18 @@ Collidable.prototype.draw = function()
     {
         CTX.save();
         CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
-        CTX.rotate(-this.theta);
         CTX.globalAlpha = 0.3;
         CTX.strokeStyle = "blue";
-        CTX.strokeRect(-MAX_LATERAL_ACCEL*PIXELS, -MAX_LATERAL_ACCEL*PIXELS,
-            (MAX_LATERAL_ACCEL + this.max_acc)*PIXELS,
-            2*MAX_LATERAL_ACCEL*PIXELS);
-        CTX.strokeRect(-MAX_LATERAL_ACCEL*PIXELS, -MAX_LATERAL_ACCEL*PIXELS,
-            2*MAX_LATERAL_ACCEL*PIXELS, 2*MAX_LATERAL_ACCEL*PIXELS);
-        CTX.rotate(this.theta);
+        if (this.max_acc < Infinity)
+        {
+            CTX.rotate(-this.theta);
+            CTX.strokeRect(-MAX_LATERAL_ACCEL*PIXELS, -MAX_LATERAL_ACCEL*PIXELS,
+                (MAX_LATERAL_ACCEL + this.max_acc)*PIXELS,
+                2*MAX_LATERAL_ACCEL*PIXELS);
+            CTX.strokeRect(-MAX_LATERAL_ACCEL*PIXELS, -MAX_LATERAL_ACCEL*PIXELS,
+                2*MAX_LATERAL_ACCEL*PIXELS, 2*MAX_LATERAL_ACCEL*PIXELS);
+            CTX.rotate(this.theta);
+        }
         CTX.beginPath();
         CTX.moveTo(0, 0);
         CTX.lineTo(this.acc[0]*PIXELS, this.acc[1]*PIXELS);
@@ -136,6 +139,9 @@ Collidable.prototype.draw = function()
 
     if (DRAW_HITBOX && this.hasOwnProperty("box"))
         this.box.draw(CTX);
+
+    if (DRAW_TORPEDO_TUBES && this.hasOwnProperty("tubes"))
+        for (let tube of this.tubes) tube.draw();
 }
 
 Collidable.prototype.skin = function()

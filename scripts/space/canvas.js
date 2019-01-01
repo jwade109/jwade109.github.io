@@ -1,9 +1,10 @@
 // canvas.js
 
-const VERSION = "2018.12.26a";
+const VERSION = "2019.1.1a";
 
 var DRAW_TRACE = false;
 var DRAW_ACCEL = false;
+var SHOW_ALL_ALERTS = false;
 var LOCK_CAMERA = false;
 var SPAWN_ENEMIES = true;
 var NUMBER_OF_ENEMIES = 0;
@@ -13,30 +14,28 @@ var SLOW_TIME = false;
 var GAME_OVER = false;
 var PLAYER_SCORE = 0;
 var SPAWN_DEBRIS = true;
-var RESPAWN_DELAY = 15;
+var SHOW_OVERLAY = true;
+const RESPAWN_DELAY = 15;
 var RESPAWN_TIMER = 30;
 var BETWEEN_WAVES = true;
 
-var FPS = 60;
-var NOMINAL_DT = 1/FPS;
-var SLOW_DT = NOMINAL_DT/8;
+const FPS = 60;
+const NOMINAL_DT = 1/FPS;
+const SLOW_DT = NOMINAL_DT/8;
 var TIME = 0;
 
-var CANVAS = document.getElementById("canvas");
-var CTX = CANVAS.getContext("2d");
+const CANVAS = document.getElementById("canvas");
+const CTX = CANVAS.getContext("2d");
 
 var UNDERTRACK = new Audio("scripts/space/sounds/undertrack.wav");
 var OVERTRACK = new Audio("scripts/space/sounds/overtrack.wav");
 UNDERTRACK.volume = 0.15;
 OVERTRACK.volume = 0;
 
-var LEFT_KEY = false, RIGHT_KEY = false, UP_KEY = false, DOWN_KEY = false,
-    space = false,
-    akey = false, wkey = false, dkey = false, skey = false, xkey = false,
-    fkey = false, qkey = false, ekey = false, leftClick = false,
-    rightClick = false, shift = false, MOUSEBUTTON_DOWN = false;
-    ENTER_KEY = false;
-
+var LEFT_KEY = false, RIGHT_KEY = false, UP_KEY = false, DOWN_KEY = false;
+var SPACE_KEY = false, SHIFT_KEY = false, ENTER_KEY = false;
+var A_KEY = false, D_KEY = false;
+var LEFT_CLICK = false, RIGHT_CLICK = false, MOUSEBUTTON_DOWN = false;
 var ONE_KEY = false, TWO_KEY = false;
 
 var ALERTS = [];
@@ -92,11 +91,20 @@ function respawn(choice)
         }
     }
 
+    if (typeof newship.launchTorpedo !== 'function')
+    {
+        newship.launchTorpedo = function()
+        {
+            throwAlert("Torpedoes not equipped on this vessel.",
+                ALERT_DISPLAY_TIME);
+        }
+    }
+
     if (typeof newship.fireRailgun !== 'function')
     {
         newship.fireRailgun = function()
         {
-            throwAlert("Railgun not equipped for this vessel.",
+            throwAlert("Railgun not equipped on this vessel.",
                 ALERT_DISPLAY_TIME);
         }
     }
@@ -109,27 +117,13 @@ function respawn(choice)
     }
 
     newship.faction = UNN;
-    newship.health = newship.max_health = 10000000;
+    // newship.control = Controller.pointDefenseAutomation
+    // newship.health = newship.max_health = Infinity;
     PLAYER_SHIP = newship;
     WORLD.push(PLAYER_SHIP);
 }
 
-// let m = new Morrigan([500, 0], 0);
-// m.control = function(dt)
-// {
-//     this.brachArrive([MOUSEX, MOUSEY], 500);
-// }
-// WORLD.push(m);
-//
-// let n = new Scirocco([500, 0], 0);
-// n.control = function(dt)
-// {
-//     this.brachArrive([MOUSEX, MOUSEY], 500);
-// }
-// WORLD.push(n);
-
-
-let current = new Date().getTime(), last = current, dt = 0;
+let CURRENT = new Date().getTime(), LAST = CURRENT, DT = 0;
 
 for (let i = 0; i < 20 && SPAWN_DEBRIS; ++i)
 {
@@ -175,9 +169,9 @@ document.addEventListener('mousedown', function(event)
 {
     switch (event.button)
     {
-        case 0: leftClick = true;
+        case 0: LEFT_CLICK = true;
                 break;
-        case 2: rightClick = true;
+        case 2: RIGHT_CLICK = true;
                 if (TARGET_OBJECT != NEAREST_OBJECT &&
                     NEAREST_OBJECT != PLAYER_SHIP)
                     TARGET_OBJECT = NEAREST_OBJECT;
@@ -191,8 +185,8 @@ document.addEventListener('mouseup', function(event)
 {
     switch (event.button)
     {
-        case 0: leftClick = false; break;
-        case 2: rightClick = false; break;
+        case 0: LEFT_CLICK = false; break;
+        case 2: RIGHT_CLICK = false; break;
         case 1: MOUSEBUTTON_DOWN = false; break;
     }
 });
@@ -205,12 +199,12 @@ document.addEventListener('keydown', function(event)
         case 9:  break;
         case 13: ENTER_KEY = true;
                  break;
-        case 16: shift = true; break;
+        case 16: SHIFT_KEY = true; break;
         case 27: GAME_PAUSED = !GAME_PAUSED;
                  SHOW_HELP = false;
                  break;
         case 32: if (GAME_OVER) location.reload();
-                 else space = true;
+                 else SPACE_KEY = true;
                  break;
         case 37: LEFT_KEY = true; break;
         case 38: UP_KEY = true; break;
@@ -224,17 +218,21 @@ document.addEventListener('keydown', function(event)
         case 54: respawn(3); break;
         case 55: respawn(4); break;
         case 56: respawn(5); break;
-        case 65: akey = true; break;
+        case 65: A_KEY = true; break;
         case 66: DRAW_FIRING_ARC = !DRAW_FIRING_ARC;
                  str = DRAW_FIRING_ARC ? "enabled." : "disabled."
                  throwAlert("DRAW_FIRING_ARC " + str, ALERT_DISPLAY_TIME);
                  break;
-        case 69: ekey = true; break;
+        case 68: D_KEY = true; break;
         case 70: PLAYER_WEAPON_SELECT = !PLAYER_WEAPON_SELECT;
                  str = PLAYER_WEAPON_SELECT ?
                      "Switched active weapon to torpedoes." :
                      "Switched active weapon to railgun.";
                  throwAlert(str, ALERT_DISPLAY_TIME);
+                 break;
+        case 71: SHOW_OVERLAY = !SHOW_OVERLAY;
+                 str = SHOW_OVERLAY ? "enabled." : "disabled."
+                 throwAlert("SHOW_OVERLAY " + str, ALERT_DISPLAY_TIME);
                  break;
         case 72: DRAW_ACCEL = !DRAW_ACCEL;
                  str = DRAW_ACCEL ? "enabled." : "disabled."
@@ -259,23 +257,20 @@ document.addEventListener('keydown', function(event)
                  break;
         case 79: --PLAYER_SCORE; break;
         case 80: ++PLAYER_SCORE; break;
-        case 81: qkey = true; break;
         case 82: SLOW_TIME = !SLOW_TIME; break;
+        case 85: SHOW_ALL_ALERTS = !SHOW_ALL_ALERTS;
+                 str = SHOW_ALL_ALERTS ? "enabled." : "disabled."
+                 throwAlert("SHOW_ALL_ALERTS " + str, ALERT_DISPLAY_TIME);
+                 break;
         case 86: LOCK_CAMERA = !LOCK_CAMERA;
                  str = LOCK_CAMERA ?
                      "Locked camera enabled." :
                      "Locked camera disabled";
                  throwAlert(str, ALERT_DISPLAY_TIME);
                  break;
-        case 87: wkey = true; break;
-        case 68: dkey = true; break;
-        case 83: skey = true; break;
-        case 88: MATCH_VELOCITY = true; break;
         case 191: if (NEAREST_OBJECT !== PLAYER_SHIP)
                       TARGET_OBJECT = NEAREST_OBJECT;
                   break;
-        default:
-            // console.log('unhandled keycode: ' + event.keyCode);
     }
 });
 
@@ -283,41 +278,23 @@ document.addEventListener('keyup', function(event)
 {
     switch (event.keyCode)
     {
-        case 16: shift = false; break;
+        case 16: SHIFT_KEY = false; break;
         case 13: ENTER_KEY = false;
                  break;
-        case 27: /* ESCAPE_KEY */ break;
-        case 32: space = false; break;
+        case 32: SPACE_KEY = false; break;
         case 37: LEFT_KEY = false; break;
         case 38: UP_KEY = false; break;
         case 39: RIGHT_KEY = false; break;
         case 40: DOWN_KEY = false; break;
         case 49: ONE_KEY = false; break
         case 50: TWO_KEY = false; break;
-        case 65: akey = false; break;
-        case 66: /* BKEY */ break;
-        case 69: ekey = false; break;
-        case 70: fkey = false; break;
-        case 72: /* HKEY */ break;
-        case 74: /* JKEY */ break;
-        case 75: /* KKEY */ break;
-        case 77: /* MKEY */ break;
-        case 78: /* NKEY */ break;
-        case 80: /* PKEY */ break;
-        case 81: qkey = false; break;
-        case 86: /* VKEY */ break;
-        case 87: wkey = false; break;
-        case 68: dkey = false; break;
-        case 83: skey = false; break;
-        case 88: MATCH_VELOCITY = false; break;
-        default:
-            // console.log('unhandled keycode: ' + event.keyCode);
+        case 65: A_KEY = false; break;
+        case 68: D_KEY = false; break;
     }
 });
 
 function throwAlert(msg, time)
 {
-    // for (let m of ALERTS)
     if (ALERTS.length > 0 && ALERTS[ALERTS.length - 1][0] == msg) return;
     ALERTS.push([msg, time]);
 }
@@ -347,7 +324,6 @@ function updateMouse()
     let min = Infinity;
     for (let obj of WORLD)
     {
-        // if (obj === PLAYER_SHIP) continue;
         let dx = obj.pos[0] - MOUSEX;
         let dy = obj.pos[1] - MOUSEY;
         let dist = Math.sqrt(dx*dx + dy*dy);
@@ -471,7 +447,7 @@ function physics(dt)
         ++PLAYER_SCORE;
         throwAlert("Enemy vessels incoming.", ALERT_DISPLAY_TIME*3);
 
-        for (let i = 0; i < PLAYER_SCORE; ++i)
+        for (let i = 0; i < Math.sqrt(PLAYER_SCORE); ++i)
         {
             let r = WORLD_RENDER_DISTANCE*2;
             let rot = Math.random()*Math.PI*2;
@@ -497,34 +473,59 @@ function physics(dt)
         RESPAWN_TIMER -= dt;
         if (RESPAWN_TIMER > 0)
         {
-            PLAYER_SHIP.health += PASSIVE_REGEN*dt;
-            PLAYER_SHIP.health =
-                Math.min(PLAYER_SHIP.health, PLAYER_SHIP.max_health);
+            PLAYER_SHIP.repair(PASSIVE_REGEN*dt);
+            // if (Math.random() < dt*13 &&
+            //     PLAYER_SHIP.health < PLAYER_SHIP.max_health)
+            // {
+            //     let health = new Debris(
+            //         PLAYER_SHIP.box.getRandom(), add2d(PLAYER_SHIP.vel,
+            //             [Math.random()*150 - 75, Math.random()*150 - 75]),
+            //         Math.random()*2*Math.PI,
+            //         Math.random()*2 - 1, SMALL_DEBRIS/100);
+            //     health.nocollide = true;
+            //     health.skin = function()
+            //     {
+            //         let width = 7;
+            //         CTX.save();
+            //         CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+            //         CTX.rotate(-this.theta);
+            //         CTX.globalAlpha = 0.5;
+            //         CTX.fillStyle = "green";
+            //         CTX.beginPath();
+            //         CTX.rect(-width*PIXELS/6, -width*PIXELS/2,
+            //             width*PIXELS/3, width*PIXELS);
+            //         CTX.rect(-width*PIXELS/2, -width*PIXELS/6,
+            //             width*PIXELS, width*PIXELS/3);
+            //         CTX.fill();
+            //         CTX.restore()
+            //     }
+            //     WORLD.push(health);
+            // }
         }
     }
     if (!GAME_OVER)
     {
-        if (shift)
+        if (SHIFT_KEY)
         {
             PLAYER_SHIP.applyForce(rot2d([PLAYER_SHIP.max_acc*
                 PLAYER_SHIP.mass, 0], PLAYER_SHIP.theta));
         }
-        if (space)
+        if (SPACE_KEY)
         {
             if (PLAYER_WEAPON_SELECT) PLAYER_SHIP.launchTorpedo(TARGET_OBJECT);
             else PLAYER_SHIP.fireRailgun();
-            space = false;
+            SPACE_KEY = false;
         }
-        if (leftClick || ENTER_KEY)
+        if (LEFT_CLICK || ENTER_KEY)
         {
             PLAYER_SHIP.firePDC(TARGET_OBJECT);
         }
 
-        if (akey)
+        if (A_KEY)
         {
             PLAYER_SHIP.applyMoment(PLAYER_SHIP.max_alpha*PLAYER_SHIP.izz);
         }
-        else if (dkey)
+        else if (D_KEY)
         {
             PLAYER_SHIP.applyMoment(-PLAYER_SHIP.max_alpha*PLAYER_SHIP.izz);
         }
@@ -595,11 +596,6 @@ function draw()
     CTX.stroke();
 
     for (let obj of WORLD) obj.draw(CTX);
-    CTX.globalAlpha = 1;
-    CTX.strokeStyle = "black";
-    CTX.beginPath();
-    CTX.arc(MOUSEX*PIXELS, MOUSEY*PIXELS, 4, 0, Math.PI*2);
-    CTX.stroke();
 
     if (NEAREST_OBJECT != null && SLOW_TIME && !GAME_PAUSED)
     {
@@ -625,13 +621,6 @@ function draw()
     if (TARGET_OBJECT != null)
     {
         let radius = 0.7*Math.max(PLAYER_SHIP.length, PLAYER_SHIP.width);
-        // CTX.strokeStyle = "black";
-        // CTX.globalAlpha = 0.5;
-        // CTX.beginPath();
-        // CTX.arc(0, 0, radius*PIXELS, 0, Math.PI*2);
-        // CTX.closePath();
-        // CTX.stroke();
-
         if (!isOffScreen(TARGET_OBJECT.pos))
         {
             CTX.save();
@@ -676,75 +665,6 @@ function draw()
             let pro = sub2d(PLAYER_SHIP.vel, TARGET_OBJECT.vel);
             pro = mult2d(unit2d(pro), radius);
             retro = mult2d(pro, -1);
-
-            CTX.save();
-
-            // // prograde symbol
-            // CTX.beginPath();
-            // CTX.strokeStyle = "green";
-            // CTX.lineWidth = 2*PIXELS;
-            // CTX.arc(pro[0]*PIXELS, pro[1]*PIXELS, 10*PIXELS, 0, Math.PI*2);
-            // CTX.closePath();
-            // CTX.stroke();
-            // CTX.beginPath();
-            // CTX.moveTo((pro[0] + 10)*PIXELS, pro[1]*PIXELS);
-            // CTX.lineTo((pro[0] + 20)*PIXELS, pro[1]*PIXELS);
-            // CTX.closePath();
-            // CTX.stroke();
-            // CTX.beginPath();
-            // CTX.moveTo((pro[0] - 10)*PIXELS, pro[1]*PIXELS);
-            // CTX.lineTo((pro[0] - 20)*PIXELS, pro[1]*PIXELS);
-            // CTX.closePath();
-            // CTX.stroke();
-            // CTX.beginPath();
-            // CTX.moveTo(pro[0]*PIXELS, (pro[1] - 10)*PIXELS);
-            // CTX.lineTo(pro[0]*PIXELS, (pro[1] - 20)*PIXELS);
-            // CTX.closePath();
-            // CTX.stroke();
-            //
-            // // retrograde symbol
-            // CTX.translate(retro[0]*PIXELS, retro[1]*PIXELS);
-            // CTX.beginPath();
-            // CTX.strokeStyle = "red";
-            // CTX.lineWidth = 3*PIXELS;
-            // CTX.arc(0, 0, 10*PIXELS, 0, Math.PI*2);
-            // CTX.closePath();
-            // CTX.stroke();
-            // CTX.beginPath();
-            // CTX.moveTo(0, -10*PIXELS);
-            // CTX.lineTo(0, -20*PIXELS);
-            // CTX.closePath();
-            // CTX.stroke();
-            //
-            // CTX.rotate(2*Math.PI/3);
-            // CTX.beginPath();
-            // CTX.moveTo(0, -10*PIXELS);
-            // CTX.lineTo(0, -20*PIXELS);
-            // CTX.closePath();
-            // CTX.stroke();
-            //
-            // CTX.rotate(2*Math.PI/3);
-            // CTX.beginPath();
-            // CTX.moveTo(0, -10*PIXELS);
-            // CTX.lineTo(0, -20*PIXELS);
-            // CTX.closePath();
-            // CTX.stroke();
-            //
-            // CTX.rotate(2*Math.PI/3 + Math.PI/4);
-            // CTX.beginPath();
-            // CTX.moveTo(0, -10*PIXELS);
-            // CTX.lineTo(0, 10*PIXELS);
-            // CTX.closePath();
-            // CTX.stroke();
-            //
-            // CTX.rotate(Math.PI/2);
-            // CTX.beginPath();
-            // CTX.moveTo(0, -10*PIXELS);
-            // CTX.lineTo(0, 10*PIXELS);
-            // CTX.closePath();
-            // CTX.stroke();
-
-            CTX.restore();
         }
     }
 
@@ -755,14 +675,10 @@ function draw()
         let spacing = 5;
         let hh = Math.max(0, PLAYER_SHIP.health)/
             PLAYER_SHIP.max_health*(HEIGHT - 2*border);
-        // let rh = (HEIGHT - 2*border) - Math.max(0, PLAYER_SHIP.railgun_reload)/
-        //     RAILGUN_COOLDOWN*(HEIGHT - 2*border);
 
         CTX.globalAlpha = 0.3;
         CTX.fillStyle = "green";
         CTX.fillRect(border, (HEIGHT - border) - hh, cw, hh);
-        // CTX.fillStyle = "gray";
-        // CTX.fillRect(border + cw + spacing, (HEIGHT - border) - rh, cw, rh);
 
         CTX.textAlign = "left";
         CTX.font = "15px Consolas";
@@ -859,14 +775,86 @@ function draw()
     for (let i in ALERTS)
     {
         CTX.globalAlpha = Math.max(0, Math.min(1, ALERTS[i][1]));
+        if (SHOW_ALL_ALERTS) CTX.globalAlpha = 1;
         CTX.fillText(ALERTS[i][0].toUpperCase(),
-            70, 30 + 20*(ALERTS.length - i - 1));
+            70, 22 + 20*(ALERTS.length - i - 1));
     }
 
-
     CTX.fillStyle = "gray";
+    CTX.globalAlpha = 1;
     CTX.font = "12px Helvetica";
     CTX.fillText("BUILD: " + VERSION.toUpperCase(), 70, HEIGHT - 30);
+
+    if (SHOW_OVERLAY)
+    {
+        function drawKey(x, y, w, h, key, desc)
+        {
+            CTX.save();
+            CTX.translate(x, y);
+            CTX.lineWidth = 2;
+            CTX.strokeStyle = "black";
+            CTX.globalAlpha = 1;
+            CTX.fillStyle = "white";
+            CTX.fillRect(0, 0, w, h);
+            CTX.globalAlpha = 0.5;
+            if (key == '') CTX.globalAlpha = 0.1;
+            CTX.strokeRect(0, 0, w, h);
+            CTX.font = "20px Helvetica";
+            CTX.textAlign = "center";
+            CTX.fillStyle = "black";
+            CTX.fillText(key, w/2, 3*h/4);
+
+            let mx = MOUSE_SCREEN_POS[0], my = MOUSE_SCREEN_POS[1];
+            if (mx > x && mx < x + w && my > y && my < y + h &&
+                (SLOW_TIME || GAME_PAUSED) && desc != "")
+            {
+                CTX.font = "16px Helvetica";
+                CTX.textAlign = "left";
+                CTX.beginPath();
+                CTX.moveTo(w, 0);
+                let len = y - (HEIGHT - 270);
+                CTX.lineTo(len/3 + w, -len);
+                let width = CTX.measureText(desc.toUpperCase()).width;
+                CTX.lineTo(len/3 + w + width, -len);
+                CTX.stroke();
+                CTX.globalAlpha = 0.8;
+                CTX.fillText(desc.toUpperCase(), len/3 + w, -len - 5);
+            }
+            CTX.restore();
+        }
+
+        let beginx = 95, beginy = HEIGHT - 230, w = 30, h = 30;
+        drawKey(beginx, beginy, w, h, '', '');
+        drawKey(beginx + 35, beginy, w, h, '1', 'Zoom Out');
+        drawKey(beginx + 70, beginy, w, h, '2', 'Zoom In');
+        drawKey(beginx + 105, beginy, w, h, '', '');
+
+        drawKey(beginx, beginy + 35, w*1.5, h, '', '');
+        drawKey(beginx + w*1.5 + 5, beginy + 35, w, h, '', '');
+        drawKey(beginx + w*2.5 + 10, beginy + 35, w, h, '', '');
+        drawKey(beginx + w*3.5 + 15, beginy + 35, w, h, '', '');
+        drawKey(beginx + w*4.5 + 20, beginy + 35, w, h, 'R', 'Targeting mode');
+
+        drawKey(beginx, beginy + 70, w*1.7, h, '', '');
+        drawKey(beginx + w*1.7 + 5, beginy + 70, w, h, 'A', 'Turn left');
+        drawKey(beginx + w*2.7 + 10, beginy + 70, w, h, '', '');
+        drawKey(beginx + w*3.7 + 15, beginy + 70, w, h, 'D', 'Turn right');
+        drawKey(beginx + w*4.7 + 20, beginy + 70, w, h, 'F', 'Switch weapons');
+
+        drawKey(beginx, beginy + 105, w*2.5, h, 'SHIFT', 'Accelerate');
+        drawKey(beginx + w*2.5 + 5, beginy + 105, w, h, '', '');
+        drawKey(beginx + w*3.5 + 10, beginy + 105, w, h, '', '');
+
+        drawKey(beginx + w*2.7 + 10, beginy + 140, w, h, '', '');
+        drawKey(beginx + w*3.7 + 15, beginy + 140, w, h, '', '');
+        drawKey(beginx + w*4.7 + 20, beginy + 140, w*5, h, 'SPACE', 'Fire');
+    }
+
+    CTX.globalAlpha = 1;
+    CTX.strokeStyle = "black";
+    CTX.beginPath();
+    CTX.arc(MOUSE_SCREEN_POS[0], MOUSE_SCREEN_POS[1], 4, 0, Math.PI*2);
+    CTX.stroke();
 
     if (PLAYER_SHIP.remove)
     {
@@ -885,24 +873,24 @@ function draw()
         CTX.fillStyle = "darkgray";
         CTX.strokeStyle = "darkgray";
         CTX.fillText("PAUSED", WIDTH/2 + 20, HEIGHT/2 - 20);
-        CTX.font = "20px Helvetica";
-        CTX.globalAlpha = 0.8;
-        CTX.fillStyle = "white";
-        CTX.fillRect(WIDTH/2 + 30, HEIGHT/2 + 30, 500, 300);
-        CTX.globalAlpha = 1;
-        CTX.strokeRect(WIDTH/2 + 30, HEIGHT/2 + 30, 500, 300);
-        CTX.fillStyle = "black";
-        CTX.fillText("[SHIFT] TO ACCELERATE", WIDTH/2 + 50, HEIGHT/2 + 70);
-        CTX.fillText("[A/D] TO TURN", WIDTH/2 + 50, HEIGHT/2 + 100);
-        CTX.fillText("[SPACE] TO FIRE WEAPONS", WIDTH/2 + 50, HEIGHT/2 + 130);
-        CTX.fillText("[F] TO SWITCH WEAPONS", WIDTH/2 + 50, HEIGHT/2 + 160);
-        CTX.fillText("[R] TO SLOW DOWN TIME", WIDTH/2 + 50, HEIGHT/2 + 190);
-        CTX.fillText("[LEFT CLICK] TO FIRE ANTI-TORPEDO CANNONS",
-            WIDTH/2 + 50, HEIGHT/2 + 220);
-        CTX.fillText("[RIGHT CLICK] TO TARGET LOCK",
-            WIDTH/2 + 50, HEIGHT/2 + 250);
-        CTX.fillText("[1][2] TO ZOOM IN/OUT", WIDTH/2 + 50, HEIGHT/2 + 280);
-        CTX.fillText("[B][N][M] FOR DEBUG", WIDTH/2 + 50, HEIGHT/2 + 310);
+        // CTX.font = "20px Helvetica";
+        // CTX.globalAlpha = 0.8;
+        // CTX.fillStyle = "white";
+        // CTX.fillRect(WIDTH/2 + 30, HEIGHT/2 + 30, 500, 300);
+        // CTX.globalAlpha = 1;
+        // CTX.strokeRect(WIDTH/2 + 30, HEIGHT/2 + 30, 500, 300);
+        // CTX.fillStyle = "black";
+        // CTX.fillText("[SHIFT] TO ACCELERATE", WIDTH/2 + 50, HEIGHT/2 + 70);
+        // CTX.fillText("[A/D] TO TURN", WIDTH/2 + 50, HEIGHT/2 + 100);
+        // CTX.fillText("[SPACE] TO FIRE WEAPONS", WIDTH/2 + 50, HEIGHT/2 + 130);
+        // CTX.fillText("[F] TO SWITCH WEAPONS", WIDTH/2 + 50, HEIGHT/2 + 160);
+        // CTX.fillText("[R] TO SLOW DOWN TIME", WIDTH/2 + 50, HEIGHT/2 + 190);
+        // CTX.fillText("[LEFT CLICK] TO FIRE ANTI-TORPEDO CANNONS",
+        //     WIDTH/2 + 50, HEIGHT/2 + 220);
+        // CTX.fillText("[RIGHT CLICK] TO TARGET LOCK",
+        //     WIDTH/2 + 50, HEIGHT/2 + 250);
+        // CTX.fillText("[1][2] TO ZOOM IN/OUT", WIDTH/2 + 50, HEIGHT/2 + 280);
+        // CTX.fillText("[B][N][M] FOR DEBUG", WIDTH/2 + 50, HEIGHT/2 + 310);
     }
 
     if (SLOW_TIME)
@@ -957,8 +945,7 @@ function start()
 
     for (let i in ALERTS)
     {
-        ALERTS[i][1] -= dt;
-        if (ALERTS[i][1] < 0) ALERTS.splice(i, 1);
+        ALERTS[i][1] -= DT;
     }
 
     if (UNDERTRACK.currentTime > UNDERTRACK.duration - 0.10)
@@ -981,7 +968,7 @@ function start()
 
         let fade = function(control, setpoint)
         {
-            let dv = 0.05*dt;
+            let dv = 0.05*DT;
             if (control > setpoint)
             {
                 control -= dv;
@@ -1009,16 +996,16 @@ function start()
         }
     }
 
-    current = new Date().getTime();
+    CURRENT = new Date().getTime();
     draw();
     let time_passed = 0;
-    if (!GAME_PAUSED && !SLOW_TIME && PAUSE_TIME <= 0) physics(dt);
+    if (!GAME_PAUSED && !SLOW_TIME && PAUSE_TIME <= 0) physics(DT);
     else if (!GAME_PAUSED && PAUSE_TIME <= 0) physics(SLOW_DT);
     requestAnimationFrame(start);
-    dt = (current - last)/1000;
-    last = current;
+    DT = (CURRENT - LAST)/1000;
+    LAST = CURRENT;
 
-    if (PAUSE_TIME > 0) PAUSE_TIME -= dt;
+    if (PAUSE_TIME > 0) PAUSE_TIME -= DT;
 
     if (ONE_KEY) zoom(VIEW_RADIUS + 50);
     if (TWO_KEY) zoom(VIEW_RADIUS - 50);

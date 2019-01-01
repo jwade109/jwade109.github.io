@@ -91,13 +91,7 @@ Scirocco.prototype = Object.create(Collidable.prototype);
 
 Scirocco.prototype.firePDC = function(target)
 {
-    for (let pdc of this.pdcs)
-    {
-        if (target == null)
-            pdc.fireAt([MOUSEX, MOUSEY]);
-        else if (isNaN(pdc.intercept(target)))
-            pdc.fireAt([MOUSEX, MOUSEY]);
-    }
+    for (let pdc of this.pdcs) pdc.intercept(target);
 }
 
 Scirocco.prototype.launchTorpedo = function(target)
@@ -265,7 +259,6 @@ Scirocco.prototype.skin = function()
     CTX.restore();
     for (let pdc of this.pdcs) pdc.draw(CTX);
     for (let railgun of this.railguns) railgun.draw(CTX);
-    for (let tube of this.tubes) tube.draw();
 }
 
 Scirocco.prototype.explode = function()

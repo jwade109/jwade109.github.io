@@ -14,7 +14,7 @@ const CORVETTE_MASS = 120000;
 const CORVETTE_MAX_ACCEL = 20*9.81;
 const CORVETTE_MAX_ALPHA = 12;
 const CORVETTE_RCS_THRUST = 9.81*CORVETTE_MASS;
-const CORVETTE_PDC_RANGE = 800;
+const CORVETTE_PDC_RANGE = 500;
 
 function Corvette(pos, theta)
 {
@@ -30,7 +30,7 @@ function Corvette(pos, theta)
     this.faction = MCRN;
     this.permanent = true;
     this.isShip = true;
-    
+
     this.box = new Hitbox([[this.length/2, this.width/3],
                            [-this.length/2, this.width/2],
                            [-this.length/2, -this.width/2],
@@ -178,8 +178,6 @@ Corvette.prototype.skin = function()
     CTX.restore();
 
     for (let pdc of this.pdcs) pdc.draw(CTX);
-    // for (let railgun of this.railguns) railgun.draw(CTX);
-    for (let tube of this.tubes) tube.draw();
 }
 
 // Corvette.prototype.damage = function(d)
