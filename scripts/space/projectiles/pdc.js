@@ -62,8 +62,8 @@ class PointDefenseCannon
             rvel, gpos, PDC_VELOCITY);
         if (isNaN(theta))
         {
-            throwAlert("Cannot fire PDC -- intercept solution not found.",
-                ALERT_DISPLAY_TIME);
+            // throwAlert("Cannot fire PDC -- intercept solution not found.",
+            //     ALERT_DISPLAY_TIME);
             return NaN;
         }
         this.fireBullet(theta);

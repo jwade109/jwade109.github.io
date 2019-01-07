@@ -24,8 +24,33 @@ static morriganEnemy(dt)
 
     if (candidates.length == 0)
     {
-        this.applyMoment(-this.theta*this.izz - this.omega*this.izz);
-        this.applyForce([this.max_acc*this.mass, 0]);
+        let sumForce = [0, 0];
+        for (let friend of friendlies)
+        {
+            let d = distance(this.pos, friend.pos);
+            if (d < 4000)
+            {
+                let sep = mult2d(unit2d(sub2d(this.pos, friend.pos)),
+                    1000000/d*this.mass);
+                sumForce = add2d(sumForce, sep);
+                let damping = mult2d(sub2d(friend.vel, this.vel), this.mass*20);
+                sumForce = add2d(sumForce, damping);
+                let cohere = mult2d(sub2d(friend.pos, this.pos), this.mass*3);
+                sumForce = add2d(sumForce, cohere);
+            }
+            if (GAME_OVER)
+            {
+                let seek = mult2d(sub2d(
+                    [MOUSEX, MOUSEY], this.pos), this.mass*10);
+                sumForce = add2d(sumForce, seek);
+                let damping = mult2d(sub2d([0, 0], this.vel), this.mass*30);
+                sumForce = add2d(sumForce, damping);
+            }
+        }
+        let forceDamping = 0.1;
+        this.forces = this.prevForces.slice();
+        this.forces = mult2d(sub2d(sumForce, this.prevForces), forceDamping);
+        this.align(angle2d([1, 0], this.forces), this.izz*60, this.izz*25);
         return;
     }
 
@@ -79,6 +104,64 @@ static morriganEnemy(dt)
     }
 
     this.prevForces = this.forces.slice();
+}
+
+static morriganAlly(dt)
+{
+    if (!this.hasOwnProperty("prevForces"))
+        this.prevForces = [0, 0];
+
+    let candidates = [], friendlies = [];
+    for (let obj of WORLD)
+    {
+        if (!obj.trackable || !obj.isShip || obj == this) continue;
+        if (obj.faction == this.faction)
+            friendlies.push(obj);
+        else candidates.push(obj);
+    }
+
+    let sumForce = [0, 0];
+    for (let friend of friendlies)
+    {
+        let d = distance(this.pos, friend.pos);
+        if (d < 4000)
+        {
+            let sep = mult2d(unit2d(sub2d(this.pos, friend.pos)),
+                1000000/d*this.mass);
+            sumForce = add2d(sumForce, sep);
+            let damping = mult2d(sub2d(friend.vel, this.vel), this.mass*20);
+            sumForce = add2d(sumForce, damping);
+            let cohere = mult2d(sub2d(friend.pos, this.pos), this.mass*3);
+            sumForce = add2d(sumForce, cohere);
+        }
+        // if (GAME_OVER)
+        // {
+        //     let seek = mult2d(sub2d(
+        //         [MOUSEX, MOUSEY], this.pos), this.mass*4);
+        //     sumForce = add2d(sumForce, seek);
+        //     let damping = mult2d(sub2d([0, 0], this.vel), this.mass*20);
+        //     sumForce = add2d(sumForce, damping);
+        // }
+    }
+    let forceDamping = 0.1;
+    this.forces = this.prevForces.slice();
+    this.forces = mult2d(sub2d(sumForce, this.prevForces), forceDamping);
+    this.align(angle2d([1, 0], this.forces), this.izz*60, this.izz*25);
+
+    let dist = Infinity, target;
+    for (let c of candidates)
+    {
+        let d = distance(c.pos, this.pos);
+        if (d < dist)
+        {
+            dist = d;
+            target = c;
+        }
+    }
+
+    if (dist < WORLD_RENDER_DISTANCE/2 && Math.random() < dt/1.7)
+        this.launchTorpedo(target);
+    if (Math.random() < 0.5) this.firePDC(target);
 }
 
 static amunRaEnemy(dt)

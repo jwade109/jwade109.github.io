@@ -25,6 +25,7 @@ function Torpedo(pos, vel, theta)
     this.target = null;
     this.name = "";
     this.type = "Torpedo";
+    this.permanent = true;
     this.thrusters = [new Thruster(
         [-this.length/2, 0], Math.PI, 0, this.width)];
 }
@@ -137,8 +138,7 @@ Torpedo.prototype.radarIcon = function(opacity)
     CTX.save();
     CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
     CTX.rotate(Math.PI/4);
-    CTX.strokeStyle = "blue";
-    CTX.fillStyle = "blue";
+    CTX.strokeStyle =  CTX.fillStyle = this.faction.radar;
     CTX.globalAlpha = opacity*0.5;
     CTX.strokeRect(-5, -5, 10, 10);
     CTX.beginPath();

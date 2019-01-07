@@ -1,74 +1,146 @@
 // canvas.js
 
-const VERSION = "2019.1.6a";
+const VERSION = "2019.1.7a";
 
-var DRAW_TRACE = false;
-var DRAW_ACCEL = false;
-var SHOW_ALL_ALERTS = false;
-var LOCK_CAMERA = false;
-var SPAWN_ENEMIES = true;
-var NUMBER_OF_ENEMIES = 0;
-var GAME_PAUSED = true;
-var SLOW_TIME = false;
-var GAME_OVER = false;
-var CURRENT_WAVE = 0;
-var WAVE_START = 0;
-var SPAWN_DEBRIS = true;
-var SHOW_OVERLAY = true;
-const RESPAWN_DELAY = 15;
-var RESPAWN_TIMER = 30;
-var BETWEEN_WAVES = true;
+var DRAW_TRACE;
+var DRAW_ACCEL;
+var SHOW_ALL_ALERTS;
+var LOCK_CAMERA;
+var SPAWN_ENEMIES;
+var NUMBER_OF_ENEMIES;
+var GAME_PAUSED;
+var SLOW_TIME;
+var GAME_OVER;
+var CURRENT_WAVE;
+var WAVE_START;
+var SPAWN_DEBRIS;
+var SHOW_OVERLAY;
+const RESPAWN_DELAY = 30;
+var RESPAWN_TIMER;
+var BETWEEN_WAVES;
 const TARGETING_MAX = 14;
-var TARGETING_STAMINA = TARGETING_MAX;
+var TARGETING_STAMINA;
 const PASSIVE_REGEN = 0.02; // percent per second
-var TARGETING_LOCKOUT = false;
+var TARGETING_LOCKOUT;
 
-var PLAYER_SCORE = 0;
-var TIME_BONUS = 0;
+var PLAYER_FACTION = UNN;
+
+var PLAYER_SCORE;
+var TIME_BONUS;
 
 const FPS = 60;
 const NOMINAL_DT = 1/FPS;
 const SLOW_DT = NOMINAL_DT/30;
-var CURRENT_DT = NOMINAL_DT;
-var TIME = 0;
+var CURRENT_DT;
+var TIME;
 
 const CANVAS = document.getElementById("canvas");
 const CTX = CANVAS.getContext("2d");
 
-var UNDERTRACK = new Audio("scripts/space/sounds/undertrack.wav");
-var OVERTRACK = new Audio("scripts/space/sounds/overtrack.wav");
-UNDERTRACK.volume = 0.15;
-OVERTRACK.volume = 0;
+const UNDERTRACK = new Audio("scripts/space/sounds/undertrack.mp3");
+const OVERTRACK = new Audio("scripts/space/sounds/overtrack.mp3");
 
-var LEFT_KEY = false, RIGHT_KEY = false, UP_KEY = false, DOWN_KEY = false;
-var SPACE_KEY = false, SHIFT_KEY = false, ENTER_KEY = false;
-var A_KEY = false, D_KEY = false;
-var LEFT_CLICK = false, RIGHT_CLICK = false, MOUSEBUTTON_DOWN = false;
-var ONE_KEY = false, TWO_KEY = false;
+var LEFT_KEY, RIGHT_KEY, UP_KEY, DOWN_KEY;
+var SPACE_KEY, SHIFT_KEY, ENTER_KEY;
+var A_KEY, D_KEY;
+var LEFT_CLICK, RIGHT_CLICK, MOUSEBUTTON_DOWN;
+var ONE_KEY, TWO_KEY;
 
-var ALERTS = [];
+var ALERTS;
 const ALERT_DISPLAY_TIME = 6;
-var PLAYER_WEAPON_SELECT = true; // true - missiles, false - railgun
+var PLAYER_WEAPON_SELECT; // true - missiles, false - railgun
 
-var WIDTH = document.body.clientWidth;
-var HEIGHT = document.body.scrollHeight;
-var MOUSEX = 0, MOUSEY = 0;
-var MOUSE_SCREEN_POS = [WIDTH/2, HEIGHT/2];
+var WIDTH, HEIGHT;
+var MOUSEX, MOUSEY;
+var MOUSE_SCREEN_POS;
 
 const MIN_ZOOM = 30;
 const MAX_ZOOM = 14000;
-var VIEW_RADIUS = TARGET_ZOOM = 2000;
-zoom();
+var VIEW_RADIUS, TARGET_ZOOM;
 
-var NEAREST_OBJECT = null;
-var TARGET_OBJECT = null;
+var NEAREST_OBJECT;
+var TARGET_OBJECT;
 
-var WORLD = [];
+var WORLD;
 const WORLD_RENDER_DISTANCE = 10000;
 
-var PLAYER_SHIP;
-var CAMERA_TRACK_TARGET = PLAYER_SHIP;
-respawn(3);
+var PLAYER_SHIP, CAMERA_TRACK_TARGET;
+
+initialize();
+start();
+
+function initialize()
+{
+    DRAW_TRACE = false;
+    DRAW_ACCEL = false;
+    SHOW_ALL_ALERTS = false;
+    LOCK_CAMERA = false;
+    SPAWN_ENEMIES = true;
+    NUMBER_OF_ENEMIES = 0;
+    SLOW_TIME = false;
+    if (GAME_OVER) GAME_PAUSED = false;
+    else GAME_PAUSED = true;
+    GAME_OVER = false;
+    CURRENT_WAVE = 0;
+    WAVE_START = 0;
+    SPAWN_DEBRIS = true;
+    SHOW_OVERLAY = true;
+    RESPAWN_TIMER = 30;
+    BETWEEN_WAVES = false;
+    TARGETING_STAMINA = TARGETING_MAX;
+    TARGETING_LOCKOUT = false;
+
+    PLAYER_SCORE = 0;
+    TIME_BONUS = 0;
+
+    CURRENT_DT = NOMINAL_DT;
+    TIME = 0;
+
+    // UNDERTRACK.volume = 0.15;
+    // OVERTRACK.volume = 0;
+
+    LEFT_KEY = false, RIGHT_KEY = false, UP_KEY = false, DOWN_KEY = false;
+    SPACE_KEY = false, SHIFT_KEY = false, ENTER_KEY = false;
+    A_KEY = false, D_KEY = false;
+    LEFT_CLICK = false, RIGHT_CLICK = false, MOUSEBUTTON_DOWN = false;
+    ONE_KEY = false, TWO_KEY = false;
+
+    ALERTS = [];
+    PLAYER_WEAPON_SELECT = true; // true - missiles, false - railgun
+
+    WIDTH = document.body.clientWidth;
+    HEIGHT = document.body.scrollHeight;
+    MOUSEX = 0, MOUSEY = 0;
+    MOUSE_SCREEN_POS = [WIDTH/2, HEIGHT/2];
+
+    VIEW_RADIUS = TARGET_ZOOM = 2000;
+    zoom();
+
+    NEAREST_OBJECT = null;
+    TARGET_OBJECT = null;
+
+    WORLD = [];
+    CAMERA_TRACK_TARGET = PLAYER_SHIP;
+    respawn(3);
+
+    CURRENT = new Date().getTime(), LAST = CURRENT, DT = 0;
+
+    for (let i = 0; i < Math.pow(WORLD_RENDER_DISTANCE, 2)/1E6
+        && SPAWN_DEBRIS; ++i)
+    {
+        let r = Math.random()*WORLD_RENDER_DISTANCE/2 + 200;
+        let rot = Math.random()*Math.PI*2;
+        let pos = [Math.cos(rot)*r + PLAYER_SHIP.pos[0],
+                   Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
+        let vel = [Math.random()*200 - 100 + PLAYER_SHIP.vel[0],
+                   Math.random()*200 - 100 + PLAYER_SHIP.vel[1]]
+        let theta = Math.random()*Math.PI*2;
+        let omega = Math.random()*10 - 5;
+        let size = Math.random()*25 + 10;
+        let deb = new Debris(pos, vel, theta, omega, size);
+        WORLD.push(deb);
+    }
+}
 
 function respawn(choice)
 {
@@ -126,29 +198,12 @@ function respawn(choice)
         PLAYER_SHIP.remove = true;
     }
 
-    newship.faction = UNN;
+    newship.faction = PLAYER_FACTION;
     // newship.control = Controller.pointDefenseAutomation
     // newship.health = newship.max_health = Infinity;
     PLAYER_SHIP = newship;
     WORLD.push(PLAYER_SHIP);
-}
-
-let CURRENT = new Date().getTime(), LAST = CURRENT, DT = 0;
-
-for (let i = 0; i < Math.pow(WORLD_RENDER_DISTANCE, 2)/1E6
-    && SPAWN_DEBRIS; ++i)
-{
-    let r = Math.random()*WORLD_RENDER_DISTANCE/2 + 200;
-    let rot = Math.random()*Math.PI*2;
-    let pos = [Math.cos(rot)*r + PLAYER_SHIP.pos[0],
-               Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
-    let vel = [Math.random()*200 - 100 + PLAYER_SHIP.vel[0],
-               Math.random()*200 - 100 + PLAYER_SHIP.vel[1]]
-    let theta = Math.random()*Math.PI*2;
-    let omega = Math.random()*10 - 5;
-    let size = Math.random()*25 + 10;
-    let deb = new Debris(pos, vel, theta, omega, size);
-    WORLD.push(deb);
+    GAME_OVER = false;
 }
 
 canvas.oncontextmenu = function(e)
@@ -214,7 +269,7 @@ document.addEventListener('keydown', function(event)
         case 27: GAME_PAUSED = !GAME_PAUSED;
                  SHOW_HELP = false;
                  break;
-        case 32: if (GAME_OVER) location.reload();
+        case 32: if (GAME_OVER) initialize();
                  else SPACE_KEY = true;
                  break;
         case 37: LEFT_KEY = true; break;
@@ -229,6 +284,12 @@ document.addEventListener('keydown', function(event)
         case 54: respawn(3); break;
         case 55: respawn(4); break;
         case 56: respawn(5); break;
+        case 57: if (PLAYER_FACTION.name == "MCRN")
+                     PLAYER_FACTION = UNN;
+                 else if (PLAYER_FACTION.name == "UNN")
+                     PLAYER_FACTION = MCRN;
+                 PLAYER_SHIP.faction = PLAYER_FACTION;
+                 break;
         case 65: A_KEY = true; break;
         case 66: DRAW_FIRING_ARC = !DRAW_FIRING_ARC;
                  str = DRAW_FIRING_ARC ? "enabled." : "disabled."
@@ -417,10 +478,11 @@ function isOffScreen(coords)
                    [-WIDTH/(2*PIXELS) + 5/PIXELS,  HEIGHT/(2*PIXELS) - 5/PIXELS]];
     let hitbox = new Hitbox(corners);
     hitbox.object = [];
-    hitbox.object.pos = PLAYER_SHIP.pos.slice();
+    hitbox.object.pos = CAMERA_TRACK_TARGET.pos.slice();
     hitbox.object.theta = 0;
-    if (LOCK_CAMERA) hitbox.object.theta = PLAYER_SHIP.theta + Math.PI/2;
-    // if (DRAW_HITBOX) hitbox.draw(CTX);
+    if (LOCK_CAMERA)
+        hitbox.object.theta = CAMERA_TRACK_TARGET.theta + Math.PI/2;
+    if (DRAW_HITBOX) hitbox.draw(CTX);
     return !hitbox.contains(coords);
 }
 
@@ -492,7 +554,7 @@ function physics(dt)
 
         let randomPos = rot2d([1.2*WORLD_RENDER_DISTANCE, 0],
             Math.random()*Math.PI*2);
-        for (let i = 0; i < Math.floor(Math.sqrt(CURRENT_WAVE)); ++i)
+        for (let i = 0; i < CURRENT_WAVE; ++i)
         {
             if (Math.random() < 0.8 && i % 3 == 0)
                 randomPos = rot2d([1.2*WORLD_RENDER_DISTANCE, 0],
@@ -521,6 +583,17 @@ function physics(dt)
         {
             TIME_BONUS = Math.floor(60 - (TIME - WAVE_START));
             PLAYER_SCORE += TIME_BONUS;
+
+            let pos = rot2d([WORLD_RENDER_DISTANCE, 0],
+                Math.PI*2*Math.random());
+            let ally = new Morrigan(pos, 0);
+            if (Math.random() < 0.3) ally = new Corvette(pos, 0);
+            ally.faction = PLAYER_FACTION;
+            ally.control = Controller.morriganAlly;
+            ally.vel = mult2d(sub2d(PLAYER_SHIP.pos, ally.pos), 0.1);
+            WORLD.push(ally);
+            throwAlert("A friendly vessel has arrived!",
+                2*ALERT_DISPLAY_TIME);
         }
         BETWEEN_WAVES = true;
         RESPAWN_TIMER -= dt;
@@ -585,9 +658,8 @@ function physics(dt)
             PLAYER_SHIP.applyMoment(-PLAYER_SHIP.max_alpha*PLAYER_SHIP.izz);
         }
         else PLAYER_SHIP.applyMoment(-PLAYER_SHIP.omega*PLAYER_SHIP.izz);
-
-        TIME += dt;
     }
+    TIME += dt;
 
     let pos = PLAYER_SHIP.pos.slice();
     let vel = PLAYER_SHIP.vel.slice();
@@ -660,7 +732,7 @@ function draw()
         CTX.save();
         CTX.translate(NEAREST_OBJECT.pos[0]*PIXELS,
                       NEAREST_OBJECT.pos[1]*PIXELS);
-        if (LOCK_CAMERA) CTX.rotate(-PLAYER_SHIP.theta + Math.PI/2);
+        if (LOCK_CAMERA) CTX.rotate(-CAMERA_TRACK_TARGET.theta + Math.PI/2);
         CTX.strokeStyle = "black";
         CTX.fillStyle = "black";
         CTX.beginPath();
@@ -686,7 +758,7 @@ function draw()
             CTX.fillStyle = "red";
             CTX.translate(TARGET_OBJECT.pos[0]*PIXELS,
                           TARGET_OBJECT.pos[1]*PIXELS);
-            if (LOCK_CAMERA) CTX.rotate(-PLAYER_SHIP.theta + Math.PI/2);
+            if (LOCK_CAMERA) CTX.rotate(-CAMERA_TRACK_TARGET.theta + Math.PI/2);
             CTX.globalAlpha = 0.6;
 
             CTX.strokeRect(-10*PIXELS, -10*PIXELS, 20*PIXELS, 20*PIXELS);
@@ -916,6 +988,8 @@ function draw()
                 '7', 'Spawn as: Basilisk Class');
             drawKey(beginx + 280, beginy, w, h,
                 '8', 'Spawn as: Donnager Class');
+            drawKey(beginx + 315, beginy, w, h,
+                '9', 'Switch factions (UNN/MCRN)');
         }
 
         drawKey(beginx, beginy + 35, w*1.5, h, '', '');
@@ -1118,15 +1192,7 @@ function draw()
 
 function start()
 {
-    if (UNDERTRACK.volume == 0)
-        UNDERTRACK.currentTime = OVERTRACK.currentTime;
-    if (OVERTRACK.volume == 0)
-        OVERTRACK.currentTime = UNDERTRACK.currentTime;
-
-    for (let i in ALERTS)
-    {
-        ALERTS[i][1] -= DT;
-    }
+    for (let i in ALERTS) ALERTS[i][1] -= DT;
 
     if (UNDERTRACK.currentTime > UNDERTRACK.duration - 0.10)
     {
@@ -1164,7 +1230,7 @@ function start()
             return setpoint;
         }
 
-        if (BETWEEN_WAVES)
+        if (NUMBER_OF_ENEMIES == 0)
         {
             UNDERTRACK.volume = fade(UNDERTRACK.volume, 0.15);
             OVERTRACK.volume = fade(OVERTRACK.volume, 0);
@@ -1216,5 +1282,3 @@ function start()
         TARGETING_LOCKOUT = true;
     }
 }
-
-start();

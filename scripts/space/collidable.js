@@ -107,7 +107,7 @@ Collidable.prototype.draw = function()
     if (!DRAW_HITBOX)
     {
         let opacity = radarOpacity(2*VIEW_RADIUS/(this.length + this.width));
-        if (opacity < 1) this.skin(1 - opacity);
+        this.skin(1);
         if (opacity > 0) this.radarIcon(opacity);
     }
 
@@ -178,12 +178,22 @@ Collidable.prototype.radarIcon = function(opacity)
     CTX.save();
     CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
     CTX.rotate(Math.PI/4);
-    CTX.fillStyle = this.faction.radar;
-    CTX.globalAlpha = opacity*0.4;
-    CTX.beginPath();
-    if (this.trackable) CTX.arc(0, 0, 3, 0, Math.PI*2);
-    else CTX.arc(0, 0, 1.5, 0, Math.PI*2);
-    CTX.fill();
+    CTX.fillStyle = CTX.strokeStyle = this.faction.radar;
+    CTX.globalAlpha = opacity*0.7;
+    if (this.isShip)
+    {
+        CTX.strokeRect(-6, -6, 12, 12);
+        CTX.beginPath();
+        CTX.arc(0, 0, this.length/2*PIXELS, 0, Math.PI*2);
+        CTX.stroke();
+    }
+    else
+    {
+        CTX.beginPath();
+        if (this.trackable) CTX.arc(0, 0, 3, 0, Math.PI*2);
+        else CTX.arc(0, 0, 1.5, 0, Math.PI*2);
+        CTX.fill();
+    }
     CTX.restore();
 }
 
@@ -270,6 +280,6 @@ function conserveMomentum(obj1, obj2)
 
 function radarOpacity(x)
 {
-    let begin = 200, interval = 20;
+    let begin = 0, interval = 50;
     return Math.max(0, Math.min(1, (x - begin)/interval));
 }
