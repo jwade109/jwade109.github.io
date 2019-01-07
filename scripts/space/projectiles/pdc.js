@@ -101,54 +101,54 @@ class PointDefenseCannon
         }
     }
 
-    draw(ctx)
+    draw(opacity)
     {
-        ctx.save();
+        CTX.save();
         let gpos = this.globalPos();
-        ctx.translate(gpos[0]*PIXELS, gpos[1]*PIXELS);
-        ctx.rotate(-this.object.theta - this.theta);
+        CTX.translate(gpos[0]*PIXELS, gpos[1]*PIXELS);
+        CTX.rotate(-this.object.theta - this.theta);
 
         if (DRAW_FIRING_ARC)
         {
-            ctx.save();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(this.radius*PIXELS, 0);
-            ctx.strokeStyle = "red";
-            ctx.globalAlpha = 0.2;
-            // ctx.stroke();
-            ctx.fillStyle = "orange";
-            ctx.beginPath()
-            ctx.moveTo(0, 0);
-            ctx.arc(0, 0, this.radius*PIXELS,
+            CTX.save();
+            CTX.moveTo(0, 0);
+            CTX.lineTo(this.radius*PIXELS, 0);
+            CTX.strokeStyle = "red";
+            CTX.globalAlpha = 0.2*opacity;
+            // CTX.stroke();
+            CTX.fillStyle = "orange";
+            CTX.beginPath()
+            CTX.moveTo(0, 0);
+            CTX.arc(0, 0, this.radius*PIXELS,
                 this.range[0], this.range[1], false);
-            ctx.lineTo(0, 0);
-            ctx.fill();
-            ctx.restore();
+            CTX.lineTo(0, 0);
+            CTX.fill();
+            CTX.restore();
         }
 
         if (!this.nodraw)
         {
-            ctx.rotate(-this.gamma);
+            CTX.rotate(-this.gamma);
 
-            ctx.strokeStyle = "black";
-            ctx.fillStyle = this.baseColor;
-            ctx.globalAlpha = 1;
-            ctx.fillRect(-0.3*PIXELS, -0.8*PIXELS, 0.6*PIXELS, 1.4*PIXELS);
-            ctx.strokeRect(-0.3*PIXELS, -0.8*PIXELS, 0.6*PIXELS, 1.4*PIXELS);
+            CTX.strokeStyle = "black";
+            CTX.fillStyle = this.baseColor;
+            CTX.globalAlpha = opacity;
+            CTX.fillRect(-0.3*PIXELS, -0.8*PIXELS, 0.6*PIXELS, 1.4*PIXELS);
+            CTX.strokeRect(-0.3*PIXELS, -0.8*PIXELS, 0.6*PIXELS, 1.4*PIXELS);
 
-            ctx.fillStyle = this.barrelColor;
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.rect(-0.15*PIXELS, -0.15*PIXELS, 1.3*PIXELS, 0.3*PIXELS);
-            ctx.fill();
-            ctx.stroke();
+            CTX.fillStyle = this.barrelColor;
+            CTX.beginPath();
+            CTX.moveTo(0, 0);
+            CTX.rect(-0.15*PIXELS, -0.15*PIXELS, 1.3*PIXELS, 0.3*PIXELS);
+            CTX.fill();
+            CTX.stroke();
 
-            ctx.fillStyle = this.magColor;
-            ctx.fillRect(-0.5*PIXELS, -0.9*PIXELS, 1*PIXELS, 0.6*PIXELS);
-            ctx.strokeRect(-0.5*PIXELS, -0.9*PIXELS, 1*PIXELS, 0.6*PIXELS);
-            ctx.fillRect(-0.5*PIXELS, 0.3*PIXELS, 1*PIXELS, 0.6*PIXELS);
-            ctx.strokeRect(-0.5*PIXELS, 0.3*PIXELS, 1*PIXELS, 0.6*PIXELS);
+            CTX.fillStyle = this.magColor;
+            CTX.fillRect(-0.5*PIXELS, -0.9*PIXELS, 1*PIXELS, 0.6*PIXELS);
+            CTX.strokeRect(-0.5*PIXELS, -0.9*PIXELS, 1*PIXELS, 0.6*PIXELS);
+            CTX.fillRect(-0.5*PIXELS, 0.3*PIXELS, 1*PIXELS, 0.6*PIXELS);
+            CTX.strokeRect(-0.5*PIXELS, 0.3*PIXELS, 1*PIXELS, 0.6*PIXELS);
         }
-        ctx.restore();
+        CTX.restore();
     }
 }

@@ -89,7 +89,7 @@ Amun_Ra.prototype.fireRailgun = function()
     for (let rg of this.railguns) rg.fire();
 }
 
-Amun_Ra.prototype.skin = function()
+Amun_Ra.prototype.skin = function(opacity)
 {
     CTX.save(); // save global reference frame
     CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
@@ -118,8 +118,6 @@ Amun_Ra.prototype.skin = function()
         CTX.restore();
     }
 
-    let dist = distance(this.pos, PLAYER_SHIP.pos);
-    let opacity = Math.max(0, Math.min(1 - (dist - 750)/100, 1));
     CTX.globalAlpha = opacity;
     CTX.fillStyle = this.faction.c4;
     CTX.strokeStyle = "black";
@@ -140,7 +138,7 @@ Amun_Ra.prototype.skin = function()
 
     CTX.rotate(-Math.PI/2);
     CTX.restore();
-    for (let pdc of this.pdcs) pdc.draw(CTX);
+    for (let pdc of this.pdcs) pdc.draw(opacity);
     for (let tube of this.tubes) tube.draw();
 }
 

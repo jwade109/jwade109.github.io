@@ -29,6 +29,7 @@ function Corvette(pos, theta)
     this.faction = MCRN;
     this.permanent = true;
     this.isShip = true;
+    this.basePoints = 100;
 
     this.box = new Hitbox([[this.length/2, this.width/3],
                            [-this.length/2, this.width/2],
@@ -92,7 +93,7 @@ Corvette.prototype.skin = function()
     CTX.rotate(-this.theta)
     // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE FRAME
 
-    let firing = norm2d(this.acc);
+    let firing = norm2d(this.acc) > MAX_LATERAL_ACCEL;
     for (let thruster of this.thrusters)
     {
         thruster.firing = firing;

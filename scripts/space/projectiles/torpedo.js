@@ -86,7 +86,22 @@ Torpedo.prototype.explode = function()
     this.remove = true;
 }
 
-Torpedo.prototype.skin = function()
+Torpedo.prototype.skin = function(opacity)
+{
+    CTX.save();
+    CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+
+    CTX.rotate(-this.theta);
+    CTX.strokeStyle = "black";
+    CTX.fillStyle = "black";
+    CTX.globalAlpha = opacity;
+    CTX.fillRect(-this.length/2*PIXELS, -this.width/2*PIXELS,
+                 this.length*PIXELS, this.width*PIXELS);
+    this.thrusters[0].draw(CTX);
+    CTX.restore();
+}
+
+Torpedo.prototype.radarIcon = function(opacity)
 {
     if (DRAW_TORPEDO_PATH && this.tracking)
     {
@@ -121,21 +136,14 @@ Torpedo.prototype.skin = function()
 
     CTX.save();
     CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
-
-    CTX.save();
     CTX.rotate(Math.PI/4);
     CTX.strokeStyle = "blue";
-    CTX.globalAlpha = 0.4;
-    CTX.strokeRect(-5*PIXELS, -5*PIXELS, 10*PIXELS, 10*PIXELS);
-    CTX.restore();
-
-    CTX.rotate(-this.theta);
-    CTX.strokeStyle = "black";
-    CTX.fillStyle = "black";
-    CTX.globalAlpha = 1;
-    CTX.fillRect(-this.length/2*PIXELS, -this.width/2*PIXELS,
-                 this.length*PIXELS, this.width*PIXELS);
-    this.thrusters[0].draw(CTX);
+    CTX.fillStyle = "blue";
+    CTX.globalAlpha = opacity*0.5;
+    CTX.strokeRect(-5, -5, 10, 10);
+    CTX.beginPath();
+    CTX.arc(0, 0, 2, 0, Math.PI*2);
+    CTX.fill();
     CTX.restore();
 }
 

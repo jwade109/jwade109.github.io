@@ -34,14 +34,14 @@ Debris.prototype.control = function(dt)
     if (this.opacity <= 0) this.remove = true;
 }
 
-Debris.prototype.skin = function()
+Debris.prototype.skin = function(opacity)
 {
     CTX.save();
     CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
     CTX.rotate(-this.theta);
     CTX.strokeStyle = "black";
     CTX.fillStyle = this.color;
-    CTX.globalAlpha = Math.max(this.opacity, 0);
+    CTX.globalAlpha = Math.max(this.opacity, 0)*opacity;
     CTX.fillRect(-this.radius/2*PIXELS, -this.radius/2*PIXELS,
                  this.radius*PIXELS, this.radius*PIXELS);
     CTX.strokeRect(-this.radius/2*PIXELS, -this.radius/2*PIXELS,

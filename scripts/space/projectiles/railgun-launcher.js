@@ -79,45 +79,45 @@ RailgunLauncher.prototype.fire = function()
     WORLD.push(new Explosion(this.globalPos(), this.object.vel.slice(), 0));
 }
 
-RailgunLauncher.prototype.draw = function(ctx)
+RailgunLauncher.prototype.draw = function(opacity)
 {
     if (this.nodraw) return;
-    ctx.save();
+    CTX.save();
     let gpos = this.globalPos();
-    ctx.translate(gpos[0]*PIXELS, gpos[1]*PIXELS);
-    ctx.rotate(-this.object.theta - this.theta);
+    CTX.translate(gpos[0]*PIXELS, gpos[1]*PIXELS);
+    CTX.rotate(-this.object.theta - this.theta);
 
     if (DRAW_FIRING_ARC)
     {
-        ctx.save();
-        ctx.fillStyle = "blue";
-        ctx.strokeStyle = "black";
-        ctx.globalAlpha = 0.2;
-        ctx.moveTo(0, 0);
-        ctx.arc(0, 0, 3000*PIXELS, this.range[0], this.range[1], false);
-        ctx.lineTo(0, 0);
-        ctx.fill();
-        ctx.rotate(-this.gamma);
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(3000*PIXELS, 0);
-        ctx.stroke();
-        ctx.restore();
+        CTX.save();
+        CTX.fillStyle = "blue";
+        CTX.strokeStyle = "black";
+        CTX.globalAlpha = 0.2*opacity;
+        CTX.moveTo(0, 0);
+        CTX.arc(0, 0, 3000*PIXELS, this.range[0], this.range[1], false);
+        CTX.lineTo(0, 0);
+        CTX.fill();
+        CTX.rotate(-this.gamma);
+        CTX.beginPath();
+        CTX.moveTo(0, 0);
+        CTX.lineTo(3000*PIXELS, 0);
+        CTX.stroke();
+        CTX.restore();
     }
 
     if (!PLAYER_WEAPON_SELECT && this.object == PLAYER_SHIP)
     {
-        ctx.save();
-        ctx.strokeStyle = "red";
-        ctx.globalAlpha = 0.2;
-        ctx.rotate(-this.gamma);
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
+        CTX.save();
+        CTX.strokeStyle = "red";
+        CTX.globalAlpha = 0.2*opacity;
+        CTX.rotate(-this.gamma);
+        CTX.beginPath();
+        CTX.moveTo(0, 0);
         if (TIME - this.lastFired < this.cooldown)
             CTX.setLineDash([10*PIXELS, 20*PIXELS]);
-        ctx.lineTo(2000*PIXELS, 0);
-        ctx.stroke();
-        ctx.restore();
+        CTX.lineTo(2000*PIXELS, 0);
+        CTX.stroke();
+        CTX.restore();
 
         if (TARGET_OBJECT != null && SLOW_TIME)
         {
@@ -129,7 +129,7 @@ RailgunLauncher.prototype.draw = function(ctx)
             while (theta > this.gamma + Math.PI) theta -= Math.PI*2;
             CTX.save();
             CTX.rotate(-theta + this.object.theta);
-            CTX.globalAlpha = 0.2;
+            CTX.globalAlpha = 0.2*opacity;
             CTX.strokeStyle = "green";
             if (TIME - this.lastFired < this.cooldown)
                 CTX.setLineDash([10*PIXELS, 20*PIXELS]);
@@ -159,38 +159,38 @@ RailgunLauncher.prototype.draw = function(ctx)
         }
     }
 
-    ctx.rotate(-this.gamma);
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = "black";
+    CTX.rotate(-this.gamma);
+    CTX.globalAlpha = opacity;
+    CTX.strokeStyle = "black";
 
-    ctx.fillStyle = this.baseColor;
-    ctx.fillRect(-7*PIXELS, -5*PIXELS, 14*PIXELS, 10*PIXELS);
-    ctx.strokeRect(-7*PIXELS, -5*PIXELS, 14*PIXELS, 10*PIXELS);
+    CTX.fillStyle = this.baseColor;
+    CTX.fillRect(-7*PIXELS, -5*PIXELS, 14*PIXELS, 10*PIXELS);
+    CTX.strokeRect(-7*PIXELS, -5*PIXELS, 14*PIXELS, 10*PIXELS);
 
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(-7*PIXELS, -5*PIXELS);
-    ctx.lineTo(-5*PIXELS, -3*PIXELS);
-    ctx.moveTo(5*PIXELS, -3*PIXELS);
-    ctx.lineTo(7*PIXELS, -5*PIXELS);
-    // ctx.moveTo(5*PIXELS, -3*PIXELS);
-    ctx.moveTo(5*PIXELS, 3*PIXELS);
-    ctx.lineTo(7*PIXELS, 5*PIXELS);
-    // ctx.moveTo(5*PIXELS, 3*PIXELS);
-    ctx.moveTo(-5*PIXELS, 3*PIXELS);
-    ctx.lineTo(-7*PIXELS, 5*PIXELS);
-    // ctx.moveTo(-5*PIXELS, 3*PIXELS);
-    // ctx.lineTo(-5*PIXELS, -3*PIXELS);
-    ctx.stroke();
-    ctx.strokeRect(-5*PIXELS, -3*PIXELS, 10*PIXELS, 6*PIXELS);
+    CTX.lineWidth = 1;
+    CTX.beginPath();
+    CTX.moveTo(-7*PIXELS, -5*PIXELS);
+    CTX.lineTo(-5*PIXELS, -3*PIXELS);
+    CTX.moveTo(5*PIXELS, -3*PIXELS);
+    CTX.lineTo(7*PIXELS, -5*PIXELS);
+    // CTX.moveTo(5*PIXELS, -3*PIXELS);
+    CTX.moveTo(5*PIXELS, 3*PIXELS);
+    CTX.lineTo(7*PIXELS, 5*PIXELS);
+    // CTX.moveTo(5*PIXELS, 3*PIXELS);
+    CTX.moveTo(-5*PIXELS, 3*PIXELS);
+    CTX.lineTo(-7*PIXELS, 5*PIXELS);
+    // CTX.moveTo(-5*PIXELS, 3*PIXELS);
+    // CTX.lineTo(-5*PIXELS, -3*PIXELS);
+    CTX.stroke();
+    CTX.strokeRect(-5*PIXELS, -3*PIXELS, 10*PIXELS, 6*PIXELS);
 
-    ctx.lineWidth = 1;
-    ctx.fillStyle = this.barrelColor;
-    ctx.fillRect(6*PIXELS, -1*PIXELS, 7*PIXELS, 2*PIXELS);
-    ctx.strokeRect(6*PIXELS, -1*PIXELS, 7*PIXELS, 2*PIXELS);
+    CTX.lineWidth = 1;
+    CTX.fillStyle = this.barrelColor;
+    CTX.fillRect(6*PIXELS, -1*PIXELS, 7*PIXELS, 2*PIXELS);
+    CTX.strokeRect(6*PIXELS, -1*PIXELS, 7*PIXELS, 2*PIXELS);
 
-    if (TIME - this.lastFired < this.cooldown) ctx.fillStyle = "red";
-    else ctx.fillStyle = "green";
-    ctx.fillRect(-4*PIXELS, -2*PIXELS, PIXELS, PIXELS);
-    ctx.restore();
+    if (TIME - this.lastFired < this.cooldown) CTX.fillStyle = "red";
+    else CTX.fillStyle = "green";
+    CTX.fillRect(-4*PIXELS, -2*PIXELS, PIXELS, PIXELS);
+    CTX.restore();
 }

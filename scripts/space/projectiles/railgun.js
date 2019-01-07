@@ -44,9 +44,9 @@ Railgun.prototype.handleCollision = function(other)
             ALERT_DISPLAY_TIME*3);
 }
 
-Railgun.prototype.skin = function()
+Railgun.prototype.skin = function(opacity)
 {
-    CTX.globalAlpha = 0.6;
+    CTX.globalAlpha = 0.6*opacity;
     CTX.strokeStyle = "black";
     CTX.beginPath();
     CTX.moveTo(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
@@ -56,10 +56,12 @@ Railgun.prototype.skin = function()
     CTX.save();
     CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
     CTX.rotate(-this.theta);
-    CTX.globalAlpha = 1;
+    CTX.globalAlpha = opacity;
     CTX.fillStyle = "black";
     CTX.strokeStyle = "gray";
     CTX.fillRect(-this.length/2*PIXELS, -this.width/2*PIXELS,
                   this.length*PIXELS, this.width*PIXELS);
     CTX.restore();
 }
+
+Railgun.prototype.radarIcon = Railgun.prototype.skin;

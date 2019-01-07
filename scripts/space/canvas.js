@@ -1,15 +1,7 @@
 // canvas.js
 
-const VERSION = "2019.1.2a";
+const VERSION = "2019.1.6a";
 
-function checkMobile()
-{
-    var check = false;
-    (function(a){if(/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(a)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0,4))) check = true;})(navigator.userAgent||navigator.vendor||window.opera);
-    return check;
-};
-
-var MOBILE_BROWSER = checkMobile();
 var DRAW_TRACE = false;
 var DRAW_ACCEL = false;
 var SHOW_ALL_ALERTS = false;
@@ -17,23 +9,27 @@ var LOCK_CAMERA = false;
 var SPAWN_ENEMIES = true;
 var NUMBER_OF_ENEMIES = 0;
 var GAME_PAUSED = true;
-var PAUSE_TIME = 0;
 var SLOW_TIME = false;
 var GAME_OVER = false;
-var PLAYER_SCORE = 0;
+var CURRENT_WAVE = 0;
+var WAVE_START = 0;
 var SPAWN_DEBRIS = true;
 var SHOW_OVERLAY = true;
 const RESPAWN_DELAY = 15;
 var RESPAWN_TIMER = 30;
 var BETWEEN_WAVES = true;
-const TARGETING_MAX = 8;
+const TARGETING_MAX = 14;
 var TARGETING_STAMINA = TARGETING_MAX;
 const PASSIVE_REGEN = 0.02; // percent per second
 var TARGETING_LOCKOUT = false;
 
+var PLAYER_SCORE = 0;
+var TIME_BONUS = 0;
+
 const FPS = 60;
 const NOMINAL_DT = 1/FPS;
-const SLOW_DT = NOMINAL_DT/8;
+const SLOW_DT = NOMINAL_DT/30;
+var CURRENT_DT = NOMINAL_DT;
 var TIME = 0;
 
 const CANVAS = document.getElementById("canvas");
@@ -60,18 +56,19 @@ var MOUSEX = 0, MOUSEY = 0;
 var MOUSE_SCREEN_POS = [WIDTH/2, HEIGHT/2];
 
 const MIN_ZOOM = 30;
-const MAX_ZOOM = 3000;
-var VIEW_RADIUS;
+const MAX_ZOOM = 14000;
+var VIEW_RADIUS = TARGET_ZOOM = 2000;
+zoom();
 
 var NEAREST_OBJECT = null;
 var TARGET_OBJECT = null;
 
 var WORLD = [];
-const WORLD_RENDER_DISTANCE = 4000;
+const WORLD_RENDER_DISTANCE = 10000;
 
-let PLAYER_SHIP;
+var PLAYER_SHIP;
+var CAMERA_TRACK_TARGET = PLAYER_SHIP;
 respawn(3);
-zoom(1000);
 
 function respawn(choice)
 {
@@ -126,6 +123,7 @@ function respawn(choice)
         newship.theta = PLAYER_SHIP.theta;
         newship.omega = PLAYER_SHIP.omega;
         WORLD.splice(WORLD.indexOf(PLAYER_SHIP), 1);
+        PLAYER_SHIP.remove = true;
     }
 
     newship.faction = UNN;
@@ -137,7 +135,8 @@ function respawn(choice)
 
 let CURRENT = new Date().getTime(), LAST = CURRENT, DT = 0;
 
-for (let i = 0; i < 20 && SPAWN_DEBRIS; ++i)
+for (let i = 0; i < Math.pow(WORLD_RENDER_DISTANCE, 2)/1E6
+    && SPAWN_DEBRIS; ++i)
 {
     let r = Math.random()*WORLD_RENDER_DISTANCE/2 + 200;
     let rot = Math.random()*Math.PI*2;
@@ -166,8 +165,8 @@ document.addEventListener('visibilitychange', function(event)
 
 document.addEventListener('mousewheel', function(event)
 {
-    if (event.deltaY > 0) zoom(VIEW_RADIUS*1.3);
-    if (event.deltaY < 0) zoom(VIEW_RADIUS/1.3);
+    if (event.deltaY > 0) TARGET_ZOOM = TARGET_ZOOM*1.3;
+    if (event.deltaY < 0) TARGET_ZOOM = TARGET_ZOOM/1.3;
 },
 { capture: true, passive: true});
 
@@ -267,9 +266,14 @@ document.addEventListener('keydown', function(event)
                  str = DRAW_HITBOX ? "enabled." : "disabled."
                  throwAlert("DRAW_HITBOX " + str, ALERT_DISPLAY_TIME);
                  break;
-        case 79: --PLAYER_SCORE; break;
-        case 80: ++PLAYER_SCORE; break;
+        case 79: --CURRENT_WAVE; break;
+        case 80: ++CURRENT_WAVE; break;
         case 82: if (!TARGETING_LOCKOUT) SLOW_TIME = !SLOW_TIME; break;
+        case 84: if (TARGET_OBJECT != null)
+                     CAMERA_TRACK_TARGET = TARGET_OBJECT;
+                 else
+                     CAMERA_TRACK_TARGET = PLAYER_SHIP;
+                 break;
         case 85: SHOW_ALL_ALERTS = !SHOW_ALL_ALERTS;
                  str = SHOW_ALL_ALERTS ? "enabled." : "disabled."
                  throwAlert("SHOW_ALL_ALERTS " + str, ALERT_DISPLAY_TIME);
@@ -311,26 +315,30 @@ function throwAlert(msg, time)
     ALERTS.push([msg, time]);
 }
 
-function zoom(radius)
+function zoom()
 {
-    VIEW_RADIUS = Math.max(MIN_ZOOM, Math.min(radius, MAX_ZOOM));
+    TARGET_ZOOM = Math.max(MIN_ZOOM, Math.min(TARGET_ZOOM, MAX_ZOOM));
+    VIEW_RADIUS += (TARGET_ZOOM - VIEW_RADIUS)*0.2;
+    VIEW_RADIUS = Math.max(MIN_ZOOM, Math.min(VIEW_RADIUS, MAX_ZOOM));
     PIXELS = WIDTH/(2*VIEW_RADIUS); //  pixels per meter
 }
 
 function updateMouse()
 {
+    if (CAMERA_TRACK_TARGET == null)
+        CAMERA_TRACK_TARGET = PLAYER_SHIP;
     let rect = CANVAS.getBoundingClientRect();
     MOUSEX = (MOUSE_SCREEN_POS[0] - rect.left +
-        PLAYER_SHIP.pos[0]*PIXELS - WIDTH/2)/PIXELS;
+        CAMERA_TRACK_TARGET.pos[0]*PIXELS - WIDTH/2)/PIXELS;
     MOUSEY = (MOUSE_SCREEN_POS[1] - rect.top +
-        PLAYER_SHIP.pos[1]*PIXELS - HEIGHT/2)/PIXELS;
+        CAMERA_TRACK_TARGET.pos[1]*PIXELS - HEIGHT/2)/PIXELS;
     if (LOCK_CAMERA)
     {
-        let mp = rot2d([MOUSEX - PLAYER_SHIP.pos[0],
-                        MOUSEY - PLAYER_SHIP.pos[1]],
-                       PLAYER_SHIP.theta - Math.PI/2);
-        MOUSEX = (PLAYER_SHIP.pos[0] + mp[0]);
-        MOUSEY = (PLAYER_SHIP.pos[1] + mp[1]);
+        let mp = rot2d([MOUSEX - CAMERA_TRACK_TARGET.pos[0],
+                        MOUSEY - CAMERA_TRACK_TARGET.pos[1]],
+                       CAMERA_TRACK_TARGET.theta - Math.PI/2);
+        MOUSEX = (CAMERA_TRACK_TARGET.pos[0] + mp[0]);
+        MOUSEY = (CAMERA_TRACK_TARGET.pos[1] + mp[1]);
     }
 
     let min = Infinity;
@@ -376,8 +384,29 @@ function collide(obj1, obj2)
 
 function handleCollision(obj1, obj2)
 {
+    let initial1 = obj1.remove;
+    let initial2 = obj2.remove;
+
     obj1.handleCollision(obj2);
     obj2.handleCollision(obj1);
+
+    if (obj1.remove && obj1.isShip && !initial1 &&
+        obj2.origin == PLAYER_SHIP)
+    {
+        playerKill(obj1);
+    }
+    else if (obj2.remove && obj2.isShip && !initial2 &&
+        obj1.origin == PLAYER_SHIP)
+    {
+        playerKill(obj2);
+    }
+}
+
+function playerKill(ship)
+{
+    console.log("player killed " + ship.fullName() + "(" + ship.type + ")" +
+        " for " + ship.basePoints);
+    PLAYER_SCORE += Math.floor(ship.basePoints);
 }
 
 function isOffScreen(coords)
@@ -432,14 +461,15 @@ function physics(dt)
         obj.step(dt);
     }
 
-    while (WORLD.length < 100 && SPAWN_DEBRIS)
+    if (WORLD.length < 100 && SPAWN_DEBRIS)
     {
-        let r = WORLD_RENDER_DISTANCE - 100;
+        let r = WORLD_RENDER_DISTANCE - 5;
         let rot = Math.random()*Math.PI*2;
-        let pos = [Math.cos(rot)*r + PLAYER_SHIP.pos[0],
-                   Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
-        let vel = [Math.random()*200 - 100, //  + PLAYER_SHIP.vel[0],
-                   Math.random()*200 - 100]; //  + PLAYER_SHIP.vel[1]]
+        let pos = [Math.cos(rot)*r, -Math.sin(rot)*r];
+        let vel = [-Math.cos(rot + (Math.random() - 0.5)
+                *Math.PI)*Math.random()*500,
+            Math.sin(rot + (Math.random() - 0.5)
+                *Math.PI)*Math.random()*500]
         let theta = Math.random()*Math.PI*2;
         let omega = Math.random()*10 - 5;
         let size = Math.random()*20 + 10;
@@ -456,19 +486,25 @@ function physics(dt)
         !GAME_OVER && RESPAWN_TIMER < 0)
     {
         BETWEEN_WAVES = false;
-        ++PLAYER_SCORE;
+        WAVE_START = TIME;
+        ++CURRENT_WAVE;
         throwAlert("Enemy vessels incoming.", ALERT_DISPLAY_TIME*3);
 
-        for (let i = 0; i < Math.sqrt(PLAYER_SCORE); ++i)
+        let randomPos = rot2d([1.2*WORLD_RENDER_DISTANCE, 0],
+            Math.random()*Math.PI*2);
+        for (let i = 0; i < Math.floor(Math.sqrt(CURRENT_WAVE)); ++i)
         {
-            let r = WORLD_RENDER_DISTANCE*2;
+            if (Math.random() < 0.8 && i % 3 == 0)
+                randomPos = rot2d([1.2*WORLD_RENDER_DISTANCE, 0],
+                    Math.random()*Math.PI*2);
+            let r = 1000*Math.random() + 200;
             let rot = Math.random()*Math.PI*2;
-            let pos = [Math.cos(rot)*r + PLAYER_SHIP.pos[0],
-                       Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
+            let pos = [Math.cos(rot)*r + randomPos[0],
+                       Math.sin(rot)*r + randomPos[1]];
             let vel = [PLAYER_SHIP.vel[0], PLAYER_SHIP.vel[1]];
             let enemy = new Morrigan(pos, 0);
             enemy.control = Controller.morriganEnemy;
-            if (PLAYER_SCORE > 2 && i == 0 || i == 5)
+            if (CURRENT_WAVE > 2 && i % 5 == 0)
             {
                 enemy = new Corvette(pos, 0);
                 enemy.control = Controller.morriganEnemy;
@@ -481,8 +517,14 @@ function physics(dt)
     }
     else if (NUMBER_OF_ENEMIES == 0)
     {
+        if (!BETWEEN_WAVES)
+        {
+            TIME_BONUS = Math.floor(60 - (TIME - WAVE_START));
+            PLAYER_SCORE += TIME_BONUS;
+        }
         BETWEEN_WAVES = true;
         RESPAWN_TIMER -= dt;
+
         if (RESPAWN_TIMER > 0)
         {
             PLAYER_SHIP.repair(PASSIVE_REGEN*dt*PLAYER_SHIP.max_health);
@@ -515,6 +557,7 @@ function physics(dt)
             // }
         }
     }
+
     if (!GAME_OVER)
     {
         if (SHIFT_KEY)
@@ -568,9 +611,12 @@ function draw()
 
     CTX.save();
     CTX.translate(WIDTH/2, HEIGHT/2);
-    if (LOCK_CAMERA) CTX.rotate(PLAYER_SHIP.theta - Math.PI/2);
-    CTX.translate(-PLAYER_SHIP.pos[0]*PIXELS,
-                  -PLAYER_SHIP.pos[1]*PIXELS);
+    if (CAMERA_TRACK_TARGET == null || CAMERA_TRACK_TARGET.remove)
+        CAMERA_TRACK_TARGET = PLAYER_SHIP;
+    if (LOCK_CAMERA) CTX.rotate(CAMERA_TRACK_TARGET.theta - Math.PI/2);
+
+    CTX.translate(-CAMERA_TRACK_TARGET.pos[0]*PIXELS,
+                  -CAMERA_TRACK_TARGET.pos[1]*PIXELS);
 
     CTX.strokeStyle = "black";
     CTX.fillStyle = "black";
@@ -600,12 +646,12 @@ function draw()
                PLAYER_SHIP.pos[1]*PIXELS);
     CTX.stroke();
 
-    CTX.beginPath();
-    CTX.arc(PLAYER_SHIP.pos[0]*PIXELS, PLAYER_SHIP.pos[1]*PIXELS,
-            WORLD_RENDER_DISTANCE*PIXELS, 0, Math.PI*2);
-    CTX.globalAlpha = 0.2;
-    CTX.strokeStyle = "black";
-    CTX.stroke();
+    // CTX.beginPath();
+    // CTX.arc(PLAYER_SHIP.pos[0]*PIXELS, PLAYER_SHIP.pos[1]*PIXELS,
+    //         WORLD_RENDER_DISTANCE*PIXELS, 0, Math.PI*2);
+    // CTX.globalAlpha = 0.2;
+    // CTX.strokeStyle = "black";
+    // CTX.stroke();
 
     for (let obj of WORLD) obj.draw(CTX);
 
@@ -782,12 +828,12 @@ function draw()
     CTX.fillText(ftime, WIDTH - 10, HEIGHT - 10);
     CTX.textAlign = "left";
 
-    CTX.fillStyle = "black";
+    CTX.fillStyle = "gray";
     CTX.font = "14px Helvetica";
     for (let i in ALERTS)
     {
-        CTX.globalAlpha = Math.max(0, Math.min(1, ALERTS[i][1]));
-        if (SHOW_ALL_ALERTS) CTX.globalAlpha = 1;
+        CTX.globalAlpha = Math.max(0, Math.min(0.8, ALERTS[i][1]));
+        if (SHOW_ALL_ALERTS) CTX.globalAlpha = 0.8;
         CTX.fillText(ALERTS[i][0].toUpperCase(),
             70, 22 + 20*(ALERTS.length - i - 1));
     }
@@ -795,10 +841,9 @@ function draw()
     CTX.fillStyle = "gray";
     CTX.globalAlpha = 1;
     CTX.font = "12px Helvetica";
-    CTX.fillText("BUILD: " + VERSION.toUpperCase() +
-        (MOBILE_BROWSER ? " (MOBILE)" : ""), 70, HEIGHT - 30);
+    CTX.fillText("BUILD: " + VERSION.toUpperCase(), 70, HEIGHT - 30);
 
-    if ((SHOW_OVERLAY || GAME_PAUSED) && !MOBILE_BROWSER)
+    if (SHOW_OVERLAY || GAME_PAUSED)
     {
         function drawKey(x, y, w, h, key, desc)
         {
@@ -882,7 +927,8 @@ function draw()
 
         if (GAME_PAUSED)
         {
-            drawKey(beginx + w*5.5 + 25, beginy + 35, w, h, '', '');
+            drawKey(beginx + w*5.5 + 25, beginy + 35, w, h,
+                'T', 'Center camera on object (debug)');
             drawKey(beginx + w*6.5 + 30, beginy + 35, w, h, '', '');
             drawKey(beginx + w*7.5 + 35, beginy + 35, w, h,
                 'U', 'Toggle display alerts (debug)');
@@ -1027,7 +1073,8 @@ function draw()
         CTX.globalAlpha = (1 - TARGETING_STAMINA/TARGETING_MAX);
         CTX.fillRect(0, 0, WIDTH, HEIGHT);
     }
-    if (BETWEEN_WAVES && RESPAWN_TIMER > 0 && !GAME_PAUSED && SPAWN_ENEMIES)
+    if (BETWEEN_WAVES && RESPAWN_TIMER > 0 && !GAME_PAUSED
+        && SPAWN_ENEMIES && !GAME_OVER)
     {
         CTX.font = "30px Helvetica";
         CTX.globalAlpha = 0.4;
@@ -1035,22 +1082,31 @@ function draw()
         CTX.textAlign = "left";
         let rtime = (Math.round(RESPAWN_TIMER*100)/100).toLocaleString("en",
             {useGrouping: false, minimumFractionDigits: 2});
-        if (PLAYER_SCORE > 0)
+        if (CURRENT_WAVE > 0)
         {
             CTX.textAlign = "right";
-            CTX.fillText("WAVE " + PLAYER_SCORE + " CLEARED",
+            CTX.fillText("WAVE " + CURRENT_WAVE + " CLEARED",
                 WIDTH/2 - 20, HEIGHT/2 - 20);
             CTX.textAlign = "left";
         }
-        CTX.fillText("WAVE " + (PLAYER_SCORE + 1) + " IN T-" + rtime + "s",
+        CTX.fillText("WAVE " + (CURRENT_WAVE + 1) + " IN T-" + rtime + "s",
             WIDTH/2 + 20, HEIGHT/2 - 20);
-        CTX.fillText("PRESS [K] to ADVANCE", WIDTH/2 + 20, HEIGHT/2 + 40);
+        if (TIME_BONUS > 0)
+        {
+            CTX.fillText("TIME BONUS: " + TIME_BONUS + "s",
+                WIDTH/2 + 20, HEIGHT/2 + 40);
+            CTX.fillText("PRESS [K] TO ADVANCE", WIDTH/2 + 20, HEIGHT/2 + 80);
+        }
+        else
+            CTX.fillText("PRESS [K] TO ADVANCE", WIDTH/2 + 20, HEIGHT/2 + 40);
     }
     CTX.font = "30px Helvetica";
     CTX.globalAlpha = 0.4;
     CTX.fillStyle = "darkgray";
+    CTX.textAlign = "center";
+    CTX.fillText(PLAYER_SCORE, WIDTH/2, 40);
     CTX.textAlign = "right";
-    CTX.fillText("WAVE " + PLAYER_SCORE, WIDTH - 20, 40);
+    CTX.fillText("WAVE " + CURRENT_WAVE, WIDTH - 20, 40);
     CTX.font = "12px Helvetica";
     CTX.globalAlpha = 0.8;
     if (NUMBER_OF_ENEMIES == 1)
@@ -1123,9 +1179,9 @@ function start()
     CURRENT = new Date().getTime();
     draw();
     let time_passed = 0;
-    if (!GAME_PAUSED && !SLOW_TIME && PAUSE_TIME <= 0)
+    if (!GAME_PAUSED && !SLOW_TIME)
     {
-        physics(DT);
+        CURRENT_DT += (DT - CURRENT_DT)*0.1;
         TARGETING_STAMINA += DT*2;
         if (TARGETING_STAMINA > TARGETING_MAX)
         {
@@ -1133,20 +1189,20 @@ function start()
             TARGETING_LOCKOUT = false;
         }
     }
-    else if (!GAME_PAUSED && PAUSE_TIME <= 0)
+    else if (!GAME_PAUSED)
     {
-        physics(SLOW_DT);
+        CURRENT_DT += (SLOW_DT - CURRENT_DT)*0.1;
         TARGETING_STAMINA -= DT;
         if (TARGETING_STAMINA < 0) TARGETING_STAMINA = 0;
     }
+    if (!GAME_PAUSED) physics(CURRENT_DT);
     requestAnimationFrame(start);
     DT = (CURRENT - LAST)/1000;
     LAST = CURRENT;
 
-    if (PAUSE_TIME > 0) PAUSE_TIME -= DT;
-
-    if (ONE_KEY) zoom(VIEW_RADIUS + 50);
-    if (TWO_KEY) zoom(VIEW_RADIUS - 50);
+    if (ONE_KEY) TARGET_ZOOM += 120;
+    if (TWO_KEY) TARGET_ZOOM -= 120;
+    zoom();
 
     let ds = 5;
     if (UP_KEY) MOUSE_SCREEN_POS[1] -= ds;

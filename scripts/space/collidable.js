@@ -32,6 +32,7 @@ function Collidable(length, width, max_health)
     this.name = "Todd";
     this.type = "Platonic Solid";
     this.faction = NEUTRAL;
+    this.basePoints = 50;
 
     this.box = new Hitbox([[length/2, width/2],
                            [-length/2, width/2],
@@ -74,6 +75,7 @@ Collidable.prototype.physics = function(dt)
     this.pos[1] += this.vel[1]*dt;
     this.omega += this.alpha*dt;
     this.theta += this.omega*dt;
+
     this.forces = [0, 0];
     this.moments = 0;
 
@@ -102,7 +104,12 @@ Collidable.prototype.applyForce = function(force)
 
 Collidable.prototype.draw = function()
 {
-    if (!DRAW_HITBOX) this.skin();
+    if (!DRAW_HITBOX)
+    {
+        let opacity = radarOpacity(2*VIEW_RADIUS/(this.length + this.width));
+        if (opacity < 1) this.skin(1 - opacity);
+        if (opacity > 0) this.radarIcon(opacity);
+    }
 
     if (DRAW_TRACE)
     {
@@ -114,7 +121,7 @@ Collidable.prototype.draw = function()
         CTX.stroke();
     }
 
-    if (DRAW_ACCEL)
+    if (DRAW_ACCEL && this.max_acc < Infinity)
     {
         CTX.save();
         CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
@@ -163,6 +170,20 @@ Collidable.prototype.skin = function()
     CTX.stroke();
     CTX.strokeRect(-this.length/2*PIXELS, -this.width/2*PIXELS,
         this.length*PIXELS, this.width*PIXELS);
+    CTX.restore();
+}
+
+Collidable.prototype.radarIcon = function(opacity)
+{
+    CTX.save();
+    CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+    CTX.rotate(Math.PI/4);
+    CTX.fillStyle = this.faction.radar;
+    CTX.globalAlpha = opacity*0.4;
+    CTX.beginPath();
+    if (this.trackable) CTX.arc(0, 0, 3, 0, Math.PI*2);
+    else CTX.arc(0, 0, 1.5, 0, Math.PI*2);
+    CTX.fill();
     CTX.restore();
 }
 
@@ -245,9 +266,10 @@ function conserveMomentum(obj1, obj2)
         obj1.vel = obj2.vel.slice();
         return;
     }
-    // let momentum = add2d(mult2d(obj1.vel, obj1.mass),
-    //     mult2d(obj2.vel, obj2.mass));
-    // let vel = div2d(momentum, obj1.mass + obj2.mass);
-    // obj1.vel = vel;
-    // obj2.vel = vel;
+}
+
+function radarOpacity(x)
+{
+    let begin = 200, interval = 20;
+    return Math.max(0, Math.min(1, (x - begin)/interval));
 }

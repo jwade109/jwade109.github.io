@@ -24,6 +24,7 @@ function Morrigan(pos, theta)
     this.faction = MCRN;
     this.permanent = true;
     this.isShip = true;
+    this.basePoints = 50;
 
     this.thrusters = [
         new Thruster([-this.length/2, 0], Math.PI, 0, this.width*7/9)
@@ -65,7 +66,7 @@ Morrigan.prototype.firePDC = function(target)
     for (let pdc of this.pdcs) pdc.intercept(target);
 }
 
-Morrigan.prototype.skin = function()
+Morrigan.prototype.skin = function(opacity)
 {
     CTX.save(); // save global reference frame
     CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
@@ -82,7 +83,7 @@ Morrigan.prototype.skin = function()
     let unit = this.length/31*PIXELS;
 
     CTX.strokeStyle = "black";
-    CTX.globalAlpha = 1;
+    CTX.globalAlpha = opacity;
     CTX.fillStyle = this.faction.c4;
     CTX.fillRect(-this.length/2*PIXELS, -3.5*unit, 2*unit, 7*unit);
     CTX.strokeRect(-this.length/2*PIXELS, -3.5*unit, 2*unit, 7*unit);
@@ -111,7 +112,7 @@ Morrigan.prototype.skin = function()
     CTX.stroke();
 
     CTX.restore();
-    for (let pdc of this.pdcs) pdc.draw(CTX);
+    for (let pdc of this.pdcs) pdc.draw(opacity);
     for (let tube of this.tubes) tube.draw();
 }
 
@@ -129,8 +130,8 @@ Morrigan.prototype.explode = function()
         let deb = new Debris(pos, vel,
             this.theta, this.omega + Math.random()*5 - 2.5, size);
         deb.name = this.fullName();
-        deb.color = this.gray;
-        if (Math.random() < 0.4) deb.color = this.orange;
+        deb.color = this.faction.c2;
+        if (Math.random() < 0.4) deb.color = this.faction.c4;
         WORLD.push(deb);
     }
     this.remove = true;

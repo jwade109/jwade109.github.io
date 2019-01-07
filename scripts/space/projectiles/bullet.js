@@ -27,9 +27,9 @@ Bullet.prototype.handleCollision = function(other)
     this.remove = true;
 }
 
-Bullet.prototype.skin = function()
+Bullet.prototype.skin = function(opacity)
 {
-    CTX.globalAlpha = 0.6;
+    CTX.globalAlpha = 0.6*opacity;
     CTX.strokeStyle = "black";
     CTX.beginPath();
     CTX.moveTo(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
@@ -39,7 +39,7 @@ Bullet.prototype.skin = function()
     CTX.save();
     CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
     CTX.rotate(-this.theta);
-    CTX.globalAlpha = 1;
+    CTX.globalAlpha = opacity;
     CTX.strokeStyle = "black";
     CTX.beginPath();
     CTX.moveTo(-this.length/2*PIXELS, 0);
@@ -47,3 +47,5 @@ Bullet.prototype.skin = function()
     CTX.stroke();
     CTX.restore();
 }
+
+Bullet.prototype.radarIcon = Bullet.prototype.skin;

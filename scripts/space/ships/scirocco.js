@@ -124,7 +124,7 @@ Scirocco.prototype.control = function(dt)
     }
 }
 
-Scirocco.prototype.skin = function()
+Scirocco.prototype.skin = function(opacity)
 {
     CTX.save();
     CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
@@ -132,7 +132,7 @@ Scirocco.prototype.skin = function()
 
     let unit = this.length/50*PIXELS;
 
-    CTX.globalAlpha = 1;
+    CTX.globalAlpha = opacity;
     CTX.strokeStyle = "black";
 
     // antenna
@@ -257,8 +257,8 @@ Scirocco.prototype.skin = function()
     }
 
     CTX.restore();
-    for (let pdc of this.pdcs) pdc.draw(CTX);
-    for (let railgun of this.railguns) railgun.draw(CTX);
+    for (let pdc of this.pdcs) pdc.draw(opacity);
+    for (let railgun of this.railguns) railgun.draw(opacity);
 }
 
 Scirocco.prototype.explode = function()

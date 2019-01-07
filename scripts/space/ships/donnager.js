@@ -172,7 +172,7 @@ Donnager.prototype.control = function(dt)
     }
 }
 
-Donnager.prototype.skin = function()
+Donnager.prototype.skin = function(opacity)
 {
     CTX.save();
     CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
@@ -285,8 +285,8 @@ Donnager.prototype.skin = function()
     CTX.strokeRect(-38*unit, 4*unit, unit, 5*unit);
 
     CTX.restore();
-    for (let pdc of this.pdcs) pdc.draw(CTX);
-    for (let railgun of this.railguns) railgun.draw(CTX);
+    for (let pdc of this.pdcs) pdc.draw(opacity);
+    for (let railgun of this.railguns) railgun.draw(opacity);
     for (let tube of this.tubes) tube.draw();
 }
 
