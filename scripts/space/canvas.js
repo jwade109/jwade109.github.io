@@ -1,6 +1,6 @@
 // canvas.js
 
-const VERSION = "2019.1.7b";
+const VERSION = "2019.1.7c";
 
 var DRAW_TRACE;
 var DRAW_ACCEL;

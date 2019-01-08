@@ -24,6 +24,10 @@ static morriganEnemy(dt)
         else candidates.push(obj);
     }
 
+    if (candidates.length == 0 && GAME_OVER &&
+        this != TARGET_OBJECT && TARGET_OBJECT != null)
+        candidates.push(TARGET_OBJECT);
+
     if (candidates.length == 0)
     {
         let sumForce = [0, 0];
