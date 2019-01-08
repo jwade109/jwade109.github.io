@@ -90,6 +90,7 @@ function source(x0, y0, lambda)
 
 function uniform(theta, v)
 {
+
     return function(x, y)
     {
         return v*x*Math.cos(-theta) + v*y*Math.sin(-theta);
@@ -194,13 +195,12 @@ function draw()
     }, 1000/fps);
 }
 
-potential.push(uniform(0, 5))
+potential.push(uniform(0, 1))
 potential.push(vortex(width/2, height/4, 5000));
 potential.push(vortex(width/2, 3*height/4, -5000));
-// potential.push(source(width/4, height/2, 1000));
-// potential.push(source(3*width/4, height/2, -1000));
-
-potential.push(doublet(mouseX, mouseY, 50000));
+potential.push(source(width/4, height/2, 1000));
+potential.push(source(3*width/4, height/2, -1000));
+// potential.push(doublet(mouseX, mouseY, 50000));
 
 draw();
 
