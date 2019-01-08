@@ -175,26 +175,7 @@ Collidable.prototype.skin = function()
 
 Collidable.prototype.radarIcon = function(opacity)
 {
-    CTX.save();
-    CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
-    CTX.rotate(Math.PI/4);
-    CTX.fillStyle = CTX.strokeStyle = this.faction.radar;
-    CTX.globalAlpha = opacity*0.7;
-    if (this.isShip)
-    {
-        CTX.strokeRect(-6, -6, 12, 12);
-        CTX.beginPath();
-        CTX.arc(0, 0, this.length/2*PIXELS, 0, Math.PI*2);
-        CTX.stroke();
-    }
-    else
-    {
-        CTX.beginPath();
-        if (this.trackable) CTX.arc(0, 0, 3, 0, Math.PI*2);
-        else CTX.arc(0, 0, 1.5, 0, Math.PI*2);
-        CTX.fill();
-    }
-    CTX.restore();
+    // no default radar icon
 }
 
 Collidable.prototype.repair = function(health)

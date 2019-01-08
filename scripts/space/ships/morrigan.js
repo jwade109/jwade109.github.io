@@ -116,6 +116,21 @@ Morrigan.prototype.skin = function(opacity)
     for (let tube of this.tubes) tube.draw();
 }
 
+Morrigan.prototype.radarIcon = function(opacity)
+{
+    CTX.save();
+    CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+    CTX.fillStyle = CTX.strokeStyle = this.faction.radar;
+    CTX.globalAlpha = opacity*0.7;
+    CTX.lineWidth = 2;
+    CTX.rotate(Math.PI/4);
+    CTX.strokeRect(-6, -6, 12, 12);
+    CTX.beginPath();
+    CTX.arc(0, 0, this.length/2*PIXELS, 0, Math.PI*2);
+    CTX.stroke();
+    CTX.restore();
+}
+
 Morrigan.prototype.explode = function()
 {
     if (this.remove) return;

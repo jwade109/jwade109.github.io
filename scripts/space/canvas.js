@@ -1,6 +1,6 @@
 // canvas.js
 
-const VERSION = "2019.1.7a";
+const VERSION = "2019.1.7b";
 
 var DRAW_TRACE;
 var DRAW_ACCEL;
@@ -8,6 +8,7 @@ var SHOW_ALL_ALERTS;
 var LOCK_CAMERA;
 var SPAWN_ENEMIES;
 var NUMBER_OF_ENEMIES;
+var NUMBER_OF_ALLIES;
 var GAME_PAUSED;
 var SLOW_TIME;
 var GAME_OVER;
@@ -27,6 +28,7 @@ var PLAYER_FACTION = UNN;
 
 var PLAYER_SCORE;
 var TIME_BONUS;
+var ALLY_BONUS;
 
 const FPS = 60;
 const NOMINAL_DT = 1/FPS;
@@ -77,27 +79,30 @@ function initialize()
     LOCK_CAMERA = false;
     SPAWN_ENEMIES = true;
     NUMBER_OF_ENEMIES = 0;
+    NUMBER_OF_ALLIES = 0;
     SLOW_TIME = false;
     if (GAME_OVER) GAME_PAUSED = false;
-    else GAME_PAUSED = true;
+    else
+    {
+        GAME_PAUSED = true;
+        UNDERTRACK.volume = 0.15;
+        OVERTRACK.volume = 0;
+    }
     GAME_OVER = false;
     CURRENT_WAVE = 0;
     WAVE_START = 0;
     SPAWN_DEBRIS = true;
     SHOW_OVERLAY = true;
     RESPAWN_TIMER = 30;
-    BETWEEN_WAVES = false;
+    BETWEEN_WAVES = true;
     TARGETING_STAMINA = TARGETING_MAX;
     TARGETING_LOCKOUT = false;
 
     PLAYER_SCORE = 0;
-    TIME_BONUS = 0;
+    TIME_BONUS = ALLY_BONUS = 0;
 
     CURRENT_DT = NOMINAL_DT;
     TIME = 0;
-
-    // UNDERTRACK.volume = 0.15;
-    // OVERTRACK.volume = 0;
 
     LEFT_KEY = false, RIGHT_KEY = false, UP_KEY = false, DOWN_KEY = false;
     SPACE_KEY = false, SHIFT_KEY = false, ENTER_KEY = false;
@@ -121,7 +126,7 @@ function initialize()
 
     WORLD = [];
     CAMERA_TRACK_TARGET = PLAYER_SHIP;
-    respawn(3);
+    respawn(1);
 
     CURRENT = new Date().getTime(), LAST = CURRENT, DT = 0;
 
@@ -515,11 +520,15 @@ function physics(dt)
         if (WORLD[i].remove == true) WORLD.splice(i, 1);
     }
 
-    NUMBER_OF_ENEMIES = 0;
+    NUMBER_OF_ENEMIES = NUMBER_OF_ALLIES = 0;
     for (let obj of WORLD)
     {
-        if (obj.isShip && obj.faction.name != PLAYER_SHIP.faction.name)
-            ++NUMBER_OF_ENEMIES;
+        if (obj.isShip)
+        {
+            if (obj.faction.name != PLAYER_SHIP.faction.name)
+                ++NUMBER_OF_ENEMIES;
+            else if (obj != PLAYER_SHIP) ++NUMBER_OF_ALLIES;
+        }
         obj.step(dt);
     }
 
@@ -582,7 +591,8 @@ function physics(dt)
         if (!BETWEEN_WAVES)
         {
             TIME_BONUS = Math.floor(60 - (TIME - WAVE_START));
-            PLAYER_SCORE += TIME_BONUS;
+            ALLY_BONUS = NUMBER_OF_ALLIES*20;
+            PLAYER_SCORE += TIME_BONUS + ALLY_BONUS;
 
             let pos = rot2d([WORLD_RENDER_DISTANCE, 0],
                 Math.PI*2*Math.random());
@@ -1165,11 +1175,13 @@ function draw()
         }
         CTX.fillText("WAVE " + (CURRENT_WAVE + 1) + " IN T-" + rtime + "s",
             WIDTH/2 + 20, HEIGHT/2 - 20);
-        if (TIME_BONUS > 0)
+        if (TIME_BONUS > 0 || ALLY_BONUS > 0)
         {
-            CTX.fillText("TIME BONUS: " + TIME_BONUS + "s",
+            CTX.fillText("TIME BONUS: " + TIME_BONUS + " POINTS",
                 WIDTH/2 + 20, HEIGHT/2 + 40);
-            CTX.fillText("PRESS [K] TO ADVANCE", WIDTH/2 + 20, HEIGHT/2 + 80);
+            CTX.fillText("ALLY BONUS: " + ALLY_BONUS + " POINTS",
+                WIDTH/2 + 20, HEIGHT/2 + 80);
+            CTX.fillText("PRESS [K] TO ADVANCE", WIDTH/2 + 20, HEIGHT/2 + 120);
         }
         else
             CTX.fillText("PRESS [K] TO ADVANCE", WIDTH/2 + 20, HEIGHT/2 + 40);

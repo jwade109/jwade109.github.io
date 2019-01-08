@@ -85,7 +85,7 @@ Corvette.prototype.firePDC = function(target)
 
 // Corvette.prototype.control = Controller.player;
 
-Corvette.prototype.skin = function()
+Corvette.prototype.skin = function(opacity)
 {
     CTX.save(); // save global reference frame
     CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
@@ -177,46 +177,28 @@ Corvette.prototype.skin = function()
     CTX.restore();
     CTX.restore();
 
-    for (let pdc of this.pdcs) pdc.draw(CTX);
+    for (let pdc of this.pdcs) pdc.draw(opacity);
 }
 
-// Corvette.prototype.damage = function(d)
-// {
-//     if (PLAYER_INVINCIBLE) return;
-//     this.health -= d;
-//
-//     function transition(x, health)
-//     {
-//         return health/CORVETTE_MAX_HEALTH <= x &&
-//             (health + d)/CORVETTE_MAX_HEALTH > x && health > 0;
-//     }
-//
-//     if (transition(0.3, this.health) || transition(0.1, this.health))
-//         throwAlert("Warning: hull integrity at " +
-//             Math.round(100*this.health/CORVETTE_MAX_HEALTH) + "%",
-//             ALERT_DISPLAY_TIME);
-//     if (this.health <= 0) this.explode();
-//     else if (Math.random() < 0.05*d)
-//     {
-//         let num_debris = 3 + Math.random()*3;
-//         let pos = this.box.getRandom();
-//         for (let i = 0; i < num_debris; ++i)
-//         {
-//             let vel = this.vel.slice();
-//             vel[0] += Math.random()*200 - 100;
-//             vel[1] += Math.random()*200 - 100;
-//             let size = Math.random()*4;
-//             let deb = new Debris(pos.slice(), vel,
-//                 this.theta,
-//                 this.omega + Math.random()*5 - 2.5, size);
-//             deb.name = this.fullName();
-//             deb.color = "#909090";
-//             if (Math.random() < 0.2)
-//                 deb.color = "#CCCCCC";
-//             WORLD.push(deb);
-//         }
-//     }
-// }
+Corvette.prototype.radarIcon = function(opacity)
+{
+    CTX.save();
+    CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+    CTX.fillStyle = CTX.strokeStyle = this.faction.radar;
+    CTX.globalAlpha = opacity*0.7;
+    CTX.lineWidth = 2;
+    for (let i = 0; i < 4; ++i)
+    {
+        CTX.beginPath();
+        CTX.arc(0, 0, 7, -Math.PI/5, Math.PI/5);
+        CTX.stroke();
+        CTX.rotate(Math.PI/2);
+    }
+    CTX.beginPath();
+    CTX.arc(0, 0, 3, 0, Math.PI*2);
+    CTX.fill();
+    CTX.restore();
+}
 
 Corvette.prototype.explode = function()
 {

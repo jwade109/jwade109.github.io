@@ -261,6 +261,20 @@ Scirocco.prototype.skin = function(opacity)
     for (let railgun of this.railguns) railgun.draw(opacity);
 }
 
+Scirocco.prototype.radarIcon = function(opacity)
+{
+    CTX.save();
+    CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+    CTX.rotate(-this.theta);
+    CTX.fillStyle = CTX.strokeStyle = this.faction.radar;
+    CTX.globalAlpha = opacity*0.7;
+    CTX.lineWidth = 2;
+    CTX.globalAlpha = opacity;
+    CTX.strokeRect(-9, -5, 18, 10);
+    CTX.fillRect(-6, -2, 12, 4);
+    CTX.restore();
+}
+
 Scirocco.prototype.explode = function()
 {
     if (this.remove) return;

@@ -1,7 +1,7 @@
 // pdc.js
 
 const PDC_SPREAD = 1*Math.PI/180;
-const PDC_VELOCITY = 2000;
+const PDC_VELOCITY = 5000;
 const PDC_COOLDOWN = 1/10;
 var DRAW_FIRING_ARC = false;
 

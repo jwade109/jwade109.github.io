@@ -1,5 +1,7 @@
 // controller.js
 
+var SEP_FORCE = 1;
+
 class Controller
 {
 
@@ -127,22 +129,15 @@ static morriganAlly(dt)
         if (d < 4000)
         {
             let sep = mult2d(unit2d(sub2d(this.pos, friend.pos)),
-                1000000/d*this.mass);
+                500000/d*this.mass);
             sumForce = add2d(sumForce, sep);
-            let damping = mult2d(sub2d(friend.vel, this.vel), this.mass*20);
-            sumForce = add2d(sumForce, damping);
-            let cohere = mult2d(sub2d(friend.pos, this.pos), this.mass*3);
-            sumForce = add2d(sumForce, cohere);
         }
-        // if (GAME_OVER)
-        // {
-        //     let seek = mult2d(sub2d(
-        //         [MOUSEX, MOUSEY], this.pos), this.mass*4);
-        //     sumForce = add2d(sumForce, seek);
-        //     let damping = mult2d(sub2d([0, 0], this.vel), this.mass*20);
-        //     sumForce = add2d(sumForce, damping);
-        // }
     }
+    let seek = mult2d(sub2d(PLAYER_SHIP.pos, this.pos), this.mass*2);
+    sumForce = add2d(sumForce, seek);
+    let damping = mult2d(sub2d(PLAYER_SHIP.vel, this.vel), this.mass*10);
+    sumForce = add2d(sumForce, damping);
+
     let forceDamping = 0.1;
     this.forces = this.prevForces.slice();
     this.forces = mult2d(sub2d(sumForce, this.prevForces), forceDamping);
@@ -159,7 +154,7 @@ static morriganAlly(dt)
         }
     }
 
-    if (dist < WORLD_RENDER_DISTANCE/2 && Math.random() < dt/1.7)
+    if (dist < WORLD_RENDER_DISTANCE/2 && Math.random() < dt/5)
         this.launchTorpedo(target);
     if (Math.random() < 0.5) this.firePDC(target);
 }
