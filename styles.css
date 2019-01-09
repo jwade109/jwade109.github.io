@@ -1,3 +1,5 @@
+ /* styles.css */
+
 input:focus
 {
     outline: none;
@@ -15,17 +17,18 @@ html, body
 p
 {
     font-size: 20px;
+    line-height: 1.4;
 }
 
 a
 {
-    color: #000000;
+    color: #0000BB;
     text-decoration: none;
 }
 
 a:hover
 {
-    color: #707070;
+    color: #0000BB;
     text-decoration: underline;
 }
 
@@ -92,11 +95,11 @@ h5
     margin-bottom: 20px;
 }
 
-ul
+ol, ul
 {
     font-size: 20px;
     padding-inline-start: 20px;
-    list-style-type: disc;
+    /* list-style-type: disc; */
 }
 
 li
@@ -181,9 +184,10 @@ img.inline
 
 #version
 {
+    text-align: center;
     font-size: 18px;
     color: lightgray;
-    margin: 20px 0;
+    margin: 40px 0 20px 0;
 }
 
 .right

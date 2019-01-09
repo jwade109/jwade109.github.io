@@ -1,1 +1,1 @@
-document.getElementById("version").innerHTML = "2019.01.08b";
+document.getElementById("version").innerHTML = "2019.01.08c";

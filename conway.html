@@ -9,8 +9,63 @@
 
   <body>
     <canvas
-      id="canvas" style="position: absolute; border: 0; top: 0">
+      id="canvas" style="border: 0; top: 0">
     </canvas>
     <script src="scripts/conway.js"></script>
+
+    <div class="center">
+      <h1 style="text-align: center">Conway's Game of Life</h1>
+      <p>The
+        <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">
+          Game of Life</a>
+        is a cellular automaton developed by John Conway in the 1970s.
+        It's not really a game, considering there's no way to win, but
+        it's a cool demo of how simple rules can be turned into wildly
+        complicated emergent behaviors. The Game of Life is determined
+        totally by four rules.
+      </p>
+      <p>
+        As a quick preamble, "live" cells are represented above in black,
+        while "dead" cells are represented in white.
+      </p>
+      <ul>
+        <li>Any live cell with fewer than two live neighbors dies.</li>
+        <li>Any live cell with two or three live neighbors lives.</li>
+        <li>Any live cell with more than three live neighbors dies.</li>
+        <li>Any dead cell with exactly three live
+          neighbors becomes a live cell.</li>
+      </ul>
+      <p>
+        A fairly simple and notable emergent behavior in the Game of
+        Life is called a "glider", which looks like this:
+      </p>
+      <img width="30%" style="margin: 0 auto; display: block"
+        src="resources/glider.png"></img>
+      <p>
+        If you draw that shape in the grid above (pause the game with
+        ESC and draw black cells with the mouse) you'll see why that
+        little guy is called a glider. There are many, many other
+        emergent behaviors worth noting, which you can find
+        <a href="https://en.wikipedia.org/wiki/Conway%27s_
+          Game_of_Life#Examples_of_patterns">here.</a>
+      </p>
+      <p>
+        In addition to be going cool as hell, the Game of Life holds
+        a special place in my heart because it was the subject of my
+        final project in AP Computer Science. It took me two months
+        to figure out how to use Java's graphics library, because it's
+        awful and I hate it.
+      </p>
+
+      <p>
+        Here's a <a href="https://www.youtube.com/embed/R9Plq-D1gEk">
+          terrific Numberphile video</a> about the Game of Life.
+      </p>
+
+      <div id="version"></div>
+    </div>
+
+    <script src="scripts/global.js"></script>
+
   </body>
 </html>
