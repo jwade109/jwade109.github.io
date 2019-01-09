@@ -2,17 +2,17 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 ctx.canvas.width = document.body.clientWidth;
-ctx.canvas.height = document.body.scrollHeight;
+ctx.canvas.height = document.body.clientHeight;
 var WIDTH = ctx.canvas.width;
 var HEIGHT = ctx.canvas.height;
 
 var CURRENT, LAST = CURRENT, DT;
 var MOUSE_SCREEN_POS = [0, 0];
-var MOUSE_BOARD_INDEX = [5, 5];
+var MOUSE_BOARD_INDEX = [-1, -1];
 var PAUSED = false;
 
 let GAME_BOARD = [];
-const SQUARE_WIDTH = 20;
+const SQUARE_WIDTH = 15;
 const NUM_ROWS = Math.round(HEIGHT/SQUARE_WIDTH);
 const NUM_COLS = Math.round(WIDTH/SQUARE_WIDTH);
 var DRAWING = -1;
@@ -22,8 +22,7 @@ for (let i = 0; i < NUM_ROWS; ++i)
     let row = [];
     for (let j = 0; j < NUM_COLS; ++j)
     {
-        // row.push(Math.round(Math.random()));
-        row.push(0);
+        row.push(Math.random() < 0.35);
     }
     GAME_BOARD.push(row);
 }
@@ -32,25 +31,9 @@ let frames = 0, iters = 0;
 
 start();
 
-document.addEventListener('keydown', function(event)
-{
-    let str = "";
-    switch (event.keyCode)
-    {
-        case 13: propogateGameOfLife(GAME_BOARD, false);
-                 break;
-        case 27: PAUSED = !PAUSED;
-                 break;
-        case 68: GAME_BOARD = propogateGameOfLife(GAME_BOARD, false);
-                 break;
-        // default: console.log(event.keyCode);
-    }
-});
-
 document.addEventListener('mousemove', function(event)
 {
     var box = canvas.getBoundingClientRect();
-
     MOUSE_SCREEN_POS = [event.clientX - box.left, event.clientY - box.top];
     let width = WIDTH/NUM_COLS;
     let height = HEIGHT/NUM_ROWS;
@@ -84,6 +67,28 @@ function modWrap(x, y)
 {
     while (x < 0) x += y;
     return x % y;
+}
+
+function clearBoard()
+{
+    for (let i = 0; i < GAME_BOARD.length; ++i)
+    {
+        for (let j = 0; j < GAME_BOARD[i].length; ++j)
+        {
+            GAME_BOARD[i][j] = 0;
+        }
+    }
+}
+
+function randomize()
+{
+    for (let i = 0; i < GAME_BOARD.length; ++i)
+    {
+        for (let j = 0; j < GAME_BOARD[i].length; ++j)
+        {
+            GAME_BOARD[i][j] = Math.random() < 0.3;
+        }
+    }
 }
 
 function propogateGameOfLife(gameBoard)
@@ -127,7 +132,7 @@ function draw()
 {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.canvas.width = document.body.clientWidth;
-    // ctx.canvas.height = document.body.scrollHeight;
+    ctx.canvas.height = document.body.clientHeight - 70;
     WIDTH = ctx.canvas.width;
     HEIGHT = ctx.canvas.height;
 
@@ -152,7 +157,8 @@ function draw()
 
     ctx.globalAlpha = 1;
     ctx.fillRect(MOUSE_SCREEN_POS[0] - 1, MOUSE_SCREEN_POS[1] - 1, 2, 2);
-    if (MOUSE_BOARD_INDEX[0] < GAME_BOARD.length &&
+    if (MOUSE_BOARD_INDEX[0] > -1 && MOUSE_BOARD_INDEX[1] > -1 &&
+        MOUSE_BOARD_INDEX[0] < GAME_BOARD.length &&
         MOUSE_BOARD_INDEX[1] < GAME_BOARD[MOUSE_BOARD_INDEX[0]].length)
     {
         ctx.strokeStyle = "red";

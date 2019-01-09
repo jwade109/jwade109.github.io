@@ -60,6 +60,12 @@ input.loruun
 button
 {
     padding: 15px 15px 15px 15px;
+    outline: none;
+}
+
+button:active
+{
+    background-color: #DDDDDD;
 }
 
 h1
@@ -105,6 +111,7 @@ ol, ul
 li
 {
     margin: 7px 0 7px 0;
+    line-height: 1.4;
 }
 
 table
