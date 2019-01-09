@@ -3,7 +3,7 @@
 
   <head>
     <link rel="stylesheet" href="styles.css">
-    <link rel="shortcut icon" type="image/x-icon" href="resources/favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="resources/glider.ico">
     <title>Conway's Game of Life</title>
   </head>
 
@@ -12,8 +12,15 @@
       id="canvas" style="border: 0; top: 0">
     </canvas>
     <script src="scripts/conway.js"></script>
-
     <div class="center">
+
+      <div style="text-align: center">
+        <button onclick="clearBoard()">Clear</button>
+        <button onclick="GAME_BOARD = propogateGameOfLife(GAME_BOARD)">Step</button>
+        <button onclick="PAUSED = !PAUSED">Pause/Unpause</button>
+        <button onclick="randomize()">Randomize</button>
+      </div>
+
       <h1 style="text-align: center">Conway's Game of Life</h1>
       <p>The
         <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">
@@ -24,10 +31,6 @@
         complicated emergent behaviors. The Game of Life is determined
         totally by four rules.
       </p>
-      <p>
-        As a quick preamble, "live" cells are represented above in black,
-        while "dead" cells are represented in white.
-      </p>
       <ul>
         <li>Any live cell with fewer than two live neighbors dies.</li>
         <li>Any live cell with two or three live neighbors lives.</li>
@@ -35,6 +38,10 @@
         <li>Any dead cell with exactly three live
           neighbors becomes a live cell.</li>
       </ul>
+      <p>
+        As a convention, "live" cells are represented above in black,
+        while "dead" cells are represented in white.
+      </p>
       <p>
         A fairly simple and notable emergent behavior in the Game of
         Life is called a "glider", which looks like this:
