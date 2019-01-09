@@ -12,7 +12,7 @@ var NUMBER_OF_ALLIES;
 var GAME_PAUSED;
 var SLOW_TIME;
 var GAME_OVER;
-var CURRENT_WAVE;
+var CURRENT_WAVE = 0;
 var WAVE_START;
 var SPAWN_DEBRIS;
 var SHOW_OVERLAY;
@@ -89,7 +89,6 @@ function initialize()
         OVERTRACK.volume = 0;
     }
     GAME_OVER = false;
-    CURRENT_WAVE = 0;
     WAVE_START = 0;
     SPAWN_DEBRIS = true;
     SHOW_OVERLAY = true;
@@ -145,6 +144,20 @@ function initialize()
         let deb = new Debris(pos, vel, theta, omega, size);
         WORLD.push(deb);
     }
+
+    for (let i = 0; i < CURRENT_WAVE; ++i)
+    {
+        let pos = rot2d([WORLD_RENDER_DISTANCE, 0],
+            Math.PI*2*Math.random());
+        let ally = new Morrigan(pos, 0);
+        if (Math.random() < 0.3) ally = new Corvette(pos, 0);
+        if (i == 5) ally = new Scirocco(pos, 0);
+        ally.faction = PLAYER_FACTION;
+        ally.control = Controller.morriganAlly;
+        ally.vel = mult2d(sub2d(PLAYER_SHIP.pos, ally.pos), 0.1);
+        WORLD.push(ally);
+    }
+    if (CURRENT_WAVE > 0) --CURRENT_WAVE;
 }
 
 function respawn(choice)
@@ -225,14 +238,22 @@ document.addEventListener('visibilitychange', function(event)
 
 document.addEventListener('mousewheel', function(event)
 {
+    if (GAME_PAUSED)
+    {
+        UNDERTRACK.play();
+        OVERTRACK.play();
+        return;
+    }
+    event.preventDefault();
     if (event.deltaY > 0) TARGET_ZOOM = TARGET_ZOOM*1.3;
     if (event.deltaY < 0) TARGET_ZOOM = TARGET_ZOOM/1.3;
 },
-{ capture: true, passive: true});
+{ capture: true, passive: false});
 
 document.addEventListener('mousemove', function(event)
 {
-    MOUSE_SCREEN_POS = [event.clientX, event.clientY];
+    var box = canvas.getBoundingClientRect();
+    MOUSE_SCREEN_POS = [event.clientX - box.left, event.clientY - box.top];
     updateMouse();
 });
 
@@ -276,6 +297,7 @@ document.addEventListener('keydown', function(event)
                  break;
         case 32: if (GAME_OVER) initialize();
                  else SPACE_KEY = true;
+                 event.preventDefault();
                  break;
         case 37: LEFT_KEY = true; break;
         case 38: UP_KEY = true; break;
@@ -335,7 +357,8 @@ document.addEventListener('keydown', function(event)
         case 79: --CURRENT_WAVE; break;
         case 80: ++CURRENT_WAVE; break;
         case 82: if (!TARGETING_LOCKOUT) SLOW_TIME = !SLOW_TIME; break;
-        case 84: if (TARGET_OBJECT != null)
+        case 84: if (TARGET_OBJECT != null &&
+                     TARGET_OBJECT != CAMERA_TRACK_TARGET)
                      CAMERA_TRACK_TARGET = TARGET_OBJECT;
                  else
                      CAMERA_TRACK_TARGET = PLAYER_SHIP;
@@ -394,9 +417,9 @@ function updateMouse()
     if (CAMERA_TRACK_TARGET == null)
         CAMERA_TRACK_TARGET = PLAYER_SHIP;
     let rect = CANVAS.getBoundingClientRect();
-    MOUSEX = (MOUSE_SCREEN_POS[0] - rect.left +
+    MOUSEX = (MOUSE_SCREEN_POS[0] +
         CAMERA_TRACK_TARGET.pos[0]*PIXELS - WIDTH/2)/PIXELS;
-    MOUSEY = (MOUSE_SCREEN_POS[1] - rect.top +
+    MOUSEY = (MOUSE_SCREEN_POS[1] +
         CAMERA_TRACK_TARGET.pos[1]*PIXELS - HEIGHT/2)/PIXELS;
     if (LOCK_CAMERA)
     {
@@ -470,8 +493,8 @@ function handleCollision(obj1, obj2)
 
 function playerKill(ship)
 {
-    console.log("player killed " + ship.fullName() + "(" + ship.type + ")" +
-        " for " + ship.basePoints);
+    // console.log("player killed " + ship.fullName() +
+    //     "(" + ship.type + ") for " + ship.basePoints);
     PLAYER_SCORE += Math.floor(ship.basePoints);
 }
 
@@ -598,6 +621,7 @@ function physics(dt)
                 Math.PI*2*Math.random());
             let ally = new Morrigan(pos, 0);
             if (Math.random() < 0.3) ally = new Corvette(pos, 0);
+            if (CURRENT_WAVE == 5) ally = new Scirocco(pos, 0);
             ally.faction = PLAYER_FACTION;
             ally.control = Controller.morriganAlly;
             ally.vel = mult2d(sub2d(PLAYER_SHIP.pos, ally.pos), 0.1);
@@ -684,11 +708,18 @@ function physics(dt)
 
 function draw()
 {
-    CTX.clearRect(0, 0, CANVAS.width, CANVAS.height);
     CTX.canvas.width = document.body.clientWidth;
-    CTX.canvas.height = document.body.scrollHeight;
+    CTX.canvas.height = document.body.clientHeight;
     WIDTH = CTX.canvas.width;
     HEIGHT = CTX.canvas.height;
+    CTX.clearRect(0, 0, WIDTH, HEIGHT);
+    CTX.globalAlpha = 0.2;
+    CTX.lineWidth = 4;
+    CTX.strokeStyle = "lightgray";
+    CTX.beginPath();
+    CTX.moveTo(0, HEIGHT);
+    CTX.lineTo(WIDTH, HEIGHT);
+    CTX.stroke();
     updateMouse();
 
     CTX.save();
@@ -702,6 +733,7 @@ function draw()
 
     CTX.strokeStyle = "black";
     CTX.fillStyle = "black";
+    CTX.lineWidth = 1;
     let interval = Math.round(Math.max(WIDTH, HEIGHT)/(PIXELS*5000))*500;
     if (interval == 0) interval = 500;
     for (let i = 0; interval*(i + 1)*PIXELS < Math.max(WIDTH, HEIGHT); ++i)
@@ -1090,6 +1122,7 @@ function draw()
     CTX.globalAlpha = 1;
     CTX.strokeStyle = "black";
     CTX.fillStyle = "lightgreen";
+    CTX.lineWidth = 1;
     if (TARGETING_LOCKOUT) CTX.fillStyle = "red";
     CTX.beginPath();
     CTX.arc(MOUSE_SCREEN_POS[0], MOUSE_SCREEN_POS[1], 4, 0, Math.PI*2);
@@ -1115,7 +1148,7 @@ function draw()
         CTX.fillStyle = "darkgray";
         CTX.fillText("YOU DIED", WIDTH/2 + 20, HEIGHT/2 - 20);
         CTX.font = "25px Helvetica";
-        CTX.fillText("PRESS [SPACE] TO RESPAWN",
+        CTX.fillText("PRESS [SPACE] TO RETRY WAVE " + CURRENT_WAVE,
                      WIDTH/2 + 20, HEIGHT/2 + 30);
     }
     else if (GAME_PAUSED)
@@ -1126,24 +1159,6 @@ function draw()
         CTX.fillStyle = "darkgray";
         CTX.strokeStyle = "darkgray";
         CTX.fillText("PAUSED", WIDTH/2 + 20, HEIGHT/2 - 20);
-        // CTX.font = "20px Helvetica";
-        // CTX.globalAlpha = 0.8;
-        // CTX.fillStyle = "white";
-        // CTX.fillRect(WIDTH/2 + 30, HEIGHT/2 + 30, 500, 300);
-        // CTX.globalAlpha = 1;
-        // CTX.strokeRect(WIDTH/2 + 30, HEIGHT/2 + 30, 500, 300);
-        // CTX.fillStyle = "black";
-        // CTX.fillText("[SHIFT] TO ACCELERATE", WIDTH/2 + 50, HEIGHT/2 + 70);
-        // CTX.fillText("[A/D] TO TURN", WIDTH/2 + 50, HEIGHT/2 + 100);
-        // CTX.fillText("[SPACE] TO FIRE WEAPONS", WIDTH/2 + 50, HEIGHT/2 + 130);
-        // CTX.fillText("[F] TO SWITCH WEAPONS", WIDTH/2 + 50, HEIGHT/2 + 160);
-        // CTX.fillText("[R] TO SLOW DOWN TIME", WIDTH/2 + 50, HEIGHT/2 + 190);
-        // CTX.fillText("[LEFT CLICK] TO FIRE ANTI-TORPEDO CANNONS",
-        //     WIDTH/2 + 50, HEIGHT/2 + 220);
-        // CTX.fillText("[RIGHT CLICK] TO TARGET LOCK",
-        //     WIDTH/2 + 50, HEIGHT/2 + 250);
-        // CTX.fillText("[1][2] TO ZOOM IN/OUT", WIDTH/2 + 50, HEIGHT/2 + 280);
-        // CTX.fillText("[B][N][M] FOR DEBUG", WIDTH/2 + 50, HEIGHT/2 + 310);
     }
 
     if (TARGETING_STAMINA < TARGETING_MAX)
@@ -1199,6 +1214,10 @@ function draw()
         CTX.fillText("1 ENEMY REMAINS", WIDTH - 20, 60);
     else
         CTX.fillText(NUMBER_OF_ENEMIES + " ENEMIES REMAIN", WIDTH - 20, 60);
+    if (NUMBER_OF_ALLIES == 1)
+        CTX.fillText("1 ALLY REMAINS", WIDTH - 20, 75);
+    else
+        CTX.fillText(NUMBER_OF_ALLIES + " ALLIES REMAIN", WIDTH - 20, 75);
     CTX.textAlign = "left";
 }
 
@@ -1209,8 +1228,8 @@ function start()
     if (UNDERTRACK.currentTime > UNDERTRACK.duration - 0.10)
     {
         console.log("https://i.ytimg.com/vi/XFFmw-HDiRE/maxresdefault.jpg");
-        UNDERTRACK.currentTime = 1.45;
-        OVERTRACK.currentTime = 1.45;
+        UNDERTRACK.currentTime = 25.821;
+        OVERTRACK.currentTime = 25.821;
     }
     if (GAME_PAUSED)
     {
@@ -1259,7 +1278,7 @@ function start()
     let time_passed = 0;
     if (!GAME_PAUSED && !SLOW_TIME)
     {
-        CURRENT_DT += (DT - CURRENT_DT)*0.1;
+        CURRENT_DT += (NOMINAL_DT - CURRENT_DT)*0.1;
         TARGETING_STAMINA += DT*2;
         if (TARGETING_STAMINA > TARGETING_MAX)
         {

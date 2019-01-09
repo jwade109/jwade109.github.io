@@ -1,8 +1,8 @@
 // pdc.js
 
 const PDC_SPREAD = 1*Math.PI/180;
-const PDC_VELOCITY = 5000;
-const PDC_COOLDOWN = 1/10;
+const PDC_VELOCITY = 2000;
+const PDC_COOLDOWN = 1/30;
 var DRAW_FIRING_ARC = false;
 
 class PointDefenseCannon
@@ -25,7 +25,7 @@ class PointDefenseCannon
         this.audio = new Audio("scripts/space/sounds/" +
             "Weapon Gun Rifle M16 Single Shot Interior Shooting Range 01.wav");
         this.audio.volume = 0.02;
-        this.audio.playbackRate = 2;
+        this.audio.playbackRate = 0;
     }
 
     globalPos()

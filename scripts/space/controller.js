@@ -117,13 +117,33 @@ static morriganAlly(dt)
     if (!this.hasOwnProperty("prevForces"))
         this.prevForces = [0, 0];
 
-    let candidates = [], friendlies = [];
+    let candidates = [], friendlies = [], torpedoes = [];
     for (let obj of WORLD)
     {
-        if (!obj.trackable || !obj.isShip || obj == this) continue;
-        if (obj.faction == this.faction)
+        if (obj instanceof Torpedo &&
+            (obj.faction.name != this.faction.name ||
+            obj.target == this))
+            torpedoes.push(obj);
+        else if (!obj.trackable || !obj.isShip || obj == this)
+            continue;
+        else if (obj.faction == this.faction)
             friendlies.push(obj);
         else candidates.push(obj);
+    }
+
+    for (let pdc of this.pdcs)
+    {
+        let dist = Infinity, torpedo;
+        for (let t of torpedoes)
+        {
+            let d = distance(t.pos, pdc.globalPos())
+            if (d < dist)
+            {
+                dist = d;
+                torpedo = t;
+            }
+        }
+        pdc.intercept(torpedo);
     }
 
     let sumForce = [0, 0];

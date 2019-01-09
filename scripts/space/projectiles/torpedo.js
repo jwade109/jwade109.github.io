@@ -25,7 +25,6 @@ function Torpedo(pos, vel, theta)
     this.target = null;
     this.name = "";
     this.type = "Torpedo";
-    this.permanent = true;
     this.thrusters = [new Thruster(
         [-this.length/2, 0], Math.PI, 0, this.width)];
 }
@@ -151,6 +150,8 @@ Torpedo.prototype.handleCollision = function(other)
 {
     if (other === this.origin) return;
     if (other.origin === this.origin) return;
+    if (other.faction.name == this.faction.name &&
+        other != this.target) return;
     if (other instanceof Debris && other.radius < SMALL_DEBRIS) return;
     conserveMomentum(this, other);
     this.explode();
