@@ -1,7 +1,5 @@
 // canvas.js
 
-const VERSION = "2019.1.7c";
-
 var DRAW_TRACE;
 var DRAW_ACCEL;
 var SHOW_ALL_ALERTS;
@@ -240,8 +238,11 @@ document.addEventListener('mousewheel', function(event)
 {
     if (GAME_PAUSED)
     {
-        UNDERTRACK.play();
-        OVERTRACK.play();
+        if (UNDERTRACK.readyState == 4 && OVERTRACK.readyState == 4)
+        {
+            UNDERTRACK.play();
+            OVERTRACK.play();
+        }
         return;
     }
     event.preventDefault();
@@ -597,12 +598,11 @@ function physics(dt)
                        Math.sin(rot)*r + randomPos[1]];
             let vel = [PLAYER_SHIP.vel[0], PLAYER_SHIP.vel[1]];
             let enemy = new Morrigan(pos, 0);
-            enemy.control = Controller.morriganEnemy;
             if (CURRENT_WAVE > 2 && i % 5 == 0)
-            {
                 enemy = new Corvette(pos, 0);
-                enemy.control = Controller.morriganEnemy;
-            }
+            if (CURRENT_WAVE > 5 && i == 1)
+                enemy = new Scirocco(pos, 0);
+            enemy.control = Controller.morriganEnemy;
             enemy.vel = vel;
             enemy.faction = MCRN;
             WORLD.push(enemy);
@@ -635,33 +635,33 @@ function physics(dt)
         if (RESPAWN_TIMER > 0)
         {
             PLAYER_SHIP.repair(PASSIVE_REGEN*dt*PLAYER_SHIP.max_health);
-            // if (Math.random() < dt*13 &&
-            //     PLAYER_SHIP.health < PLAYER_SHIP.max_health)
-            // {
-            //     let health = new Debris(
-            //         PLAYER_SHIP.box.getRandom(), add2d(PLAYER_SHIP.vel,
-            //             [Math.random()*150 - 75, Math.random()*150 - 75]),
-            //         Math.random()*2*Math.PI,
-            //         Math.random()*2 - 1, SMALL_DEBRIS/100);
-            //     health.nocollide = true;
-            //     health.skin = function()
-            //     {
-            //         let width = 7;
-            //         CTX.save();
-            //         CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
-            //         CTX.rotate(-this.theta);
-            //         CTX.globalAlpha = 0.5;
-            //         CTX.fillStyle = "green";
-            //         CTX.beginPath();
-            //         CTX.rect(-width*PIXELS/6, -width*PIXELS/2,
-            //             width*PIXELS/3, width*PIXELS);
-            //         CTX.rect(-width*PIXELS/2, -width*PIXELS/6,
-            //             width*PIXELS, width*PIXELS/3);
-            //         CTX.fill();
-            //         CTX.restore()
-            //     }
-            //     WORLD.push(health);
-            // }
+            if (Math.random() < dt*13 &&
+                PLAYER_SHIP.health < PLAYER_SHIP.max_health)
+            {
+                let health = new Debris(
+                    PLAYER_SHIP.box.getRandom(), add2d(PLAYER_SHIP.vel,
+                        [Math.random()*150 - 75, Math.random()*150 - 75]),
+                    Math.random()*2*Math.PI,
+                    Math.random()*2 - 1, SMALL_DEBRIS/100);
+                health.nocollide = true;
+                health.skin = function()
+                {
+                    let width = 7;
+                    CTX.save();
+                    CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+                    // CTX.rotate(-this.theta);
+                    CTX.globalAlpha = 0.3;
+                    CTX.fillStyle = "green";
+                    CTX.beginPath();
+                    CTX.rect(-width*PIXELS/6, -width*PIXELS/2,
+                        width*PIXELS/3, width*PIXELS);
+                    CTX.rect(-width*PIXELS/2, -width*PIXELS/6,
+                        width*PIXELS, width*PIXELS/3);
+                    CTX.fill();
+                    CTX.restore()
+                }
+                WORLD.push(health);
+            }
         }
     }
 
@@ -769,7 +769,8 @@ function draw()
 
     for (let obj of WORLD) obj.draw(CTX);
 
-    if (NEAREST_OBJECT != null && SLOW_TIME && !GAME_PAUSED)
+    if (NEAREST_OBJECT != null && NEAREST_OBJECT != TARGET_OBJECT &&
+        SLOW_TIME && !GAME_PAUSED)
     {
         CTX.save();
         CTX.translate(NEAREST_OBJECT.pos[0]*PIXELS,
@@ -809,12 +810,17 @@ function draw()
             CTX.textAlign = "center";
             CTX.fillText(TARGET_OBJECT.type.toUpperCase(), 0, -20*PIXELS);
             CTX.font = "10px Helvetica";
-            CTX.fillText(TARGET_OBJECT.fullName(), 0, -20*PIXELS - 15);
+            CTX.fillText(TARGET_OBJECT.fullName(), 0, -20*PIXELS - 17);
 
-            let health_percent = Math.max(0, TARGET_OBJECT.health/
-                TARGET_OBJECT.max_health);
-            CTX.fillRect(-20, -20*PIXELS - 30,
-                40*health_percent, 5);
+            if (TARGET_OBJECT.health < Infinity)
+            {
+                let health_percent = Math.max(0, TARGET_OBJECT.health/
+                    TARGET_OBJECT.max_health);
+                CTX.fillRect(-20, -20*PIXELS - 35,
+                    40*health_percent, 5);
+                CTX.fillText(Math.round(TARGET_OBJECT.health) + "/" +
+                    Math.round(TARGET_OBJECT.max_health), 0, -20*PIXELS - 40)
+            }
 
             CTX.restore();
         }
@@ -859,9 +865,8 @@ function draw()
         CTX.save();
         CTX.translate(border + cw, HEIGHT - border);
         CTX.rotate(-Math.PI/2);
-        let percent = Math.round(PLAYER_SHIP.health/
-            PLAYER_SHIP.max_health*100);
-        CTX.fillText("HULL (" + percent + "%)", 0, -3);
+        CTX.fillText("HULL (" + PLAYER_SHIP.health + "/" +
+            PLAYER_SHIP.max_health + ")", 0, -3);
         CTX.restore();
 
         if (PLAYER_SHIP.hasOwnProperty("tubes"))
@@ -951,11 +956,6 @@ function draw()
         CTX.fillText(ALERTS[i][0].toUpperCase(),
             70, 22 + 20*(ALERTS.length - i - 1));
     }
-
-    CTX.fillStyle = "gray";
-    CTX.globalAlpha = 1;
-    CTX.font = "12px Helvetica";
-    CTX.fillText("BUILD: " + VERSION.toUpperCase(), 70, HEIGHT - 30);
 
     if (SHOW_OVERLAY || GAME_PAUSED)
     {
@@ -1205,7 +1205,7 @@ function draw()
     CTX.globalAlpha = 0.4;
     CTX.fillStyle = "darkgray";
     CTX.textAlign = "center";
-    CTX.fillText(PLAYER_SCORE, WIDTH/2, 40);
+    // CTX.fillText(PLAYER_SCORE, WIDTH/2, 40);
     CTX.textAlign = "right";
     CTX.fillText("WAVE " + CURRENT_WAVE, WIDTH - 20, 40);
     CTX.font = "12px Helvetica";
@@ -1225,21 +1225,24 @@ function start()
 {
     for (let i in ALERTS) ALERTS[i][1] -= DT;
 
+    if (UNDERTRACK.readyState == 4 && OVERTRACK.readyState == 4)
+    {
+        UNDERTRACK.play();
+        OVERTRACK.play();
+    }
     if (UNDERTRACK.currentTime > UNDERTRACK.duration - 0.10)
     {
         console.log("https://i.ytimg.com/vi/XFFmw-HDiRE/maxresdefault.jpg");
         UNDERTRACK.currentTime = 25.821;
         OVERTRACK.currentTime = 25.821;
     }
-    if (GAME_PAUSED)
+    else if (GAME_PAUSED)
     {
         UNDERTRACK.volume = BETWEEN_WAVES ? 0.05 : 0;
         OVERTRACK.volume = BETWEEN_WAVES ? 0 : 0.05;
     }
     else
     {
-        if (!UNDERTRACK.ispaused) UNDERTRACK.play();
-        if (!OVERTRACK.ispaused) OVERTRACK.play();
         UNDERTRACK.playbackRate = 1;
         OVERTRACK.playbackRate = 1;
 

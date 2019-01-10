@@ -19,6 +19,11 @@ function Bullet(pos, vel, theta)
 
 Bullet.prototype = Object.create(Collidable.prototype);
 
+Bullet.prototype.control = function(dt)
+{
+    if (this.time > 1) this.remove = true;
+}
+
 Bullet.prototype.handleCollision = function(other)
 {
     if (other === this.origin) return;

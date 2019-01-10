@@ -50,10 +50,10 @@ function Corvette(pos, theta)
             [-Math.PI/2.2, Math.PI/2.2], CORVETTE_PDC_RANGE),
          new PointDefenseCannon(
             [-this.length/6, -this.width*0.44], Math.PI/2, this,
-            [-Math.PI/2.2, Math.PI/1.8], CORVETTE_PDC_RANGE),
+            [-Math.PI/1.8, Math.PI/1.8], CORVETTE_PDC_RANGE),
          new PointDefenseCannon(
             [-this.length/6, this.width*0.44], -Math.PI/2, this,
-            [-Math.PI/1.8, Math.PI/2.2], CORVETTE_PDC_RANGE)];
+            [-Math.PI/1.8, Math.PI/1.8], CORVETTE_PDC_RANGE)];
 
     this.tubes = [
         new TorpedoTube([this.length/2, 3], 0, this),
@@ -224,4 +224,30 @@ Corvette.prototype.explode = function()
     throwAlert(this.fullName() + " (" + this.type +
         ") was destroyed.", ALERT_DISPLAY_TIME);
     this.remove = true;
+}
+
+Corvette.prototype.damage = function(d)
+{
+    this.health -= d;
+    if (this.health < 1) this.explode();
+    else if (Math.random() < 0.05*d)
+    {
+        let num_debris = 3 + Math.random()*3;
+        let pos = this.box.getRandom();
+        for (let i = 0; i < num_debris; ++i)
+        {
+            let vel = this.vel.slice();
+            vel[0] += Math.random()*200 - 100;
+            vel[1] += Math.random()*200 - 100;
+            let size = Math.random()*4;
+            let deb = new Debris(pos.slice(), vel,
+                this.theta,
+                this.omega + Math.random()*5 - 2.5, size);
+            deb.name = this.fullName();
+            deb.color = this.c3;
+            if (Math.random() < 0.4)
+                deb.color = this.c2;
+            WORLD.push(deb);
+        }
+    }
 }

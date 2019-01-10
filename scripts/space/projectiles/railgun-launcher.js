@@ -1,7 +1,7 @@
 // railgun-launcher.js
 
 const RAILGUN_VEL = 20000;
-const RAILGUN_COOLDOWN = 5;
+const RAILGUN_COOLDOWN = 2.5;
 const RAILGUN_SPREAD = 0;
 
 function RailgunLauncher(pos, theta, object, range)

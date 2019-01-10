@@ -8,7 +8,7 @@ const SCIROCCO_MAX_ACCEL = 12*9.81;
 const SCIROCCO_MAX_ALPHA = 2;
 const SCIROCCO_IZZ = 50000000;
 const SCIROCCO_EXPLOSION_RADIUS = 500;
-const SCIROCCO_PDC_RANGE = 1200;
+const SCIROCCO_PDC_RANGE = 800;
 
 function Scirocco(pos, theta)
 {

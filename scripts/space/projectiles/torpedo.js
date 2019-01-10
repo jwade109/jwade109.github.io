@@ -25,6 +25,7 @@ function Torpedo(pos, vel, theta)
     this.target = null;
     this.name = "";
     this.type = "Torpedo";
+    this.permanent = true;
     this.thrusters = [new Thruster(
         [-this.length/2, 0], Math.PI, 0, this.width)];
 }
@@ -36,6 +37,7 @@ Torpedo.prototype.control = function(dt)
     this.pos_history.push(this.pos.slice());
     if (this.target != null && this.target.remove) this.tracking = false;
     this.time += dt;
+    if (!this.tracking && Math.random() < dt/10) this.explode();
 
     let theta = this.theta;
     if (this.target != null)

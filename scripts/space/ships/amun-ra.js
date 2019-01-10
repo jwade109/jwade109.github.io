@@ -51,7 +51,7 @@ function Amun_Ra(pos, theta)
     ];
 
     this.thrusters = [
-        new Thruster([-this.length/3, 0], Math.PI, 0, this.width/2)
+        new Thruster([-this.length/3.1, 0], Math.PI, 0, this.width/2)
     ];
 
     this.railguns = [

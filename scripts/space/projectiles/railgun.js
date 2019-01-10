@@ -1,6 +1,6 @@
 // railgun.js
 
-const RAILGUN_DAMAGE = 500;
+const RAILGUN_DAMAGE = 1000;
 const RAILGUN_LENGTH = 1;
 const RAILGUN_WIDTH = 0.2;
 const RAILGUN_MASS = 1;
@@ -15,12 +15,19 @@ function Railgun(pos, vel, theta)
     this.mass = RAILGUN_MASS;
     this.trackable = false;
     this.kills = 0;
+    this.hits = [];
 }
 
 Railgun.prototype = Object.create(Collidable.prototype);
 
 Railgun.prototype.handleCollision = function(other)
 {
+    if (this.hits.indexOf(other) > -1) return;
+    for (let obj of this.hits)
+    {
+        if (obj.fullName() == other.fullName()) return;
+    }
+    this.hits.push(other);
     if (other === this.origin) return;
     if (other instanceof Railgun) return;
     if (other instanceof Debris && other.radius < SMALL_DEBRIS) return;

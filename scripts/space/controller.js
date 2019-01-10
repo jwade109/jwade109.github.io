@@ -44,19 +44,19 @@ static morriganEnemy(dt)
                 let cohere = mult2d(sub2d(friend.pos, this.pos), this.mass*3);
                 sumForce = add2d(sumForce, cohere);
             }
-            if (GAME_OVER)
-            {
-                let seek = mult2d(sub2d(
-                    [MOUSEX, MOUSEY], this.pos), this.mass*10);
-                sumForce = add2d(sumForce, seek);
-                let damping = mult2d(sub2d([0, 0], this.vel), this.mass*30);
-                sumForce = add2d(sumForce, damping);
-            }
+        }
+        if (GAME_OVER)
+        {
+            let seek = mult2d(sub2d(
+                [MOUSEX, MOUSEY], this.pos), this.mass*15);
+            sumForce = add2d(sumForce, seek);
+            let damping = mult2d(sub2d([0, 0], this.vel), this.mass*40);
+            sumForce = add2d(sumForce, damping);
         }
         let forceDamping = 0.1;
         this.forces = this.prevForces.slice();
         this.forces = mult2d(sub2d(sumForce, this.prevForces), forceDamping);
-        this.align(angle2d([1, 0], this.forces), this.izz*60, this.izz*25);
+        this.align(angle2d([1, 0], this.forces), this.izz*60, this.izz*40);
         return;
     }
 
