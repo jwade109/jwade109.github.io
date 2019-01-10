@@ -95,9 +95,9 @@ function Donnager(pos, theta)
 
     this.railguns = [
         new RailgunLauncher([15*this.length/76, -5*this.width/24],
-            Math.PI/2, this, [-Math.PI/2, Math.PI/2]),
+            Math.PI/2, this, [-Math.PI/1.5, Math.PI/1.5]),
         new RailgunLauncher([15*this.length/76, 5*this.width/24],
-            -Math.PI/2, this, [-Math.PI/2, Math.PI/2]),
+            -Math.PI/2, this, [-Math.PI/1.5, Math.PI/1.5]),
     ];
 
     this.tubes = [
@@ -143,20 +143,20 @@ Donnager.prototype.fireRailgun = function()
     {
         let mouseAngle = angle2d([1, 0],
             sub2d([MOUSEX, MOUSEY], this.pos));
-        let min = Infinity, best;
+        let min = Infinity, best = null;
         for (let gun of this.railguns)
         {
             let gunAngle = this.theta + gun.theta + gun.gamma;
             let error = gunAngle - mouseAngle;
             while (error > Math.PI) error -= Math.PI*2;
             while (error < -Math.PI) error += Math.PI*2;
-            if (Math.abs(error) < min)
+            if (Math.abs(error) < min && gun.canFire())
             {
                 min = Math.abs(error);
                 best = gun;
             }
         }
-        best.fire();
+        if (best != null) best.fire();
     }
     else for (let gun of this.railguns) gun.fire();
 }

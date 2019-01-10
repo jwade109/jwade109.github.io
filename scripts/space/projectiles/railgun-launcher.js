@@ -128,7 +128,7 @@ RailgunLauncher.prototype.draw = function(opacity)
             while (theta < this.gamma - Math.PI) theta += Math.PI*2;
             while (theta > this.gamma + Math.PI) theta -= Math.PI*2;
             CTX.save();
-            CTX.rotate(-theta + this.object.theta);
+            CTX.rotate(-theta + this.theta + this.object.theta);
             CTX.globalAlpha = 0.2*opacity;
             CTX.strokeStyle = "green";
             if (TIME - this.lastFired < this.cooldown)

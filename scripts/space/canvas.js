@@ -256,6 +256,11 @@ document.addEventListener('mousemove', function(event)
     var box = canvas.getBoundingClientRect();
     MOUSE_SCREEN_POS = [event.clientX - box.left, event.clientY - box.top];
     updateMouse();
+    if (UNDERTRACK.readyState == 4 && OVERTRACK.readyState == 4)
+    {
+        UNDERTRACK.play();
+        OVERTRACK.play();
+    }
 });
 
 document.addEventListener('mousedown', function(event)
@@ -713,13 +718,6 @@ function draw()
     WIDTH = CTX.canvas.width;
     HEIGHT = CTX.canvas.height;
     CTX.clearRect(0, 0, WIDTH, HEIGHT);
-    CTX.globalAlpha = 0.2;
-    CTX.lineWidth = 4;
-    CTX.strokeStyle = "lightgray";
-    CTX.beginPath();
-    CTX.moveTo(0, HEIGHT);
-    CTX.lineTo(WIDTH, HEIGHT);
-    CTX.stroke();
     updateMouse();
 
     CTX.save();
@@ -865,8 +863,8 @@ function draw()
         CTX.save();
         CTX.translate(border + cw, HEIGHT - border);
         CTX.rotate(-Math.PI/2);
-        CTX.fillText("HULL (" + PLAYER_SHIP.health + "/" +
-            PLAYER_SHIP.max_health + ")", 0, -3);
+        CTX.fillText("HULL (" + Math.round(PLAYER_SHIP.health) + "/" +
+            Math.round(PLAYER_SHIP.max_health) + ")", 0, -3);
         CTX.restore();
 
         if (PLAYER_SHIP.hasOwnProperty("tubes"))
@@ -1218,18 +1216,23 @@ function draw()
         CTX.fillText("1 ALLY REMAINS", WIDTH - 20, 75);
     else
         CTX.fillText(NUMBER_OF_ALLIES + " ALLIES REMAIN", WIDTH - 20, 75);
-    CTX.textAlign = "left";
+
+    // CTX.textAlign = "right";
+    // CTX.strokeStyle = "black";
+    // CTX.globalAlpha = 0.4;
+    // CTX.fillStyle = UNN.radar;
+    // CTX.font = "15px Helvetica";
+    // CTX.fillRect(WIDTH - 130, 100, 15, 15);
+    // CTX.fillText("FRIENDLIES", WIDTH - 110, 113);
+    // CTX.fillStyle = MCRN.radar;
+    // CTX.fillRect(WIDTH - 130, 120, 15, 15);
+    // CTX.fillText("ENEMIES", WIDTH - 110, 133);
 }
 
 function start()
 {
     for (let i in ALERTS) ALERTS[i][1] -= DT;
 
-    if (UNDERTRACK.readyState == 4 && OVERTRACK.readyState == 4)
-    {
-        UNDERTRACK.play();
-        OVERTRACK.play();
-    }
     if (UNDERTRACK.currentTime > UNDERTRACK.duration - 0.10)
     {
         console.log("https://i.ytimg.com/vi/XFFmw-HDiRE/maxresdefault.jpg");

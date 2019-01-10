@@ -9,12 +9,13 @@
 
   <body>
     <canvas
-      id="canvas" style="border: 0; top: 0">
+      id="canvas" style="border: 0; top: 0;
+      box-shadow: 0px 0px 16px 0px #BBBBBB;">
     </canvas>
     <script src="scripts/conway.js"></script>
     <div class="center">
 
-      <div style="text-align: center">
+      <div style="text-align: center; margin-top: 5px">
         <button onclick="clearBoard()">Clear</button>
         <button onclick="GAME_BOARD = propogateGameOfLife(GAME_BOARD)">Step</button>
         <button onclick="PAUSED = !PAUSED">Pause/Unpause</button>
