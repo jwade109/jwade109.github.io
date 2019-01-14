@@ -24,15 +24,18 @@ function Debris(pos, vel, theta, omega, radius)
     if (Math.random() < 0.4)
         this.color = "gray";
     this.opacity = 1;
+
+    if (this.radius < SMALL_DEBRIS)
+    {
+        this.behaviors = [function(self, dt)
+        {
+            self.opacity -= dt*Math.random();
+            if (self.opacity <= 0) self.remove = true;
+        }];
+    }
 }
 
 Debris.prototype = Object.create(Collidable.prototype);
-
-Debris.prototype.control = function(dt)
-{
-    if (this.radius < SMALL_DEBRIS) this.opacity -= dt*Math.random();
-    if (this.opacity <= 0) this.remove = true;
-}
 
 Debris.prototype.skin = function(opacity)
 {

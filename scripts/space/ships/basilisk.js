@@ -66,7 +66,7 @@ Basilisk.prototype.control = function(dt)
             obj.health < obj.max_health &&
             distance(obj.pos, this.pos) < BASILISK_REPAIR_RADIUS)
         {
-            if (obj == this) obj.repair(BASILISK_REGEN_RATE*dt/10);
+            if (obj === this) obj.repair(BASILISK_REGEN_RATE*dt/10);
             else obj.repair(BASILISK_REGEN_RATE*dt);
             if (Math.random() > dt*13) return;
             let health = new Debris(
@@ -93,14 +93,6 @@ Basilisk.prototype.control = function(dt)
             WORLD.push(health);
         }
     }
-}
-
-Basilisk.prototype.explode = function()
-{
-    WORLD.push(new Explosion(this.pos.slice(),
-        this.vel.slice(), BASILISK_EXPLOSION_RADIUS));
-    throwAlert(this.fullName() + " (" + this.type +
-        ") was destroyed.", ALERT_DISPLAY_TIME);
 }
 
 Basilisk.prototype.handleCollision = function(other)
@@ -202,4 +194,55 @@ Basilisk.prototype.skin = function()
     CTX.restore();
 
     for (let pdc of this.pdcs) pdc.draw(CTX);
+}
+
+Basilisk.prototype.explode = function()
+{
+    if (this.remove) return;
+    let num_debris = 24 + Math.random()*7;
+    for (let i = 0; i < num_debris; ++i)
+    {
+        let pos = this.box.getRandom();
+        let vel = this.vel.slice();
+        vel[0] += Math.random()*200 - 100;
+        vel[1] += Math.random()*200 - 100;
+        let size = Math.random()*this.width/6 + this.width/8;
+        let deb = new Debris(pos, vel,
+            this.theta, this.omega + Math.random()*5 - 2.5, size);
+        deb.name = this.fullName();
+        deb.color = this.faction.c3;
+        if (Math.random() < 0.5) deb.color = this.faction.c2;
+        WORLD.push(deb);
+    }
+    this.remove = true;
+    WORLD.push(new Explosion(this.pos.slice(), this.vel.slice(),
+        BASILISK_EXPLOSION_RADIUS));
+    throwAlert(this.fullName() + " (" + this.type +
+        ") was destroyed.", ALERT_DISPLAY_TIME);
+}
+
+Basilisk.prototype.damage = function(d)
+{
+    this.health -= d;
+    if (this.health < 1) this.explode();
+    else if (Math.random() < 0.01*d)
+    {
+        let num_debris = 3 + Math.random()*3;
+        let pos = this.box.getRandom();
+        for (let i = 0; i < num_debris; ++i)
+        {
+            let vel = this.vel.slice();
+            vel[0] += Math.random()*200 - 100;
+            vel[1] += Math.random()*200 - 100;
+            let size = Math.random()*4;
+            let deb = new Debris(pos.slice(), vel,
+                this.theta,
+                this.omega + Math.random()*5 - 2.5, size);
+            deb.name = this.fullName();
+            deb.color = this.faction.c3;
+            if (Math.random() < 0.4)
+                deb.color = this.faction.c2;
+            WORLD.push(deb);
+        }
+    }
 }

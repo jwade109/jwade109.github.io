@@ -5,7 +5,7 @@ const SCIROCCO_WIDTH = 72;
 const SCIROCCO_HEALTH = 5000;
 const SCIROCCO_MASS = 200000;
 const SCIROCCO_MAX_ACCEL = 12*9.81;
-const SCIROCCO_MAX_ALPHA = 2;
+const SCIROCCO_MAX_ALPHA = 3.5;
 const SCIROCCO_IZZ = 50000000;
 const SCIROCCO_EXPLOSION_RADIUS = 500;
 const SCIROCCO_PDC_RANGE = 800;
@@ -111,17 +111,6 @@ Scirocco.prototype.launchTorpedo = function(target)
 Scirocco.prototype.fireRailgun = function()
 {
     for (let rg of this.railguns) rg.fire();
-}
-
-Scirocco.prototype.control = function(dt)
-{
-    for (let rg of this.railguns)
-    {
-        let angle = angle2d([1, 0], sub2d([MOUSEX, MOUSEY], rg.globalPos()));
-        if (!PLAYER_WEAPON_SELECT && this === PLAYER_SHIP)
-            rg.seek(dt, angle);
-        else rg.seek(dt, this.theta + rg.theta);
-    }
 }
 
 Scirocco.prototype.skin = function(opacity)

@@ -28,6 +28,7 @@ function Collidable(length, width, max_health)
     this.trackable = true;
     this.permanent = false;
     this.isShip = false;
+    this.behaviors = [];
 
     this.name = "Todd";
     this.type = "Platonic Solid";
@@ -46,11 +47,6 @@ Collidable.prototype.fullName = function()
     if (this.faction.name == "Neutral" ||
         this.faction.name == "") return this.name;
     return this.faction.name + " " + this.name;
-}
-
-Collidable.prototype.control = function(dt)
-{
-    // no default control action
 }
 
 Collidable.prototype.physics = function(dt)
@@ -88,7 +84,7 @@ Collidable.prototype.physics = function(dt)
 
 Collidable.prototype.step = function(dt)
 {
-    this.control(dt);
+    for (let b of this.behaviors) b(this, dt);
     this.physics(dt);
 }
 
@@ -121,7 +117,7 @@ Collidable.prototype.draw = function()
         CTX.stroke();
     }
 
-    if (DRAW_ACCEL && this.max_acc < Infinity)
+    if (DRAW_ACCEL)
     {
         CTX.save();
         CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
@@ -130,17 +126,29 @@ Collidable.prototype.draw = function()
         if (this.max_acc < Infinity)
         {
             CTX.rotate(-this.theta);
-            CTX.strokeRect(-MAX_LATERAL_ACCEL*PIXELS, -MAX_LATERAL_ACCEL*PIXELS,
+            CTX.strokeRect(-MAX_LATERAL_ACCEL*PIXELS,
+                -MAX_LATERAL_ACCEL*PIXELS,
                 (MAX_LATERAL_ACCEL + this.max_acc)*PIXELS,
                 2*MAX_LATERAL_ACCEL*PIXELS);
-            CTX.strokeRect(-MAX_LATERAL_ACCEL*PIXELS, -MAX_LATERAL_ACCEL*PIXELS,
+            CTX.strokeRect(-MAX_LATERAL_ACCEL*PIXELS,
+                -MAX_LATERAL_ACCEL*PIXELS,
                 2*MAX_LATERAL_ACCEL*PIXELS, 2*MAX_LATERAL_ACCEL*PIXELS);
             CTX.rotate(this.theta);
         }
         CTX.beginPath();
         CTX.moveTo(0, 0);
         CTX.lineTo(this.acc[0]*PIXELS, this.acc[1]*PIXELS);
+
+        CTX.fillStyle = "purple";
+        CTX.rotate(-this.theta);
+        CTX.fillRect(-MAX_LATERAL_ACCEL*PIXELS,
+            -this.alpha*PIXELS*10, MAX_LATERAL_ACCEL*PIXELS*2,
+            this.alpha*PIXELS*10);
+        CTX.strokeRect(-MAX_LATERAL_ACCEL*PIXELS,
+            -this.max_alpha*PIXELS*10, MAX_LATERAL_ACCEL*PIXELS*2,
+            this.max_alpha*PIXELS*20);
         CTX.stroke();
+        CTX.rotate(this.theta);
         CTX.restore();
     }
 
@@ -210,6 +218,18 @@ Collidable.prototype.decay = function(health)
 Collidable.prototype.explode = function()
 {
     // no default explode behavior
+}
+
+Collidable.prototype.launchTorpedo = function()
+{
+    throwAlert("Torpedoes not equipped on this vessel.",
+        ALERT_DISPLAY_TIME);
+}
+
+Collidable.prototype.fireRailgun = function()
+{
+    throwAlert("Railgun not equipped on this vessel.",
+        ALERT_DISPLAY_TIME);
 }
 
 Collidable.prototype.align = function(theta, w1, w2)

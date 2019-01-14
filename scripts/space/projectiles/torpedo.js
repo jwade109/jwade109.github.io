@@ -28,43 +28,44 @@ function Torpedo(pos, vel, theta)
     this.permanent = true;
     this.thrusters = [new Thruster(
         [-this.length/2, 0], Math.PI, 0, this.width)];
+
+    let torpedoTrack = function(self, dt)
+    {
+        self.pos_history.push(self.pos.slice());
+        if (self.target != null && self.target.remove) self.tracking = false;
+        self.time += dt;
+        if (!self.tracking && Math.random() < dt/10) self.explode();
+
+        let theta = self.theta;
+        if (self.target != null)
+            theta = -torpedoGuidance(self.pos.slice(),
+                             self.vel.slice(),
+                             self.target.pos.slice(),
+                             self.target.vel.slice());
+
+        while (theta < self.theta - Math.PI) theta += Math.PI*2;
+        while (theta > self.theta + Math.PI) theta -= Math.PI*2;
+        if (self.tracking && self.time > self.drifttimer)
+            self.theta = theta;
+        else if (self.tracking && self.time > self.drifttimer/2)
+            self.theta += (theta - self.theta)*0.05;
+
+        if (self.time > TORPEDO_DRIFT_TIME &&
+            self.time < TORPEDO_DRIFT_TIME + TORPEDO_FUEL_TIME)
+        {
+            self.thrusters[0].firing = true;
+            self.applyForce(rot2d([TORPEDO_THRUST, 0], self.theta));
+        }
+        else if (self.time > TORPEDO_DRIFT_TIME + TORPEDO_FUEL_TIME)
+        {
+            self.thrusters[0].firing = false;
+            self.tracking = false;
+        }
+    };
+    this.behaviors = [torpedoTrack];
 }
 
 Torpedo.prototype = Object.create(Collidable.prototype);
-
-Torpedo.prototype.control = function(dt)
-{
-    this.pos_history.push(this.pos.slice());
-    if (this.target != null && this.target.remove) this.tracking = false;
-    this.time += dt;
-    if (!this.tracking && Math.random() < dt/10) this.explode();
-
-    let theta = this.theta;
-    if (this.target != null)
-        theta = -torpedoGuidance(this.pos.slice(),
-                         this.vel.slice(),
-                         this.target.pos.slice(),
-                         this.target.vel.slice());
-
-    while (theta < this.theta - Math.PI) theta += Math.PI*2;
-    while (theta > this.theta + Math.PI) theta -= Math.PI*2;
-    if (this.tracking && this.time > this.drifttimer)
-        this.theta = theta;
-    else if (this.tracking && this.time > this.drifttimer/2)
-        this.theta += (theta - this.theta)*0.05;
-
-    if (this.time > TORPEDO_DRIFT_TIME &&
-        this.time < TORPEDO_DRIFT_TIME + TORPEDO_FUEL_TIME)
-    {
-        this.thrusters[0].firing = true;
-        this.applyForce(rot2d([TORPEDO_THRUST, 0], this.theta));
-    }
-    else if (this.time > TORPEDO_DRIFT_TIME + TORPEDO_FUEL_TIME)
-    {
-        this.thrusters[0].firing = false;
-        this.tracking = false;
-    }
-}
 
 Torpedo.prototype.explode = function()
 {

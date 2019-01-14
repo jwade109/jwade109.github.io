@@ -15,14 +15,14 @@ function Bullet(pos, vel, theta)
     this.mass = BULLET_MASS;
     this.trackable = false;
     delete this.box;
+
+    this.behaviors = [function(self, dt)
+    {
+        if (self.time > 1) self.remove = true;
+    }];
 }
 
 Bullet.prototype = Object.create(Collidable.prototype);
-
-Bullet.prototype.control = function(dt)
-{
-    if (this.time > 1) this.remove = true;
-}
 
 Bullet.prototype.handleCollision = function(other)
 {

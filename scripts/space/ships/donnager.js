@@ -161,17 +161,6 @@ Donnager.prototype.fireRailgun = function()
     else for (let gun of this.railguns) gun.fire();
 }
 
-Donnager.prototype.control = function(dt)
-{
-    for (let rg of this.railguns)
-    {
-        let angle = angle2d([1, 0], sub2d([MOUSEX, MOUSEY], rg.globalPos()));
-        if (!PLAYER_WEAPON_SELECT && this === PLAYER_SHIP)
-            rg.seek(dt, angle);
-        else rg.seek(dt, this.theta + rg.theta);
-    }
-}
-
 Donnager.prototype.skin = function(opacity)
 {
     CTX.save();

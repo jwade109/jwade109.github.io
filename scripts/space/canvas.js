@@ -3,23 +3,28 @@
 var DRAW_TRACE;
 var DRAW_ACCEL;
 var SHOW_ALL_ALERTS;
+var SHOW_BEHAVIORS;
+var SHOW_OVERLAY;
+
 var LOCK_CAMERA;
 var SPAWN_ENEMIES;
+var SPAWN_DEBRIS;
 var NUMBER_OF_ENEMIES;
 var NUMBER_OF_ALLIES;
+
 var GAME_PAUSED;
 var SLOW_TIME;
 var GAME_OVER;
 var CURRENT_WAVE = 0;
 var WAVE_START;
-var SPAWN_DEBRIS;
-var SHOW_OVERLAY;
+
 const RESPAWN_DELAY = 30;
 var RESPAWN_TIMER;
 var BETWEEN_WAVES;
+const PASSIVE_REGEN = 0.02; // percent per second
+
 const TARGETING_MAX = 14;
 var TARGETING_STAMINA;
-const PASSIVE_REGEN = 0.02; // percent per second
 var TARGETING_LOCKOUT;
 
 var PLAYER_FACTION = UNN;
@@ -65,6 +70,7 @@ var WORLD;
 const WORLD_RENDER_DISTANCE = 10000;
 
 var PLAYER_SHIP, CAMERA_TRACK_TARGET;
+var CAMERA_POS, CAMERA_THETA;
 
 initialize();
 start();
@@ -74,6 +80,7 @@ function initialize()
     DRAW_TRACE = false;
     DRAW_ACCEL = false;
     SHOW_ALL_ALERTS = false;
+    SHOW_BEHAVIORS = false;
     LOCK_CAMERA = false;
     SPAWN_ENEMIES = true;
     NUMBER_OF_ENEMIES = 0;
@@ -122,8 +129,10 @@ function initialize()
     TARGET_OBJECT = null;
 
     WORLD = [];
-    CAMERA_TRACK_TARGET = PLAYER_SHIP;
     respawn(1);
+    CAMERA_TRACK_TARGET = PLAYER_SHIP;
+    CAMERA_POS = CAMERA_TRACK_TARGET.pos.slice();
+    CAMERA_THETA = Math.PI/2;
 
     CURRENT = new Date().getTime(), LAST = CURRENT, DT = 0;
 
@@ -151,7 +160,8 @@ function initialize()
         if (Math.random() < 0.3) ally = new Corvette(pos, 0);
         if (i == 5) ally = new Scirocco(pos, 0);
         ally.faction = PLAYER_FACTION;
-        ally.control = Controller.morriganAlly;
+        ally.behaviors = [Behaviors.genericAlly,
+            Behaviors.pdcDefense];
         ally.vel = mult2d(sub2d(PLAYER_SHIP.pos, ally.pos), 0.1);
         WORLD.push(ally);
     }
@@ -177,35 +187,6 @@ function respawn(choice)
                 break;
     }
 
-    newship.firePDC = function(target)
-    {
-        for (let pdc of this.pdcs)
-        {
-            if (target == null)
-                pdc.fireAt([MOUSEX, MOUSEY]);
-            else if (isNaN(pdc.intercept(target)))
-                pdc.fireAt([MOUSEX, MOUSEY]);
-        }
-    }
-
-    if (typeof newship.launchTorpedo !== 'function')
-    {
-        newship.launchTorpedo = function()
-        {
-            throwAlert("Torpedoes not equipped on this vessel.",
-                ALERT_DISPLAY_TIME);
-        }
-    }
-
-    if (typeof newship.fireRailgun !== 'function')
-    {
-        newship.fireRailgun = function()
-        {
-            throwAlert("Railgun not equipped on this vessel.",
-                ALERT_DISPLAY_TIME);
-        }
-    }
-
     if (typeof PLAYER_SHIP !== 'undefined')
     {
         newship.theta = PLAYER_SHIP.theta;
@@ -215,8 +196,7 @@ function respawn(choice)
     }
 
     newship.faction = PLAYER_FACTION;
-    // newship.control = Controller.pointDefenseAutomation
-    // newship.health = newship.max_health = Infinity;
+    newship.behaviors = [Behaviors.playerControlled];
     PLAYER_SHIP = newship;
     WORLD.push(PLAYER_SHIP);
     GAME_OVER = false;
@@ -240,8 +220,15 @@ document.addEventListener('mousewheel', function(event)
     {
         if (UNDERTRACK.readyState == 4 && OVERTRACK.readyState == 4)
         {
-            UNDERTRACK.play();
-            OVERTRACK.play();
+            try
+            {
+                UNDERTRACK.play();
+                OVERTRACK.play();
+            }
+            catch (except)
+            {
+
+            }
         }
         return;
     }
@@ -258,8 +245,15 @@ document.addEventListener('mousemove', function(event)
     updateMouse();
     if (UNDERTRACK.readyState == 4 && OVERTRACK.readyState == 4)
     {
-        UNDERTRACK.play();
-        OVERTRACK.play();
+        try
+        {
+            UNDERTRACK.play();
+            OVERTRACK.play();
+        }
+        catch (except)
+        {
+
+        }
     }
 });
 
@@ -270,8 +264,7 @@ document.addEventListener('mousedown', function(event)
         case 0: LEFT_CLICK = true;
                 break;
         case 2: RIGHT_CLICK = true;
-                if (TARGET_OBJECT != NEAREST_OBJECT &&
-                    NEAREST_OBJECT != PLAYER_SHIP)
+                if (TARGET_OBJECT != NEAREST_OBJECT)
                     TARGET_OBJECT = NEAREST_OBJECT;
                 else TARGET_OBJECT = null;
                 break;
@@ -379,6 +372,14 @@ document.addEventListener('keydown', function(event)
                      "Locked camera disabled";
                  throwAlert(str, ALERT_DISPLAY_TIME);
                  break;
+        case 89: SHOW_BEHAVIORS = !SHOW_BEHAVIORS;
+                 str = SHOW_BEHAVIORS ?
+                     "SHOW_BEHAVIORS enabled." :
+                     "SHOW_BEHAVIORS disabled";
+                 throwAlert(str, ALERT_DISPLAY_TIME);
+                 break;
+        case 90: takeControl(TARGET_OBJECT);
+                 break;
         case 191: if (NEAREST_OBJECT !== PLAYER_SHIP)
                       TARGET_OBJECT = NEAREST_OBJECT;
                   break;
@@ -420,21 +421,18 @@ function zoom()
 
 function updateMouse()
 {
-    if (CAMERA_TRACK_TARGET == null)
-        CAMERA_TRACK_TARGET = PLAYER_SHIP;
+    // if (CAMERA_TRACK_TARGET == null)
+        // CAMERA_TRACK_TARGET = PLAYER_SHIP;
     let rect = CANVAS.getBoundingClientRect();
     MOUSEX = (MOUSE_SCREEN_POS[0] +
-        CAMERA_TRACK_TARGET.pos[0]*PIXELS - WIDTH/2)/PIXELS;
+        CAMERA_POS[0]*PIXELS - WIDTH/2)/PIXELS;
     MOUSEY = (MOUSE_SCREEN_POS[1] +
-        CAMERA_TRACK_TARGET.pos[1]*PIXELS - HEIGHT/2)/PIXELS;
-    if (LOCK_CAMERA)
-    {
-        let mp = rot2d([MOUSEX - CAMERA_TRACK_TARGET.pos[0],
-                        MOUSEY - CAMERA_TRACK_TARGET.pos[1]],
-                       CAMERA_TRACK_TARGET.theta - Math.PI/2);
-        MOUSEX = (CAMERA_TRACK_TARGET.pos[0] + mp[0]);
-        MOUSEY = (CAMERA_TRACK_TARGET.pos[1] + mp[1]);
-    }
+        CAMERA_POS[1]*PIXELS - HEIGHT/2)/PIXELS;
+    let mp = rot2d([MOUSEX - CAMERA_POS[0],
+                    MOUSEY - CAMERA_POS[1]],
+                   CAMERA_THETA - Math.PI/2);
+    MOUSEX = (CAMERA_POS[0] + mp[0]);
+    MOUSEY = (CAMERA_POS[1] + mp[1]);
 
     let min = Infinity;
     for (let obj of WORLD)
@@ -512,12 +510,25 @@ function isOffScreen(coords)
                    [-WIDTH/(2*PIXELS) + 5/PIXELS,  HEIGHT/(2*PIXELS) - 5/PIXELS]];
     let hitbox = new Hitbox(corners);
     hitbox.object = [];
-    hitbox.object.pos = CAMERA_TRACK_TARGET.pos.slice();
+    hitbox.object.pos = CAMERA_POS.slice();
     hitbox.object.theta = 0;
-    if (LOCK_CAMERA)
-        hitbox.object.theta = CAMERA_TRACK_TARGET.theta + Math.PI/2;
+    hitbox.object.theta = CAMERA_THETA + Math.PI/2;
     if (DRAW_HITBOX) hitbox.draw(CTX);
     return !hitbox.contains(coords);
+}
+
+function takeControl(friendlyShip)
+{
+    if (friendlyShip == null || !friendlyShip.isShip ||
+        friendlyShip.faction.name != PLAYER_SHIP.faction.name ||
+        friendlyShip == PLAYER_SHIP) return;
+    let oldPlayer = PLAYER_SHIP;
+    PLAYER_SHIP = friendlyShip;
+    let oldControl = oldPlayer.behaviors;
+    oldPlayer.behaviors = friendlyShip.behaviors;
+    friendlyShip.behaviors = oldControl;
+    CAMERA_TRACK_TARGET = PLAYER_SHIP;
+    CAMERA_POS = mult2d(friendlyShip.pos, -1);
 }
 
 function physics(dt)
@@ -526,7 +537,25 @@ function physics(dt)
         TARGET_OBJECT = null;
     if (NEAREST_OBJECT != null && NEAREST_OBJECT.remove)
         NEAREST_OBJECT = null;
-    if (PLAYER_SHIP.remove) GAME_OVER = true;
+    if (PLAYER_SHIP.remove)
+    {
+        // let dist = Infinity, nearest = null;
+        // for (let obj of WORLD)
+        // {
+        //     if (obj.isShip && obj.faction.name == PLAYER_SHIP.faction.name)
+        //     {
+        //         let d = distance(obj.pos, PLAYER_SHIP.pos);
+        //         if (d < dist)
+        //         {
+        //             nearest = obj;
+        //             dist = d;
+        //         }
+        //     }
+        // }
+        // if (nearest == null)
+            GAME_OVER = true;
+        // else takeControl(nearest);
+    }
 
     let collided = [];
     for (let obj1 of WORLD)
@@ -607,7 +636,7 @@ function physics(dt)
                 enemy = new Corvette(pos, 0);
             if (CURRENT_WAVE > 5 && i == 1)
                 enemy = new Scirocco(pos, 0);
-            enemy.control = Controller.morriganEnemy;
+            enemy.behaviors = [Behaviors.genericEnemy];
             enemy.vel = vel;
             enemy.faction = MCRN;
             WORLD.push(enemy);
@@ -628,7 +657,8 @@ function physics(dt)
             if (Math.random() < 0.3) ally = new Corvette(pos, 0);
             if (CURRENT_WAVE == 5) ally = new Scirocco(pos, 0);
             ally.faction = PLAYER_FACTION;
-            ally.control = Controller.morriganAlly;
+            ally.behaviors = [Behaviors.genericAlly,
+                Behaviors.pdcDefense];
             ally.vel = mult2d(sub2d(PLAYER_SHIP.pos, ally.pos), 0.1);
             WORLD.push(ally);
             throwAlert("A friendly vessel has arrived!",
@@ -669,35 +699,6 @@ function physics(dt)
             }
         }
     }
-
-    if (!GAME_OVER)
-    {
-        if (SHIFT_KEY)
-        {
-            PLAYER_SHIP.applyForce(rot2d([PLAYER_SHIP.max_acc*
-                PLAYER_SHIP.mass, 0], PLAYER_SHIP.theta));
-        }
-        if (SPACE_KEY)
-        {
-            if (PLAYER_WEAPON_SELECT) PLAYER_SHIP.launchTorpedo(TARGET_OBJECT);
-            else PLAYER_SHIP.fireRailgun();
-            SPACE_KEY = false;
-        }
-        if (LEFT_CLICK || ENTER_KEY)
-        {
-            PLAYER_SHIP.firePDC(TARGET_OBJECT);
-        }
-
-        if (A_KEY)
-        {
-            PLAYER_SHIP.applyMoment(PLAYER_SHIP.max_alpha*PLAYER_SHIP.izz);
-        }
-        else if (D_KEY)
-        {
-            PLAYER_SHIP.applyMoment(-PLAYER_SHIP.max_alpha*PLAYER_SHIP.izz);
-        }
-        else PLAYER_SHIP.applyMoment(-PLAYER_SHIP.omega*PLAYER_SHIP.izz);
-    }
     TIME += dt;
 
     let pos = PLAYER_SHIP.pos.slice();
@@ -724,10 +725,10 @@ function draw()
     CTX.translate(WIDTH/2, HEIGHT/2);
     if (CAMERA_TRACK_TARGET == null || CAMERA_TRACK_TARGET.remove)
         CAMERA_TRACK_TARGET = PLAYER_SHIP;
-    if (LOCK_CAMERA) CTX.rotate(CAMERA_TRACK_TARGET.theta - Math.PI/2);
+    CTX.rotate(CAMERA_THETA - Math.PI/2);
 
-    CTX.translate(-CAMERA_TRACK_TARGET.pos[0]*PIXELS,
-                  -CAMERA_TRACK_TARGET.pos[1]*PIXELS);
+    CTX.translate(-CAMERA_POS[0]*PIXELS,
+                  -CAMERA_POS[1]*PIXELS);
 
     CTX.strokeStyle = "black";
     CTX.fillStyle = "black";
@@ -773,7 +774,7 @@ function draw()
         CTX.save();
         CTX.translate(NEAREST_OBJECT.pos[0]*PIXELS,
                       NEAREST_OBJECT.pos[1]*PIXELS);
-        if (LOCK_CAMERA) CTX.rotate(-CAMERA_TRACK_TARGET.theta + Math.PI/2);
+        CTX.rotate(-CAMERA_THETA + Math.PI/2);
         CTX.strokeStyle = "black";
         CTX.fillStyle = "black";
         CTX.beginPath();
@@ -799,7 +800,7 @@ function draw()
             CTX.fillStyle = "red";
             CTX.translate(TARGET_OBJECT.pos[0]*PIXELS,
                           TARGET_OBJECT.pos[1]*PIXELS);
-            if (LOCK_CAMERA) CTX.rotate(-CAMERA_TRACK_TARGET.theta + Math.PI/2);
+            CTX.rotate(-CAMERA_THETA + Math.PI/2);
             CTX.globalAlpha = 0.6;
 
             CTX.strokeRect(-10*PIXELS, -10*PIXELS, 20*PIXELS, 20*PIXELS);
@@ -818,6 +819,13 @@ function draw()
                     40*health_percent, 5);
                 CTX.fillText(Math.round(TARGET_OBJECT.health) + "/" +
                     Math.round(TARGET_OBJECT.max_health), 0, -20*PIXELS - 40)
+            }
+
+            if (SHOW_BEHAVIORS)
+            {
+                for (let i = 0; i < TARGET_OBJECT.behaviors.length; ++i)
+                    CTX.fillText(TARGET_OBJECT.behaviors[i].name,
+                        0, -20*PIXELS - 55 - i*15)
             }
 
             CTX.restore();
@@ -1043,7 +1051,8 @@ function draw()
         {
             drawKey(beginx + w*5.5 + 25, beginy + 35, w, h,
                 'T', 'Center camera on object (debug)');
-            drawKey(beginx + w*6.5 + 30, beginy + 35, w, h, '', '');
+            drawKey(beginx + w*6.5 + 30, beginy + 35, w, h,
+                'Y', 'Toggle show behaviors (debug)');
             drawKey(beginx + w*7.5 + 35, beginy + 35, w, h,
                 'U', 'Toggle display alerts (debug)');
             drawKey(beginx + w*8.5 + 40, beginy + 35, w, h, '', '');
@@ -1232,6 +1241,15 @@ function draw()
 function start()
 {
     for (let i in ALERTS) ALERTS[i][1] -= DT;
+
+    CAMERA_POS[0] += (CAMERA_TRACK_TARGET.pos[0] - CAMERA_POS[0])*0.09;
+    CAMERA_POS[1] += (CAMERA_TRACK_TARGET.pos[1] - CAMERA_POS[1])*0.09;
+
+    let targetTheta = CAMERA_TRACK_TARGET.theta;
+    if (!LOCK_CAMERA) targetTheta = Math.PI/2;
+    while (targetTheta - CAMERA_THETA < -Math.PI) targetTheta += Math.PI*2;
+    while (targetTheta - CAMERA_THETA > Math.PI) targetTheta -= Math.PI*2;
+    CAMERA_THETA += (targetTheta - CAMERA_THETA)*0.09;
 
     if (UNDERTRACK.currentTime > UNDERTRACK.duration - 0.10)
     {
