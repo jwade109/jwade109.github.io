@@ -118,8 +118,13 @@ table
 {
     white-space: nowrap;
     margin: 10px auto 10px auto;
-    font-size: 24px;
+    font-size: 20px;
     border-collapse: collapse;
+}
+
+tr
+{
+    border-top: 1px solid #EEEEEE;
 }
 
 th
@@ -130,7 +135,6 @@ th
 
 td
 {
-    border-top: 1px solid #EEEEEE;
     padding: 8px 20px;
     margin: 0px;
 }
