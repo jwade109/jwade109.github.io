@@ -13,6 +13,7 @@ function det2d(u, v)
 // turns u into a unit vector
 function unit2d(u)
 {
+    if (norm2d(u) == 0) return [0, 0];
     return div2d(u, norm2d(u));
 }
 
