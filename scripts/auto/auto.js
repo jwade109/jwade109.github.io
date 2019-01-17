@@ -177,6 +177,7 @@ class Car
 
         ctx.translate(this.x, this.y);
         ctx.rotate(-this.theta)
+        ctx.lineWidth = 2;
         // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE FRAME
 
         ctx.strokeStyle = "black";
@@ -472,19 +473,10 @@ function draw()
         }
 
         ctx.globalAlpha = 1;
-        ctx.fillStyle = "black";
-        ctx.fillText("Car[0] velocity: " +
-            Math.round(cars[0].v/meters) + " m/s " +
-            Math.round(cars[0].v/mph) + " mph", 5, height - 40);
-        ctx.fillText("10 Meters/25 Feet", 5, height - 25);
-        for (var i = 5; i < width - 100; i += 10*meters)
-            ctx.fillRect(i, height - 20, meters*5, 5);
-        for (var i = 5; i < width - 100; i += 50*feet)
-            ctx.fillRect(i, height - 10, feet*25, 5);
-
-        ctx.globalAlpha = 1;
         ctx.fillStyle = "red";
-        ctx.fillRect(mx - 2 + shiftx, my - 2 + shifty, 4, 4);
+        ctx.beginPath();
+        ctx.arc(mx + shiftx, my + shifty, 2, 0, Math.PI*2);
+        ctx.fill();
 
     }, 1000/fps);
 }

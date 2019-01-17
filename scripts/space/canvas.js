@@ -539,22 +539,23 @@ function physics(dt)
         NEAREST_OBJECT = null;
     if (PLAYER_SHIP.remove)
     {
-        // let dist = Infinity, nearest = null;
-        // for (let obj of WORLD)
-        // {
-        //     if (obj.isShip && obj.faction.name == PLAYER_SHIP.faction.name)
-        //     {
-        //         let d = distance(obj.pos, PLAYER_SHIP.pos);
-        //         if (d < dist)
-        //         {
-        //             nearest = obj;
-        //             dist = d;
-        //         }
-        //     }
-        // }
-        // if (nearest == null)
+        let dist = Infinity, nearest = null;
+        for (let obj of WORLD)
+        {
+            if (obj.isShip && obj.faction.name == PLAYER_SHIP.faction.name)
+            {
+                let d = distance(obj.pos, PLAYER_SHIP.pos);
+                if (d < dist)
+                {
+                    nearest = obj;
+                    dist = d;
+                }
+            }
+        }
+        if (nearest == null)
             GAME_OVER = true;
-        // else takeControl(nearest);
+        else
+            takeControl(nearest);
     }
 
     let collided = [];

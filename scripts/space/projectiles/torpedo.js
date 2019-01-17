@@ -159,6 +159,7 @@ Torpedo.prototype.handleCollision = function(other)
     conserveMomentum(this, other);
     this.explode();
     other.damage(TORPEDO_DAMAGE);
+    other.omega += (Math.random()*5 - 2.5);
 }
 
 function torpedoGuidance(pos, vel, tpos, tvel)

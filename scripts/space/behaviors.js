@@ -56,7 +56,7 @@ static playerControlled(self, dt)
                 sub2d([MOUSEX, MOUSEY], rg.globalPos()));
             if (!PLAYER_WEAPON_SELECT)
                 rg.seek(dt, angle);
-            else rg.seek(dt, self.theta + rg.theta);
+            // else rg.seek(dt, self.theta + rg.theta);
         }
     }
 }
@@ -248,7 +248,7 @@ static pdcDefense(self, dt)
 
 static pdcAttack(self, dt)
 {
-    
+
 }
 
 }
