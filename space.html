@@ -51,6 +51,8 @@
         are destroyed.
       </p>
 
+      <meta name="description" content="contact form">
+
       <h2>What is this and why does it exist?</h2>
       <p>
         This is a small game I made. It is <b>heavily</b> inspired by the
@@ -88,6 +90,27 @@
         on the subject.
       <p>The music is "<a href="https://www.youtube.com/watch?v=ne1y-bjXOgw"
         >Rooftop Paradise</a>" by Weval.</p>
+
+      <h2>User Feedback</h2>
+      <p>
+        Is this game too hard, or do you want to suggest a feature?
+        Yell at me about it here.
+      </p>
+      <form class="gform" method="POST"
+        style="text-align: center; margin: 15px 0px"
+        action="https://script.google.com/macros/s/AKfycbz-ygNaF39Ebj0rs-N2GlWVJiMK5e8gClB1ypT-b4OZ7Ein6g/exec">
+        <div style="display:none" class="thankyou_message">
+        <h2>Thanks for the feedback!</h2>
+        </div>
+        <input class="space" type="text" name="name"
+          placeholder="Bob the Builder">
+        <input class="space" type="text" name="message"
+          placeholder="Hey your game sucks, I really hate it.">
+        <input class="space" type="text" name="email"
+          placeholder="bob@builder.com"><br>
+        <input style="margin: 15px 0 0 0" type="submit" value="Submit">
+      </form>
+
       <div id="version"></div>
     </div>
 
@@ -119,6 +142,9 @@
     <script src="scripts/space/projectiles/railgun-launcher.js"></script>
     <script src="scripts/space/projectiles/torpedo-tube.js"></script>
     <script src="scripts/space/canvas.js"></script>
+
+    <script data-cfasync="false" type="text/javascript"
+      src="form-submission-handler.js"></script>
   </body>
 
 </html>

@@ -5,6 +5,18 @@ input:focus
     outline: none;
 }
 
+input[type=submit]
+{
+    font-family: Garamond, Cambria, SERIF;
+    font-size: 20px;
+    background: #EEEEEE;
+}
+
+input[type=submit]:active
+{
+    background: #BBBBBB;
+}
+
 html, body
 {
     box-sizing: border-box;
@@ -39,11 +51,23 @@ form
 
 input
 {
-    font-size: 18px;
+    font-size: 20px;
     padding: 10px;
     margin-right: 15px;
     border: 2px solid lightgray;
     font-family: monospace;
+}
+
+input.space
+{
+    font-size: 20px;
+    padding: 6px;
+    border: 0;
+    font-family: Garamond, Cambria, serif;
+    width: 60%;
+    text-align: center;
+    border-bottom: 1px solid lightgray;
+    margin: 10px;
 }
 
 input.loruun
@@ -55,6 +79,7 @@ input.loruun
     width: 80%;
     text-align: center;
     border-bottom: 1px solid lightgray;
+    margin: 0;
 }
 
 button

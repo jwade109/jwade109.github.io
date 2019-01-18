@@ -296,7 +296,8 @@ document.addEventListener('keydown', function(event)
                  break;
         case 32: if (GAME_OVER) initialize();
                  else SPACE_KEY = true;
-                 event.preventDefault();
+                 if (!GAME_PAUSED)
+                    event.preventDefault();
                  break;
         case 37: LEFT_KEY = true; break;
         case 38: UP_KEY = true; break;
@@ -637,7 +638,8 @@ function physics(dt)
                 enemy = new Corvette(pos, 0);
             if (CURRENT_WAVE > 5 && i == 1)
                 enemy = new Scirocco(pos, 0);
-            enemy.behaviors = [Behaviors.genericEnemy];
+            enemy.behaviors = [Behaviors.genericEnemy,
+                Behaviors.railgunTargetScirocco];
             enemy.vel = vel;
             enemy.faction = MCRN;
             WORLD.push(enemy);
@@ -659,7 +661,8 @@ function physics(dt)
             if (CURRENT_WAVE == 5) ally = new Scirocco(pos, 0);
             ally.faction = PLAYER_FACTION;
             ally.behaviors = [Behaviors.genericAlly,
-                Behaviors.pdcDefense];
+                Behaviors.pdcDefense,
+                Behaviors.railgunTargetScirocco];
             ally.vel = mult2d(sub2d(PLAYER_SHIP.pos, ally.pos), 0.1);
             WORLD.push(ally);
             throwAlert("A friendly vessel has arrived!",

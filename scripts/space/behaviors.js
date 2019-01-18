@@ -246,9 +246,33 @@ static pdcDefense(self, dt)
     }
 }
 
-static pdcAttack(self, dt)
+static railgunTargetScirocco(self, dt)
 {
+    if (!self.hasOwnProperty("railguns")) return;
 
+    let closest = null, dist = Infinity;
+    for (let obj of WORLD)
+    {
+        if (obj.isShip && obj.faction.name != self.faction.name)
+        {
+            let d = distance(self.pos, obj.pos);
+            if (d < dist)
+            {
+                closest = obj;
+                dist = d;
+            }
+        }
+    }
+    if (closest == null) return;
+
+
+    let rvel = sub2d(closest.vel, self.vel);
+    for (let gun of self.railguns)
+    {
+        let theta = -interceptSolution(gun.globalPos(),
+            rvel, self.pos, RAILGUN_VEL);
+        if (!isNaN(theta))
+            gun.seek(dt, theta);
+    }
 }
-
 }
