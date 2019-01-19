@@ -61,11 +61,12 @@ var MOUSEX, MOUSEY;
 var MOUSE_SCREEN_POS;
 
 const MIN_ZOOM = 30;
-const MAX_ZOOM = 14000*2;
+const MAX_ZOOM = 14000;
 var VIEW_RADIUS, TARGET_ZOOM;
 
 var NEAREST_OBJECT;
 var TARGET_OBJECT;
+var WAYPOINTS;
 
 var WORLD;
 const WORLD_RENDER_DISTANCE = 10000;
@@ -79,7 +80,7 @@ start();
 
 function initialize()
 {
-    DRAW_TRACE = true;
+    DRAW_TRACE = false;
     DRAW_ACCEL = false;
     SHOW_ALL_ALERTS = false;
     SHOW_BEHAVIORS = false;
@@ -123,6 +124,7 @@ function initialize()
 
     NEAREST_OBJECT = null;
     TARGET_OBJECT = null;
+    WAYPOINTS = [];
 
     WORLD = [];
     STARFIELD = [];
@@ -166,6 +168,7 @@ function initialize()
         ally.faction = PLAYER_FACTION;
         ally.behaviors = [Behaviors.genericAlly,
             Behaviors.pdcDefense];
+        ally.vel = PLAYER_SHIP.vel.slice();
         WORLD.push(ally);
     }
     if (CURRENT_WAVE > 0) --CURRENT_WAVE;
@@ -255,7 +258,21 @@ document.addEventListener('mousedown', function(event)
                     TARGET_OBJECT = NEAREST_OBJECT;
                 else TARGET_OBJECT = null;
                 break;
-        case 1: MOUSEBUTTON_DOWN = true; break;
+        case 1: MOUSEBUTTON_DOWN = true;
+                event.preventDefault();
+                let dist = Infinity, toRemove = null;
+                for (let i = 0; i < WAYPOINTS.length; ++i)
+                {
+                    let d = distance(WAYPOINTS[i], [MOUSEX, MOUSEY]);
+                    if (d < 100/PIXELS)
+                    {
+                        dist = d;
+                        toRemove = i;
+                    }
+                }
+                if (toRemove == null) WAYPOINTS.push([MOUSEX, MOUSEY]);
+                else WAYPOINTS.splice(toRemove, 1);
+                break;
     }
 });
 
@@ -620,6 +637,7 @@ function physics(dt)
             let rot = Math.random()*Math.PI*2;
             let pos = [Math.cos(rot)*r + randomPos[0],
                        Math.sin(rot)*r + randomPos[1]];
+            pos = add2d(pos, PLAYER_SHIP.pos);
             let vel = [PLAYER_SHIP.vel[0], PLAYER_SHIP.vel[1]];
             let enemy = new Morrigan(pos, 0);
             if (CURRENT_WAVE > 2 && i % 5 == 0)
@@ -644,6 +662,7 @@ function physics(dt)
 
             let pos = rot2d([WORLD_RENDER_DISTANCE, 0],
                 Math.PI*2*Math.random());
+            pos = add2d(PLAYER_SHIP.pos, pos);
             let ally = new Morrigan(pos, 0);
             if (Math.random() < 0.3) ally = new Corvette(pos, 0);
             if (CURRENT_WAVE == 5) ally = new Scirocco(pos, 0);
@@ -652,6 +671,7 @@ function physics(dt)
                 Behaviors.pdcDefense,
                 Behaviors.railgunTargetScirocco];
             ally.vel = mult2d(sub2d(PLAYER_SHIP.pos, ally.pos), 0.1);
+            ally.vel = add2d(ally.vel, PLAYER_SHIP.vel);
             WORLD.push(ally);
             throwAlert("A friendly vessel has arrived!",
                 2*ALERT_DISPLAY_TIME);
@@ -790,8 +810,8 @@ function draw()
                           TARGET_OBJECT.pos[1]*PIXELS);
             CTX.rotate(-CAMERA_THETA + Math.PI/2);
             CTX.globalAlpha = 0.6;
-
-            CTX.strokeRect(-10*PIXELS, -10*PIXELS, 20*PIXELS, 20*PIXELS);
+            CTX.lineWidth = 3;
+            CTX.strokeRect(-7, -7, 14, 14);
             CTX.globalAlpha = 1;
             CTX.font = "15px Helvetica";
             CTX.textAlign = "center";
@@ -821,6 +841,8 @@ function draw()
         else
         {
             CTX.save();
+            CTX.translate(PLAYER_SHIP.pos[0]*PIXELS,
+                PLAYER_SHIP.pos[1]*PIXELS);
             let angle = -angle2d(PLAYER_SHIP.pos,
                                  TARGET_OBJECT.pos) + Math.PI/2;
             CTX.rotate(angle);
@@ -837,6 +859,48 @@ function draw()
             let pro = sub2d(PLAYER_SHIP.vel, TARGET_OBJECT.vel);
             pro = mult2d(unit2d(pro), radius);
             retro = mult2d(pro, -1);
+        }
+    }
+
+
+    for (let i = 0; i < WAYPOINTS.length; ++i)
+    {
+        let waypoint = WAYPOINTS[i];
+        if (!isOffScreen(waypoint))
+        {
+            CTX.save();
+            CTX.strokeStyle = "green";
+            CTX.fillStyle = "green";
+            CTX.translate(waypoint[0]*PIXELS, waypoint[1]*PIXELS);
+            CTX.rotate(-CAMERA_THETA + Math.PI/2);
+            CTX.globalAlpha = 0.6;
+
+            CTX.lineWidth = 3;
+            CTX.beginPath();
+            CTX.moveTo(0, -6);
+            CTX.lineTo(-6, 6);
+            CTX.lineTo(6, 6);
+            CTX.closePath();
+            CTX.stroke();
+            CTX.restore();
+        }
+        else
+        {
+            CTX.save();
+            CTX.translate(PLAYER_SHIP.pos[0]*PIXELS,
+                PLAYER_SHIP.pos[1]*PIXELS);
+            let angle = -angle2d(PLAYER_SHIP.pos, waypoint) + Math.PI/2;
+            CTX.rotate(angle);
+            let radius = 1.1*Math.max(PLAYER_SHIP.length, PLAYER_SHIP.width);
+            CTX.globalAlpha = 0.4;
+            CTX.strokeStyle = "green";
+            CTX.lineWidth = 4*PIXELS;
+            CTX.beginPath();
+            CTX.moveTo(-20*PIXELS, -(radius + 5)*PIXELS);
+            CTX.lineTo(0*PIXELS, -(radius + 20)*PIXELS);
+            CTX.lineTo(20*PIXELS, -(radius + 5)*PIXELS);
+            CTX.stroke();
+            CTX.restore();
         }
     }
 
@@ -1229,8 +1293,8 @@ function start()
 {
     for (let i in ALERTS) ALERTS[i][1] -= DT;
 
-    CAMERA_POS[0] += (CAMERA_TRACK_TARGET.pos[0] - CAMERA_POS[0])*0.09;
-    CAMERA_POS[1] += (CAMERA_TRACK_TARGET.pos[1] - CAMERA_POS[1])*0.09;
+    CAMERA_POS[0] += (CAMERA_TRACK_TARGET.pos[0] - CAMERA_POS[0])*CURRENT_DT*10; // 0.17*DT;
+    CAMERA_POS[1] += (CAMERA_TRACK_TARGET.pos[1] - CAMERA_POS[1])*CURRENT_DT*10; // 0.17;
 
     let targetTheta = CAMERA_TRACK_TARGET.theta;
     if (!LOCK_CAMERA) targetTheta = Math.PI/2;

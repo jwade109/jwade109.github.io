@@ -100,13 +100,6 @@ Collidable.prototype.applyForce = function(force)
 
 Collidable.prototype.draw = function()
 {
-    if (!DRAW_HITBOX)
-    {
-        let opacity = radarOpacity(2*VIEW_RADIUS/(this.length + this.width));
-        this.skin(1);
-        if (opacity > 0) this.radarIcon(opacity);
-    }
-
     if (DRAW_TRACE)
     {
         CTX.globalAlpha = 0.6;
@@ -115,6 +108,13 @@ Collidable.prototype.draw = function()
         CTX.moveTo(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
         CTX.lineTo(this.pos_prev[0]*PIXELS, this.pos_prev[1]*PIXELS);
         CTX.stroke();
+    }
+
+    if (!DRAW_HITBOX)
+    {
+        let opacity = radarOpacity(2*VIEW_RADIUS/(this.length + this.width));
+        this.skin(1);
+        if (opacity > 0) this.radarIcon(opacity);
     }
 
     if (DRAW_ACCEL)

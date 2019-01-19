@@ -112,7 +112,8 @@ Torpedo.prototype.radarIcon = function(opacity)
         CTX.strokeStyle = "black";
         CTX.setLineDash([40*PIXELS, 15*PIXELS]);
         CTX.beginPath();
-        for (let i = 1; i < this.pos_history.length; ++i)
+        for (let i = Math.max(1, this.pos_history.length - 25);
+            i < this.pos_history.length; ++i)
         {
             CTX.lineTo(this.pos_history[i][0]*PIXELS,
                        this.pos_history[i][1]*PIXELS);
