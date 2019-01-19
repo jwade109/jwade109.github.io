@@ -48,7 +48,7 @@ const OVERTRACK = new Audio("scripts/space/sounds/overtrack.mp3");
 
 var LEFT_KEY = false, RIGHT_KEY = false, UP_KEY = false, DOWN_KEY = false;
 var SPACE_KEY = false, SHIFT_KEY = false, ENTER_KEY = false;
-var A_KEY = false, D_KEY = false;
+var A_KEY = false, D_KEY = false, W_KEY = false;
 var LEFT_CLICK = false, RIGHT_CLICK = false, MOUSEBUTTON_DOWN = false;
 var ONE_KEY = false, TWO_KEY = false, CTRL_KEY = false;
 
@@ -377,6 +377,8 @@ document.addEventListener('keydown', function(event)
                      "Locked camera disabled";
                  throwAlert(str, ALERT_DISPLAY_TIME);
                  break;
+        case 87: W_KEY = true;
+                 break;
         case 89: SHOW_BEHAVIORS = !SHOW_BEHAVIORS;
                  str = SHOW_BEHAVIORS ?
                      "SHOW_BEHAVIORS enabled." :
@@ -396,8 +398,7 @@ document.addEventListener('keyup', function(event)
     switch (event.keyCode)
     {
         case 16: SHIFT_KEY = false; break;
-        case 13: ENTER_KEY = false;
-                 break;
+        case 13: ENTER_KEY = false; break;
         case 32: SPACE_KEY = false; break;
         case 37: LEFT_KEY = false; break;
         case 38: UP_KEY = false; break;
@@ -407,6 +408,7 @@ document.addEventListener('keyup', function(event)
         case 50: TWO_KEY = false; break;
         case 65: A_KEY = false; break;
         case 68: D_KEY = false; break;
+        case 87: W_KEY = false; break;
     }
 });
 
@@ -1093,7 +1095,8 @@ function draw()
 
         drawKey(beginx, beginy + 35, w*1.5, h, '', '');
         drawKey(beginx + w*1.5 + 5, beginy + 35, w, h, '', '');
-        drawKey(beginx + w*2.5 + 10, beginy + 35, w, h, '', '');
+        drawKey(beginx + w*2.5 + 10, beginy + 35, w, h,
+            'W', 'Accelerate');
         drawKey(beginx + w*3.5 + 15, beginy + 35, w, h, '', '');
         drawKey(beginx + w*4.5 + 20, beginy + 35, w, h,
             'R', 'Toggle targeting mode');
@@ -1134,7 +1137,8 @@ function draw()
         }
 
         drawKey(beginx, beginy + 105, w*2.5, h, 'SHIFT', 'Accelerate');
-        drawKey(beginx + w*2.5 + 5, beginy + 105, w, h, '', '');
+        drawKey(beginx + w*2.5 + 5, beginy + 105, w, h,
+            'Z', 'Take control of friendly vessel');
         drawKey(beginx + w*3.5 + 10, beginy + 105, w, h, '', '');
         drawKey(beginx + w*4.5 + 15, beginy + 105, w, h, '', '');
         drawKey(beginx + w*5.5 + 20, beginy + 105, w, h,

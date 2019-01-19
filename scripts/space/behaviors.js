@@ -7,7 +7,7 @@ static playerControlled(self, dt)
 {
     if (!GAME_OVER)
     {
-        if (SHIFT_KEY)
+        if (SHIFT_KEY || W_KEY)
         {
             PLAYER_SHIP.applyForce(rot2d([self.max_acc*
                 self.mass, 0], self.theta));
