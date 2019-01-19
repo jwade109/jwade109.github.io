@@ -275,4 +275,42 @@ static railgunTargetScirocco(self, dt)
             gun.seek(dt, theta);
     }
 }
+
+static repairFriendlies(self, dt)
+{
+    for (let obj of WORLD)
+    {
+        if (obj.isShip && obj.faction.name == self.faction.name &&
+            obj.health < obj.max_health &&
+            distance(obj.pos, self.pos) < BASILISK_REPAIR_RADIUS)
+        {
+            if (obj === self) obj.repair(BASILISK_REGEN_RATE*dt/10);
+            else obj.repair(BASILISK_REGEN_RATE*dt);
+            if (Math.random() > dt*13) return;
+            let health = new Debris(
+                obj.box.getRandom(), add2d(obj.vel,
+                    [Math.random()*150 - 75, Math.random()*150 - 75]),
+                Math.random()*2*Math.PI,
+                Math.random()*2 - 1, SMALL_DEBRIS/100);
+            health.nocollide = true;
+            health.skin = function()
+            {
+                let width = 7;
+                CTX.save();
+                CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+                CTX.globalAlpha = 0.3;
+                CTX.fillStyle = "green";
+                CTX.beginPath();
+                CTX.rect(-width*PIXELS/6, -width*PIXELS/2,
+                    width*PIXELS/3, width*PIXELS);
+                CTX.rect(-width*PIXELS/2, -width*PIXELS/6,
+                    width*PIXELS, width*PIXELS/3);
+                CTX.fill();
+                CTX.restore()
+            }
+            WORLD.push(health);
+        }
+    }
+}
+
 }

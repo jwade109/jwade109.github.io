@@ -30,6 +30,24 @@ Bullet.prototype.handleCollision = function(other)
     if (other instanceof Bullet) return;
     other.damage(BULLET_DAMAGE);
     this.remove = true;
+
+    if (!other.remove || Math.random() < 0.8) return true;
+    let num_debris = Math.round(Math.random()*3 + 2);
+    for (let i = 0; i < num_debris; ++i)
+    {
+        let pos = this.pos.slice();
+        let vel = other.vel.slice();
+        let rvel = sub2d(other.vel, this.vel);
+        vel[0] -= rvel[0]*Math.random()*0.4;
+        vel[1] -= rvel[1]*Math.random()*0.4;
+        let deb = new Debris(pos, vel,
+            Math.random()*Math.PI*2,
+            Math.random()*40 - 20,
+            Math.random()*3 + 2);
+        deb.name = other.name;
+        deb.faction = other.faction;
+        WORLD.push(deb);
+    }
 }
 
 Bullet.prototype.skin = function(opacity)

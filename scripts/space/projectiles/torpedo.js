@@ -1,7 +1,7 @@
 // torpedo.js
 
 const TORPEDO_MASS = 200;
-const TORPEDO_THRUST = 100*9.81*TORPEDO_MASS;
+const TORPEDO_THRUST = 150*9.81*TORPEDO_MASS;
 const TORPEDO_DAMAGE = 200;
 const TORPEDO_LENGTH = 6;
 const TORPEDO_WIDTH = 1;
@@ -33,7 +33,6 @@ function Torpedo(pos, vel, theta)
     {
         self.pos_history.push(self.pos.slice());
         if (self.target != null && self.target.remove) self.tracking = false;
-        self.time += dt;
         if (!self.tracking && Math.random() < dt/10) self.explode();
 
         let theta = self.theta;
@@ -156,10 +155,26 @@ Torpedo.prototype.handleCollision = function(other)
     if (other.faction.name == this.faction.name &&
         other != this.target) return;
     if (other instanceof Debris && other.radius < SMALL_DEBRIS) return;
+    other.damage(TORPEDO_DAMAGE);
+
+    let num_debris = Math.round(Math.random()*5 + 6);
+    for (let i = 0; i < num_debris; ++i)
+    {
+        let pos = this.pos.slice();
+        let vel = other.vel.slice();
+        let rvel = sub2d(other.vel, this.vel);
+        vel[0] -= rvel[0]*Math.random()*0.4;
+        vel[1] -= rvel[1]*Math.random()*0.4;
+        let deb = new Debris(pos, vel,
+            Math.random()*Math.PI*2,
+            Math.random()*40 - 20,
+            Math.random()*3 + 2);
+        deb.name = "Exploded Torpedo";
+        WORLD.push(deb);
+    }
+
     conserveMomentum(this, other);
     this.explode();
-    other.damage(TORPEDO_DAMAGE);
-    other.omega += (Math.random()*5 - 2.5);
 }
 
 function torpedoGuidance(pos, vel, tpos, tvel)

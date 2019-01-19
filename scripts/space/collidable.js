@@ -110,7 +110,7 @@ Collidable.prototype.draw = function()
     if (DRAW_TRACE)
     {
         CTX.globalAlpha = 0.6;
-        CTX.strokeStyle = "red";
+        CTX.strokeStyle = "black";
         CTX.beginPath();
         CTX.moveTo(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
         CTX.lineTo(this.pos_prev[0]*PIXELS, this.pos_prev[1]*PIXELS);

@@ -58,43 +58,6 @@ function Basilisk(pos, theta)
 
 Basilisk.prototype = Object.create(Collidable.prototype);
 
-Basilisk.prototype.control = function(dt)
-{
-    for (let obj of WORLD)
-    {
-        if (obj.isShip && obj.faction.name == this.faction.name &&
-            obj.health < obj.max_health &&
-            distance(obj.pos, this.pos) < BASILISK_REPAIR_RADIUS)
-        {
-            if (obj === this) obj.repair(BASILISK_REGEN_RATE*dt/10);
-            else obj.repair(BASILISK_REGEN_RATE*dt);
-            if (Math.random() > dt*13) return;
-            let health = new Debris(
-                obj.box.getRandom(), add2d(obj.vel,
-                    [Math.random()*150 - 75, Math.random()*150 - 75]),
-                Math.random()*2*Math.PI,
-                Math.random()*2 - 1, SMALL_DEBRIS/100);
-            health.nocollide = true;
-            health.skin = function()
-            {
-                let width = 7;
-                CTX.save();
-                CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
-                CTX.globalAlpha = 0.3;
-                CTX.fillStyle = "green";
-                CTX.beginPath();
-                CTX.rect(-width*PIXELS/6, -width*PIXELS/2,
-                    width*PIXELS/3, width*PIXELS);
-                CTX.rect(-width*PIXELS/2, -width*PIXELS/6,
-                    width*PIXELS, width*PIXELS/3);
-                CTX.fill();
-                CTX.restore()
-            }
-            WORLD.push(health);
-        }
-    }
-}
-
 Basilisk.prototype.handleCollision = function(other)
 {
     if (other instanceof Debris && other.radius > LARGE_DEBRIS)
@@ -194,6 +157,28 @@ Basilisk.prototype.skin = function()
     CTX.restore();
 
     for (let pdc of this.pdcs) pdc.draw(CTX);
+}
+
+Basilisk.prototype.radarIcon = function(opacity)
+{
+    CTX.save();
+    CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+    CTX.rotate(-this.theta);
+    CTX.fillStyle = CTX.strokeStyle = this.faction.radar;
+    CTX.globalAlpha = opacity*0.7;
+    CTX.lineWidth = 2;
+    CTX.globalAlpha = opacity;
+    CTX.beginPath();
+    CTX.arc(0, 0, 8, 0, Math.PI*2);
+    CTX.stroke();
+    CTX.lineWidth = 4;
+    CTX.beginPath();
+    CTX.moveTo(5, 0);
+    CTX.lineTo(-5, 0);
+    CTX.moveTo(0, 5);
+    CTX.lineTo(0, -5);
+    CTX.stroke();
+    CTX.restore();
 }
 
 Basilisk.prototype.explode = function()

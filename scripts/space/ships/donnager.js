@@ -279,6 +279,32 @@ Donnager.prototype.skin = function(opacity)
     for (let tube of this.tubes) tube.draw();
 }
 
+Donnager.prototype.radarIcon = function(opacity)
+{
+    CTX.save();
+    CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+    CTX.rotate(-this.theta);
+    CTX.fillStyle = CTX.strokeStyle = this.faction.radar;
+    CTX.globalAlpha = opacity*0.7;
+    CTX.lineWidth = 2;
+    CTX.globalAlpha = opacity;
+    CTX.beginPath();
+    CTX.moveTo(15, -2);
+    CTX.lineTo(15, 2);
+    CTX.lineTo(-15, 7);
+    CTX.lineTo(-15, -7);
+    CTX.closePath();
+    CTX.stroke();
+    CTX.beginPath();
+    CTX.moveTo(12, 0);
+    CTX.lineTo(12, 0);
+    CTX.lineTo(-12, 4);
+    CTX.lineTo(-12, -4);
+    CTX.closePath();
+    CTX.fill();
+    CTX.restore();
+}
+
 Donnager.prototype.explode = function()
 {
     let num_debris = 25 + Math.random()*9;

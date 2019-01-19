@@ -5,6 +5,7 @@ var DRAW_ACCEL;
 var SHOW_ALL_ALERTS;
 var SHOW_BEHAVIORS;
 var SHOW_OVERLAY;
+// var TUTORIAL = true;
 
 var LOCK_CAMERA;
 var SPAWN_ENEMIES;
@@ -45,11 +46,11 @@ const CTX = CANVAS.getContext("2d");
 const UNDERTRACK = new Audio("scripts/space/sounds/undertrack.mp3");
 const OVERTRACK = new Audio("scripts/space/sounds/overtrack.mp3");
 
-var LEFT_KEY, RIGHT_KEY, UP_KEY, DOWN_KEY;
-var SPACE_KEY, SHIFT_KEY, ENTER_KEY;
-var A_KEY, D_KEY;
-var LEFT_CLICK, RIGHT_CLICK, MOUSEBUTTON_DOWN;
-var ONE_KEY, TWO_KEY;
+var LEFT_KEY = false, RIGHT_KEY = false, UP_KEY = false, DOWN_KEY = false;
+var SPACE_KEY = false, SHIFT_KEY = false, ENTER_KEY = false;
+var A_KEY = false, D_KEY = false;
+var LEFT_CLICK = false, RIGHT_CLICK = false, MOUSEBUTTON_DOWN = false;
+var ONE_KEY = false, TWO_KEY = false, CTRL_KEY = false;
 
 var ALERTS;
 const ALERT_DISPLAY_TIME = 6;
@@ -60,7 +61,7 @@ var MOUSEX, MOUSEY;
 var MOUSE_SCREEN_POS;
 
 const MIN_ZOOM = 30;
-const MAX_ZOOM = 14000;
+const MAX_ZOOM = 14000*2;
 var VIEW_RADIUS, TARGET_ZOOM;
 
 var NEAREST_OBJECT;
@@ -68,6 +69,7 @@ var TARGET_OBJECT;
 
 var WORLD;
 const WORLD_RENDER_DISTANCE = 10000;
+var STARFIELD;
 
 var PLAYER_SHIP, CAMERA_TRACK_TARGET;
 var CAMERA_POS, CAMERA_THETA;
@@ -77,7 +79,7 @@ start();
 
 function initialize()
 {
-    DRAW_TRACE = false;
+    DRAW_TRACE = true;
     DRAW_ACCEL = false;
     SHOW_ALL_ALERTS = false;
     SHOW_BEHAVIORS = false;
@@ -108,12 +110,6 @@ function initialize()
     CURRENT_DT = NOMINAL_DT;
     TIME = 0;
 
-    LEFT_KEY = false, RIGHT_KEY = false, UP_KEY = false, DOWN_KEY = false;
-    SPACE_KEY = false, SHIFT_KEY = false, ENTER_KEY = false;
-    A_KEY = false, D_KEY = false;
-    LEFT_CLICK = false, RIGHT_CLICK = false, MOUSEBUTTON_DOWN = false;
-    ONE_KEY = false, TWO_KEY = false;
-
     ALERTS = [];
     PLAYER_WEAPON_SELECT = true; // true - missiles, false - railgun
 
@@ -129,6 +125,7 @@ function initialize()
     TARGET_OBJECT = null;
 
     WORLD = [];
+    STARFIELD = [];
     respawn(1);
     CAMERA_TRACK_TARGET = PLAYER_SHIP;
     CAMERA_POS = CAMERA_TRACK_TARGET.pos.slice();
@@ -152,17 +149,23 @@ function initialize()
         WORLD.push(deb);
     }
 
+    for (let i = 0; i < 200; ++i)
+    {
+        STARFIELD.push(new Star([Math.random()*50000 - 25000,
+            Math.random()*50000 - 25000]));
+    }
+
     for (let i = 0; i < CURRENT_WAVE; ++i)
     {
         let pos = rot2d([WORLD_RENDER_DISTANCE, 0],
             Math.PI*2*Math.random());
+        pos = add2d(pos, PLAYER_SHIP.pos);
         let ally = new Morrigan(pos, 0);
         if (Math.random() < 0.3) ally = new Corvette(pos, 0);
         if (i == 5) ally = new Scirocco(pos, 0);
         ally.faction = PLAYER_FACTION;
         ally.behaviors = [Behaviors.genericAlly,
             Behaviors.pdcDefense];
-        ally.vel = mult2d(sub2d(PLAYER_SHIP.pos, ally.pos), 0.1);
         WORLD.push(ally);
     }
     if (CURRENT_WAVE > 0) --CURRENT_WAVE;
@@ -191,12 +194,16 @@ function respawn(choice)
     {
         newship.theta = PLAYER_SHIP.theta;
         newship.omega = PLAYER_SHIP.omega;
+        newship.pos = PLAYER_SHIP.pos.slice();
+        newship.vel = PLAYER_SHIP.vel.slice();
         WORLD.splice(WORLD.indexOf(PLAYER_SHIP), 1);
         PLAYER_SHIP.remove = true;
     }
 
     newship.faction = PLAYER_FACTION;
     newship.behaviors = [Behaviors.playerControlled];
+    if (newship instanceof Basilisk)
+        newship.behaviors.push(Behaviors.repairFriendlies);
     PLAYER_SHIP = newship;
     WORLD.push(PLAYER_SHIP);
     GAME_OVER = false;
@@ -216,25 +223,15 @@ document.addEventListener('visibilitychange', function(event)
 
 document.addEventListener('mousewheel', function(event)
 {
-    if (GAME_PAUSED)
-    {
-        if (UNDERTRACK.readyState == 4 && OVERTRACK.readyState == 4)
-        {
-            try
-            {
-                UNDERTRACK.play();
-                OVERTRACK.play();
-            }
-            catch (except)
-            {
+    UNDERTRACK.play().catch(function(error) { });
+    OVERTRACK.play().catch(function(error) { });
 
-            }
-        }
-        return;
+    if (window.pageYOffset == 0)
+    {
+        event.preventDefault();
+        if (event.deltaY > 0) TARGET_ZOOM = TARGET_ZOOM*1.3;
+        if (event.deltaY < 0) TARGET_ZOOM = TARGET_ZOOM/1.3;
     }
-    event.preventDefault();
-    if (event.deltaY > 0) TARGET_ZOOM = TARGET_ZOOM*1.3;
-    if (event.deltaY < 0) TARGET_ZOOM = TARGET_ZOOM/1.3;
 },
 { capture: true, passive: false});
 
@@ -243,18 +240,8 @@ document.addEventListener('mousemove', function(event)
     var box = canvas.getBoundingClientRect();
     MOUSE_SCREEN_POS = [event.clientX - box.left, event.clientY - box.top];
     updateMouse();
-    if (UNDERTRACK.readyState == 4 && OVERTRACK.readyState == 4)
-    {
-        try
-        {
-            UNDERTRACK.play();
-            OVERTRACK.play();
-        }
-        catch (except)
-        {
-
-        }
-    }
+    UNDERTRACK.play().catch(function(error) { });
+    OVERTRACK.play().catch(function(error) { });
 });
 
 document.addEventListener('mousedown', function(event)
@@ -529,7 +516,6 @@ function takeControl(friendlyShip)
     oldPlayer.behaviors = friendlyShip.behaviors;
     friendlyShip.behaviors = oldControl;
     CAMERA_TRACK_TARGET = PLAYER_SHIP;
-    CAMERA_POS = mult2d(friendlyShip.pos, -1);
 }
 
 function physics(dt)
@@ -597,6 +583,7 @@ function physics(dt)
         let r = WORLD_RENDER_DISTANCE - 5;
         let rot = Math.random()*Math.PI*2;
         let pos = [Math.cos(rot)*r, -Math.sin(rot)*r];
+        pos = add2d(pos, CAMERA_POS);
         let vel = [-Math.cos(rot + (Math.random() - 0.5)
                 *Math.PI)*Math.random()*500,
             Math.sin(rot + (Math.random() - 0.5)
@@ -623,6 +610,7 @@ function physics(dt)
 
         let randomPos = rot2d([1.2*WORLD_RENDER_DISTANCE, 0],
             Math.random()*Math.PI*2);
+        randomPos = add2d(randomPos, CAMERA_POS);
         for (let i = 0; i < CURRENT_WAVE; ++i)
         {
             if (Math.random() < 0.8 && i % 3 == 0)
@@ -670,50 +658,18 @@ function physics(dt)
         }
         BETWEEN_WAVES = true;
         RESPAWN_TIMER -= dt;
-
-        if (RESPAWN_TIMER > 0)
-        {
-            PLAYER_SHIP.repair(PASSIVE_REGEN*dt*PLAYER_SHIP.max_health);
-            if (Math.random() < dt*13 &&
-                PLAYER_SHIP.health < PLAYER_SHIP.max_health)
-            {
-                let health = new Debris(
-                    PLAYER_SHIP.box.getRandom(), add2d(PLAYER_SHIP.vel,
-                        [Math.random()*150 - 75, Math.random()*150 - 75]),
-                    Math.random()*2*Math.PI,
-                    Math.random()*2 - 1, SMALL_DEBRIS/100);
-                health.nocollide = true;
-                health.skin = function()
-                {
-                    let width = 7;
-                    CTX.save();
-                    CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
-                    // CTX.rotate(-this.theta);
-                    CTX.globalAlpha = 0.3;
-                    CTX.fillStyle = "green";
-                    CTX.beginPath();
-                    CTX.rect(-width*PIXELS/6, -width*PIXELS/2,
-                        width*PIXELS/3, width*PIXELS);
-                    CTX.rect(-width*PIXELS/2, -width*PIXELS/6,
-                        width*PIXELS, width*PIXELS/3);
-                    CTX.fill();
-                    CTX.restore()
-                }
-                WORLD.push(health);
-            }
-        }
     }
     TIME += dt;
 
-    let pos = PLAYER_SHIP.pos.slice();
-    let vel = PLAYER_SHIP.vel.slice();
-    for (let obj of WORLD)
-    {
-        obj.pos[0] -= pos[0];
-        obj.pos[1] -= pos[1];
-        obj.vel[0] -= vel[0];
-        obj.vel[1] -= vel[1];
-    }
+    // let pos = PLAYER_SHIP.pos.slice();
+    // let vel = PLAYER_SHIP.vel.slice();
+    // for (let obj of WORLD)
+    // {
+    //     obj.pos[0] -= pos[0];
+    //     obj.pos[1] -= pos[1];
+    //     obj.vel[0] -= vel[0];
+    //     obj.vel[1] -= vel[1];
+    // }
 }
 
 function draw()
@@ -733,6 +689,8 @@ function draw()
 
     CTX.translate(-CAMERA_POS[0]*PIXELS,
                   -CAMERA_POS[1]*PIXELS);
+
+    for (let star of STARFIELD) star.draw();
 
     CTX.strokeStyle = "black";
     CTX.fillStyle = "black";
@@ -771,6 +729,32 @@ function draw()
     // CTX.stroke();
 
     for (let obj of WORLD) obj.draw(CTX);
+
+
+    // let drawHint = function(pos, color, str, dir)
+    // {
+    //     CTX.save();
+    //     CTX.translate(pos[0]*PIXELS, pos[1]*PIXELS);
+    //     CTX.globalAlpha = 0.4;
+    //     CTX.strokeStyle = CTX.fillStyle = color;
+    //     CTX.lineWidth = 2;
+    //     CTX.font = "24px Helvetica";
+    //     let width = CTX.measureText(str).width;
+    //     CTX.beginPath();
+    //     CTX.moveTo(0, 0);
+    //     CTX.lineTo(50, -50);
+    //     CTX.lineTo(50 + width, -50);
+    //     CTX.stroke();
+    //     CTX.fillText(str, 50, -55);
+    //     CTX.restore();
+    // }
+    //
+    // if (TUTORIAL && !GAME_OVER && CURRENT_WAVE < 2)
+    // {
+    //     drawHint(PLAYER_SHIP.pos, "black", "THIS IS YOU");
+    //     if (TARGET_OBJECT != null)
+    //         drawHint(TARGET_OBJECT.pos, "red", "THIS IS YOUR TARGET");
+    // }
 
     if (NEAREST_OBJECT != null && NEAREST_OBJECT != TARGET_OBJECT &&
         SLOW_TIME && !GAME_PAUSED)
@@ -930,9 +914,8 @@ function draw()
     if (TARGET_OBJECT != null)
     {
         let dist = Math.round(distance(PLAYER_SHIP.pos, TARGET_OBJECT.pos));
-        let rvel = Math.round(norm2d(
-            sub2d(TARGET_OBJECT.vel, PLAYER_SHIP.vel)));
-        let racc = norm2d(sub2d(PLAYER_SHIP.acc, TARGET_OBJECT.acc));
+        let rvel = Math.round(norm2d(TARGET_OBJECT.vel));
+        let racc = norm2d(TARGET_OBJECT.acc);
 
         let dstr = Math.round(dist).toLocaleString("en",
             {useGrouping: false, minimumFractionDigits: 0}) + " M";
@@ -1253,7 +1236,7 @@ function start()
     if (!LOCK_CAMERA) targetTheta = Math.PI/2;
     while (targetTheta - CAMERA_THETA < -Math.PI) targetTheta += Math.PI*2;
     while (targetTheta - CAMERA_THETA > Math.PI) targetTheta -= Math.PI*2;
-    CAMERA_THETA += (targetTheta - CAMERA_THETA)*0.09;
+    CAMERA_THETA += (targetTheta - CAMERA_THETA)*0.2;
 
     if (UNDERTRACK.currentTime > UNDERTRACK.duration - 0.10)
     {
