@@ -1,2 +1,2 @@
 document.getElementById("version").innerHTML =
-    "2019.01.19b" + " - <a href=\"index\">Home</a>";
+    "2019.01.20a" + " - <a href=\"index\">Home</a>";
