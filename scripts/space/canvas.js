@@ -1,5 +1,8 @@
 // canvas.js
 
+const DEVELOPER = false;
+
+var PIXELS = 1;
 var DRAW_TRACE;
 var DRAW_ACCEL;
 var SHOW_ALL_ALERTS;
@@ -28,8 +31,6 @@ const TARGETING_MAX = 14;
 var TARGETING_STAMINA;
 var TARGETING_LOCKOUT;
 
-var PLAYER_FACTION = UNN;
-
 var PLAYER_SCORE;
 var TIME_BONUS;
 var ALLY_BONUS;
@@ -46,31 +47,23 @@ const CTX = CANVAS.getContext("2d");
 const UNDERTRACK = new Audio("scripts/space/sounds/undertrack.mp3");
 const OVERTRACK = new Audio("scripts/space/sounds/overtrack.mp3");
 
-var LEFT_KEY = false, RIGHT_KEY = false, UP_KEY = false, DOWN_KEY = false;
-var SPACE_KEY = false, SHIFT_KEY = false, ENTER_KEY = false;
-var A_KEY = false, D_KEY = false, W_KEY = false;
-var LEFT_CLICK = false, RIGHT_CLICK = false, MOUSEBUTTON_DOWN = false;
-var ONE_KEY = false, TWO_KEY = false, CTRL_KEY = false;
-
 var ALERTS;
 const ALERT_DISPLAY_TIME = 6;
-var PLAYER_WEAPON_SELECT; // true - missiles, false - railgun
 
 var WIDTH, HEIGHT;
 var MOUSEX, MOUSEY;
 var MOUSE_SCREEN_POS;
 
+var WORLD;
+const WORLD_RENDER_DISTANCE = 10000;
+
 const MIN_ZOOM = 30;
-const MAX_ZOOM = 14000;
+const MAX_ZOOM = WORLD_RENDER_DISTANCE + 1000;
 var VIEW_RADIUS, TARGET_ZOOM;
 
 var NEAREST_OBJECT;
 var TARGET_OBJECT;
 var WAYPOINTS;
-
-var WORLD;
-const WORLD_RENDER_DISTANCE = 10000;
-var STARFIELD;
 
 var PLAYER_SHIP, CAMERA_TRACK_TARGET;
 var CAMERA_POS, CAMERA_THETA;
@@ -112,7 +105,7 @@ function initialize()
     TIME = 0;
 
     ALERTS = [];
-    PLAYER_WEAPON_SELECT = true; // true - missiles, false - railgun
+    // PLAYER_WEAPON_SELECT = true; // true - missiles, false - railgun
 
     WIDTH = document.body.clientWidth;
     HEIGHT = document.body.scrollHeight;
@@ -127,7 +120,6 @@ function initialize()
     WAYPOINTS = [];
 
     WORLD = [];
-    STARFIELD = [];
     respawn(1);
     CAMERA_TRACK_TARGET = PLAYER_SHIP;
     CAMERA_POS = CAMERA_TRACK_TARGET.pos.slice();
@@ -140,21 +132,15 @@ function initialize()
     {
         let r = Math.random()*WORLD_RENDER_DISTANCE/2 + 200;
         let rot = Math.random()*Math.PI*2;
-        let pos = [Math.cos(rot)*r + PLAYER_SHIP.pos[0],
-                   Math.sin(rot)*r + PLAYER_SHIP.pos[1]];
-        let vel = [Math.random()*200 - 100 + PLAYER_SHIP.vel[0],
-                   Math.random()*200 - 100 + PLAYER_SHIP.vel[1]]
+        let pos = [Math.cos(rot)*r + CAMERA_POS[0],
+                   Math.sin(rot)*r + CAMERA_POS[1]];
+        let vel = [Math.random()*200 - 100,
+                   Math.random()*200 - 100]
         let theta = Math.random()*Math.PI*2;
         let omega = Math.random()*10 - 5;
         let size = Math.random()*25 + 10;
         let deb = new Debris(pos, vel, theta, omega, size);
         WORLD.push(deb);
-    }
-
-    for (let i = 0; i < 200; ++i)
-    {
-        STARFIELD.push(new Star([Math.random()*50000 - 25000,
-            Math.random()*50000 - 25000]));
     }
 
     for (let i = 0; i < CURRENT_WAVE; ++i)
@@ -165,7 +151,7 @@ function initialize()
         let ally = new Morrigan(pos, 0);
         if (Math.random() < 0.3) ally = new Corvette(pos, 0);
         if (i == 5) ally = new Scirocco(pos, 0);
-        ally.faction = PLAYER_FACTION;
+        ally.faction = PLAYER_SHIP.faction;
         ally.behaviors = [Behaviors.genericAlly,
             Behaviors.pdcDefense];
         ally.vel = PLAYER_SHIP.vel.slice();
@@ -193,20 +179,24 @@ function respawn(choice)
                 break;
     }
 
+    newship.behaviors = [Behaviors.playerControlled];
+    if (newship instanceof Basilisk)
+        newship.behaviors.push(Behaviors.repairFriendlies);
     if (typeof PLAYER_SHIP !== 'undefined')
     {
         newship.theta = PLAYER_SHIP.theta;
         newship.omega = PLAYER_SHIP.omega;
         newship.pos = PLAYER_SHIP.pos.slice();
         newship.vel = PLAYER_SHIP.vel.slice();
+        newship.faction = PLAYER_SHIP.faction;
         WORLD.splice(WORLD.indexOf(PLAYER_SHIP), 1);
         PLAYER_SHIP.remove = true;
     }
+    else
+    {
+        newship.faction = UNN;
+    }
 
-    newship.faction = PLAYER_FACTION;
-    newship.behaviors = [Behaviors.playerControlled];
-    if (newship instanceof Basilisk)
-        newship.behaviors.push(Behaviors.repairFriendlies);
     PLAYER_SHIP = newship;
     WORLD.push(PLAYER_SHIP);
     GAME_OVER = false;
@@ -216,201 +206,6 @@ canvas.oncontextmenu = function(e)
 {
     e.preventDefault();
 };
-
-document.addEventListener('visibilitychange', function(event)
-{
-    if (document.hidden) GAME_PAUSED = true;
-    UNDERTRACK.ispaused = true;
-    OVERTRACK.ispaused = true;
-});
-
-document.addEventListener('mousewheel', function(event)
-{
-    UNDERTRACK.play().catch(function(error) { });
-    OVERTRACK.play().catch(function(error) { });
-
-    if (window.pageYOffset == 0)
-    {
-        event.preventDefault();
-        if (event.deltaY > 0) TARGET_ZOOM = TARGET_ZOOM*1.3;
-        if (event.deltaY < 0) TARGET_ZOOM = TARGET_ZOOM/1.3;
-    }
-},
-{ capture: true, passive: false});
-
-document.addEventListener('mousemove', function(event)
-{
-    var box = canvas.getBoundingClientRect();
-    MOUSE_SCREEN_POS = [event.clientX - box.left, event.clientY - box.top];
-    updateMouse();
-    UNDERTRACK.play().catch(function(error) { });
-    OVERTRACK.play().catch(function(error) { });
-});
-
-document.addEventListener('mousedown', function(event)
-{
-    switch (event.button)
-    {
-        case 0: LEFT_CLICK = true;
-                break;
-        case 2: RIGHT_CLICK = true;
-                if (TARGET_OBJECT != NEAREST_OBJECT)
-                    TARGET_OBJECT = NEAREST_OBJECT;
-                else TARGET_OBJECT = null;
-                break;
-        case 1: MOUSEBUTTON_DOWN = true;
-                event.preventDefault();
-                let dist = Infinity, toRemove = null;
-                for (let i = 0; i < WAYPOINTS.length; ++i)
-                {
-                    let d = distance(WAYPOINTS[i], [MOUSEX, MOUSEY]);
-                    if (d < 100/PIXELS)
-                    {
-                        dist = d;
-                        toRemove = i;
-                    }
-                }
-                if (toRemove == null) WAYPOINTS.push([MOUSEX, MOUSEY]);
-                else WAYPOINTS.splice(toRemove, 1);
-                break;
-    }
-});
-
-document.addEventListener('mouseup', function(event)
-{
-    switch (event.button)
-    {
-        case 0: LEFT_CLICK = false; break;
-        case 2: RIGHT_CLICK = false; break;
-        case 1: MOUSEBUTTON_DOWN = false; break;
-    }
-});
-
-document.addEventListener('keydown', function(event)
-{
-    let str = "";
-    switch (event.keyCode)
-    {
-        case 9:  break;
-        case 13: ENTER_KEY = true;
-                 break;
-        case 16: SHIFT_KEY = true; break;
-        case 27: GAME_PAUSED = !GAME_PAUSED;
-                 SHOW_HELP = false;
-                 break;
-        case 32: if (GAME_OVER) initialize();
-                 else SPACE_KEY = true;
-                 if (!GAME_PAUSED)
-                    event.preventDefault();
-                 break;
-        case 37: LEFT_KEY = true; break;
-        case 38: UP_KEY = true; break;
-        case 39: RIGHT_KEY = true; break;
-        case 40: DOWN_KEY = true; break;
-        case 49: ONE_KEY = true; break
-        case 50: TWO_KEY = true; break;
-        case 51: respawn(0); break;
-        case 52: respawn(1); break;
-        case 53: respawn(2); break;
-        case 54: respawn(3); break;
-        case 55: respawn(4); break;
-        case 56: respawn(5); break;
-        case 57: if (PLAYER_FACTION.name == "MCRN")
-                     PLAYER_FACTION = UNN;
-                 else if (PLAYER_FACTION.name == "UNN")
-                     PLAYER_FACTION = MCRN;
-                 PLAYER_SHIP.faction = PLAYER_FACTION;
-                 break;
-        case 65: A_KEY = true; break;
-        case 66: DRAW_FIRING_ARC = !DRAW_FIRING_ARC;
-                 str = DRAW_FIRING_ARC ? "enabled." : "disabled."
-                 throwAlert("DRAW_FIRING_ARC " + str, ALERT_DISPLAY_TIME);
-                 break;
-        case 68: D_KEY = true; break;
-        case 70: PLAYER_WEAPON_SELECT = !PLAYER_WEAPON_SELECT;
-                 str = PLAYER_WEAPON_SELECT ?
-                     "Switched active weapon to torpedoes." :
-                     "Switched active weapon to railgun.";
-                 throwAlert(str, ALERT_DISPLAY_TIME);
-                 break;
-        case 71: SHOW_OVERLAY = !SHOW_OVERLAY;
-                 str = SHOW_OVERLAY ? "enabled." : "disabled."
-                 throwAlert("SHOW_OVERLAY " + str, ALERT_DISPLAY_TIME);
-                 break;
-        case 72: DRAW_ACCEL = !DRAW_ACCEL;
-                 str = DRAW_ACCEL ? "enabled." : "disabled."
-                 throwAlert("DRAW_ACCEL " + str, ALERT_DISPLAY_TIME);
-                 break;
-        case 74: if (GAME_PAUSED) physics(-SLOW_DT);
-                 break;
-        case 75: if (GAME_PAUSED) physics(SLOW_DT);
-                 else if (BETWEEN_WAVES) RESPAWN_TIMER = 0;
-                 break;
-        case 76: DRAW_TORPEDO_TUBES = !DRAW_TORPEDO_TUBES;
-                 str = DRAW_TORPEDO_TUBES ? "enabled." : "disabled."
-                 throwAlert("DRAW_TORPEDO_TUBES " + str, ALERT_DISPLAY_TIME);
-                 break;
-        case 77: DRAW_TRACE = !DRAW_TRACE;
-                 str = DRAW_TRACE ? "enabled." : "disabled."
-                 throwAlert("DRAW_TRACE " + str, ALERT_DISPLAY_TIME);
-                 break;
-        case 78: DRAW_HITBOX = !DRAW_HITBOX;
-                 str = DRAW_HITBOX ? "enabled." : "disabled."
-                 throwAlert("DRAW_HITBOX " + str, ALERT_DISPLAY_TIME);
-                 break;
-        case 79: --CURRENT_WAVE; break;
-        case 80: ++CURRENT_WAVE; break;
-        case 82: if (!TARGETING_LOCKOUT) SLOW_TIME = !SLOW_TIME; break;
-        case 84: if (TARGET_OBJECT != null &&
-                     TARGET_OBJECT != CAMERA_TRACK_TARGET)
-                     CAMERA_TRACK_TARGET = TARGET_OBJECT;
-                 else
-                     CAMERA_TRACK_TARGET = PLAYER_SHIP;
-                 break;
-        case 85: SHOW_ALL_ALERTS = !SHOW_ALL_ALERTS;
-                 str = SHOW_ALL_ALERTS ? "enabled." : "disabled."
-                 throwAlert("SHOW_ALL_ALERTS " + str, ALERT_DISPLAY_TIME);
-                 break;
-        case 86: LOCK_CAMERA = !LOCK_CAMERA;
-                 str = LOCK_CAMERA ?
-                     "Locked camera enabled." :
-                     "Locked camera disabled";
-                 throwAlert(str, ALERT_DISPLAY_TIME);
-                 break;
-        case 87: W_KEY = true;
-                 break;
-        case 89: SHOW_BEHAVIORS = !SHOW_BEHAVIORS;
-                 str = SHOW_BEHAVIORS ?
-                     "SHOW_BEHAVIORS enabled." :
-                     "SHOW_BEHAVIORS disabled";
-                 throwAlert(str, ALERT_DISPLAY_TIME);
-                 break;
-        case 90: takeControl(TARGET_OBJECT);
-                 break;
-        case 191: if (NEAREST_OBJECT !== PLAYER_SHIP)
-                      TARGET_OBJECT = NEAREST_OBJECT;
-                  break;
-    }
-});
-
-document.addEventListener('keyup', function(event)
-{
-    switch (event.keyCode)
-    {
-        case 16: SHIFT_KEY = false; break;
-        case 13: ENTER_KEY = false; break;
-        case 32: SPACE_KEY = false; break;
-        case 37: LEFT_KEY = false; break;
-        case 38: UP_KEY = false; break;
-        case 39: RIGHT_KEY = false; break;
-        case 40: DOWN_KEY = false; break;
-        case 49: ONE_KEY = false; break
-        case 50: TWO_KEY = false; break;
-        case 65: A_KEY = false; break;
-        case 68: D_KEY = false; break;
-        case 87: W_KEY = false; break;
-    }
-});
 
 function throwAlert(msg, time)
 {
@@ -423,7 +218,7 @@ function zoom()
     TARGET_ZOOM = Math.max(MIN_ZOOM, Math.min(TARGET_ZOOM, MAX_ZOOM));
     VIEW_RADIUS += (TARGET_ZOOM - VIEW_RADIUS)*0.2;
     VIEW_RADIUS = Math.max(MIN_ZOOM, Math.min(VIEW_RADIUS, MAX_ZOOM));
-    PIXELS = WIDTH/(2*VIEW_RADIUS); //  pixels per meter
+    PIXELS = Math.min(WIDTH, HEIGHT)/(2*VIEW_RADIUS); //  pixels per meter
 }
 
 function updateMouse()
@@ -577,8 +372,8 @@ function physics(dt)
 
     for (let i = 0; i < WORLD.length; ++i)
     {
-        let dx = WORLD[i].pos[0] - PLAYER_SHIP.pos[0];
-        let dy = WORLD[i].pos[1] - PLAYER_SHIP.pos[1];
+        let dx = WORLD[i].pos[0] - CAMERA_POS[0];
+        let dy = WORLD[i].pos[1] - CAMERA_POS[1];
         let dist = Math.sqrt(dx*dx + dy*dy);
         if (dist > WORLD_RENDER_DISTANCE && !WORLD[i].permanent)
             WORLD[i].remove = true;
@@ -610,10 +405,10 @@ function physics(dt)
         let theta = Math.random()*Math.PI*2;
         let omega = Math.random()*10 - 5;
         let size = Math.random()*20 + 10;
-        if (Math.random() < 0.01)
+        if (Math.random() < 0.02)
         {
-            size *= 5;
-            omega /= 10;
+            size *= 8;
+            omega /= 15;
         }
         let deb = new Debris(pos, vel, theta, omega, size);
         WORLD.push(deb);
@@ -668,7 +463,7 @@ function physics(dt)
             let ally = new Morrigan(pos, 0);
             if (Math.random() < 0.3) ally = new Corvette(pos, 0);
             if (CURRENT_WAVE == 5) ally = new Scirocco(pos, 0);
-            ally.faction = PLAYER_FACTION;
+            ally.faction = PLAYER_SHIP.faction;
             ally.behaviors = [Behaviors.genericAlly,
                 Behaviors.pdcDefense,
                 Behaviors.railgunTargetScirocco];
@@ -712,71 +507,153 @@ function draw()
     CTX.translate(-CAMERA_POS[0]*PIXELS,
                   -CAMERA_POS[1]*PIXELS);
 
-    for (let star of STARFIELD) star.draw();
+    const STAR_TILE_SIZE = 2000;
+    function drawStarTile(xoff, yoff, layer)
+    {
+        function mix(a, b, c)
+        {
+            a=a-b;  a=a-c;  a=a^(c >>> 13);
+            b=b-c;  b=b-a;  b=b^(a << 8);
+            c=c-a;  c=c-b;  c=c^(b >>> 13);
+            a=a-b;  a=a-c;  a=a^(c >>> 12);
+            b=b-c;  b=b-a;  b=b^(a << 16);
+            c=c-a;  c=c-b;  c=c^(b >>> 5);
+            a=a-b;  a=a-c;  a=a^(c >>> 3);
+            b=b-c;  b=b-a;  b=b^(a << 10);
+            c=c-a;  c=c-b;  c=c^(b >>> 15);
+            return c;
+        }
+
+        const STARS_PER_TILE = 2;
+        const STAR_SEED = 0x9c2c9188;
+
+        CTX.fillStyle = "black";
+        CTX.globalAlpha = layer*0.3 + 0.4;
+
+        // TODO: apply parallax with layering
+
+        let offset = mult2d(CAMERA_POS, 1 - layer);
+        let parallax = add2d([xoff, yoff], offset);
+        let salt = STAR_SEED*(STAR_SEED + layer);
+
+        let hash = Math.abs(mix(STAR_SEED, xoff + salt, yoff + salt));
+        for (let n = 0; n < STARS_PER_TILE; n++) {
+            let px = hash % STAR_TILE_SIZE + parallax[0];
+            hash >>= 3;
+            let py = hash % STAR_TILE_SIZE + parallax[1];
+            hash >>= 3;
+            CTX.beginPath();
+            CTX.arc(px*PIXELS, py*PIXELS, 9*PIXELS*(layer*0.4 + 0.3), 0, Math.PI*2);
+            CTX.fill();
+        }
+
+        // CTX.fillStyle = "black";
+        // CTX.globalAlpha = 0.05;
+        // CTX.fillRect(parallax[0]*PIXELS, parallax[1]*PIXELS,
+        //     STAR_TILE_SIZE*PIXELS - 3, STAR_TILE_SIZE*PIXELS - 3);
+        // CTX.globalAlpha = 0.6;
+        // CTX.strokeRect(parallax[0]*PIXELS, parallax[1]*PIXELS,
+        //     STAR_TILE_SIZE*PIXELS - 3, STAR_TILE_SIZE*PIXELS - 3);
+    }
+
+    if (!DRAW_HITBOX)
+    {
+        for (let layer of [0.9, 0.6, 0.3, 0.01])
+        {
+            let xBegin = CAMERA_POS[0]*layer - WIDTH/2/PIXELS;
+            xBegin = xBegin - (xBegin % STAR_TILE_SIZE) - STAR_TILE_SIZE;
+            let yBegin = CAMERA_POS[1]*layer - HEIGHT/2/PIXELS;
+            yBegin = yBegin - (yBegin % STAR_TILE_SIZE) - STAR_TILE_SIZE;
+
+            let xEnd = CAMERA_POS[0]*layer + WIDTH/2/PIXELS;
+            xEnd = xEnd - (xEnd % STAR_TILE_SIZE) + STAR_TILE_SIZE;
+            let yEnd = CAMERA_POS[1]*layer + HEIGHT/2/PIXELS;
+            yEnd = yEnd - (yEnd % STAR_TILE_SIZE) + STAR_TILE_SIZE;
+
+            for (let i = xBegin; i < xEnd; i += STAR_TILE_SIZE)
+            {
+                for (let j = yBegin; j < yEnd; j += STAR_TILE_SIZE)
+                {
+                    drawStarTile(i, j, layer);
+                }
+            }
+        }
+    }
 
     CTX.strokeStyle = "black";
     CTX.fillStyle = "black";
     CTX.lineWidth = 1;
-    let interval = Math.round(Math.max(WIDTH, HEIGHT)/(PIXELS*5000))*500;
-    if (interval == 0) interval = 500;
+    let max = Math.round(Math.max(WIDTH, HEIGHT)/(PIXELS*10));
+    let interval = 500;
+    while (interval < max) interval *= 2;
     for (let i = 0; interval*(i + 1)*PIXELS < Math.max(WIDTH, HEIGHT); ++i)
     {
         CTX.beginPath();
-        CTX.arc(PLAYER_SHIP.pos[0]*PIXELS, PLAYER_SHIP.pos[1]*PIXELS,
+        CTX.arc(CAMERA_TRACK_TARGET.pos[0]*PIXELS, CAMERA_TRACK_TARGET.pos[1]*PIXELS,
                 interval*(i + 1)*PIXELS, 0, Math.PI*2);
         CTX.globalAlpha = 0.06;
         CTX.stroke();
         CTX.globalAlpha = 0.2;
         CTX.fillText(interval*(i + 1) + " m",
-            (PLAYER_SHIP.pos[0] + interval*(i + 1))*PIXELS + 3,
-            PLAYER_SHIP.pos[1]*PIXELS - 3);
+            (CAMERA_TRACK_TARGET.pos[0] + interval*(i + 1))*PIXELS + 3,
+            CAMERA_TRACK_TARGET.pos[1]*PIXELS - 3);
     }
 
     CTX.globalAlpha = 0.06;
-    CTX.moveTo(PLAYER_SHIP.pos[0]*PIXELS,
-               PLAYER_SHIP.pos[1]*PIXELS - Math.max(WIDTH, HEIGHT));
-    CTX.lineTo(PLAYER_SHIP.pos[0]*PIXELS,
-               PLAYER_SHIP.pos[1]*PIXELS + Math.max(WIDTH, HEIGHT));
-    CTX.moveTo(PLAYER_SHIP.pos[0]*PIXELS - Math.max(WIDTH, HEIGHT),
-               PLAYER_SHIP.pos[1]*PIXELS);
-    CTX.lineTo(PLAYER_SHIP.pos[0]*PIXELS + Math.max(WIDTH, HEIGHT),
-               PLAYER_SHIP.pos[1]*PIXELS);
+    CTX.moveTo(CAMERA_TRACK_TARGET.pos[0]*PIXELS,
+               CAMERA_TRACK_TARGET.pos[1]*PIXELS - Math.max(WIDTH, HEIGHT));
+    CTX.lineTo(CAMERA_TRACK_TARGET.pos[0]*PIXELS,
+               CAMERA_TRACK_TARGET.pos[1]*PIXELS + Math.max(WIDTH, HEIGHT));
+    CTX.moveTo(CAMERA_TRACK_TARGET.pos[0]*PIXELS - Math.max(WIDTH, HEIGHT),
+               CAMERA_TRACK_TARGET.pos[1]*PIXELS);
+    CTX.lineTo(CAMERA_TRACK_TARGET.pos[0]*PIXELS + Math.max(WIDTH, HEIGHT),
+               CAMERA_TRACK_TARGET.pos[1]*PIXELS);
     CTX.stroke();
-
-    // CTX.beginPath();
-    // CTX.arc(PLAYER_SHIP.pos[0]*PIXELS, PLAYER_SHIP.pos[1]*PIXELS,
-    //         WORLD_RENDER_DISTANCE*PIXELS, 0, Math.PI*2);
-    // CTX.globalAlpha = 0.2;
-    // CTX.strokeStyle = "black";
-    // CTX.stroke();
 
     for (let obj of WORLD) obj.draw(CTX);
 
+    {
+        CTX.save();
+        CTX.translate(CAMERA_POS[0]*PIXELS - WIDTH/2,
+            CAMERA_POS[1]*PIXELS - HEIGHT/2);
+        let grd = CTX.createRadialGradient(
+            WIDTH/2, HEIGHT/2, WORLD_RENDER_DISTANCE*0.9*PIXELS,
+            WIDTH/2, HEIGHT/2, WORLD_RENDER_DISTANCE*1*PIXELS);
+        grd.addColorStop(0, "rgba(255, 255, 255, 0)");
+        grd.addColorStop(1, "rgba(255, 255, 255, 1)");
+        CTX.fillStyle = grd;
+        CTX.globalAlpha = 1;
+        CTX.fillRect(0, 0, WIDTH, HEIGHT);
+        CTX.translate(WIDTH/2, HEIGHT/2);
+        CTX.beginPath();
+        CTX.setLineDash([500*PIXELS, 500*PIXELS]);
+        CTX.arc(0, 0, WORLD_RENDER_DISTANCE*PIXELS, 0, Math.PI*2);
+        CTX.strokeStyle = "lightgray";
+        CTX.stroke();
+        CTX.restore();
+    }
 
-    // let drawHint = function(pos, color, str, dir)
-    // {
-    //     CTX.save();
-    //     CTX.translate(pos[0]*PIXELS, pos[1]*PIXELS);
-    //     CTX.globalAlpha = 0.4;
-    //     CTX.strokeStyle = CTX.fillStyle = color;
-    //     CTX.lineWidth = 2;
-    //     CTX.font = "24px Helvetica";
-    //     let width = CTX.measureText(str).width;
-    //     CTX.beginPath();
-    //     CTX.moveTo(0, 0);
-    //     CTX.lineTo(50, -50);
-    //     CTX.lineTo(50 + width, -50);
-    //     CTX.stroke();
-    //     CTX.fillText(str, 50, -55);
-    //     CTX.restore();
-    // }
-    //
-    // if (TUTORIAL && !GAME_OVER && CURRENT_WAVE < 2)
-    // {
-    //     drawHint(PLAYER_SHIP.pos, "black", "THIS IS YOU");
-    //     if (TARGET_OBJECT != null)
-    //         drawHint(TARGET_OBJECT.pos, "red", "THIS IS YOUR TARGET");
-    // }
+    let drawHint = function(pos, color, str, dir)
+    {
+        CTX.save();
+        CTX.translate(pos[0]*PIXELS, pos[1]*PIXELS);
+        if (LOCK_CAMERA) CTX.rotate(-CAMERA_THETA + Math.PI/2);
+        CTX.globalAlpha = 0.4;
+        CTX.strokeStyle = CTX.fillStyle = color;
+        CTX.lineWidth = 2;
+        CTX.font = "24px Helvetica";
+        let width = CTX.measureText(str).width;
+        CTX.beginPath();
+        CTX.moveTo(0, 0);
+        CTX.lineTo(50, -50);
+        CTX.lineTo(50 + width, -50);
+        CTX.stroke();
+        CTX.fillText(str, 50, -55);
+        CTX.restore();
+    }
+
+    if (CAMERA_TRACK_TARGET != PLAYER_SHIP && !PLAYER_SHIP.remove)
+        drawHint(PLAYER_SHIP.pos, "black", "THIS IS YOU");
 
     if (NEAREST_OBJECT != null && NEAREST_OBJECT != TARGET_OBJECT &&
         SLOW_TIME && !GAME_PAUSED)
@@ -969,14 +846,11 @@ function draw()
     CTX.globalAlpha = 1;
     CTX.fillStyle = "gray";
     CTX.font = "12px Helvetica";
-    let weapon = PLAYER_WEAPON_SELECT ? "TORPEDOES" : "RAILGUN";
-    CTX.fillText("FIRING MODE: " + weapon, 70, HEIGHT - 10);
-    CTX.fillText("RADAR RANGE: " + Math.round(VIEW_RADIUS) + " METERS",
-        270, HEIGHT - 10);
     if (GAME_PAUSED)
-        CTX.fillText("PRESS [ESC] TO UNPAUSE", 500, HEIGHT - 10);
+        CTX.fillText("PRESS [ESC] TO UNPAUSE", 70, HEIGHT - 10);
     else
-        CTX.fillText("PRESS [ESC] TO PAUSE", 500, HEIGHT - 10);
+        CTX.fillText("PRESS [ESC] TO PAUSE", 70, HEIGHT - 10);
+
     if (TARGET_OBJECT != null)
     {
         let dist = Math.round(distance(PLAYER_SHIP.pos, TARGET_OBJECT.pos));
@@ -996,10 +870,19 @@ function draw()
         let astr = (Math.round(racc/0.981)/10).toLocaleString("en",
                 {useGrouping: false, minimumFractionDigits: 0}) + " G";
 
+        CTX.font = "14px Helvetica";
+        CTX.textAlign = "center";
         CTX.fillText("TARGET LOCKED: " +
+            TARGET_OBJECT.fullName().toUpperCase() + ": " +
             TARGET_OBJECT.type.toUpperCase() + " (" +
-            dstr + ", " + vstr + ", " + astr + ")", 680, HEIGHT - 10);
+            dstr + ", " + vstr + ", " + astr + ")", WIDTH/2, HEIGHT - 10);
     }
+    else
+    {
+        CTX.textAlign = "center";
+        CTX.fillText("RIGHT CLICK TO TARGET", WIDTH/2, HEIGHT - 10);
+    }
+
     CTX.textAlign = "right";
     let ftime = (Math.round(TIME*100)/100).toLocaleString("en",
         {useGrouping: false, minimumFractionDigits: 2});
@@ -1007,13 +890,21 @@ function draw()
     CTX.textAlign = "left";
 
     CTX.fillStyle = "gray";
-    CTX.font = "14px Helvetica";
-    for (let i in ALERTS)
+    let index = 0;
+    for (let i = ALERTS.length - 1; i >= 0; --i)
     {
-        CTX.globalAlpha = Math.max(0, Math.min(0.8, ALERTS[i][1]));
-        if (SHOW_ALL_ALERTS) CTX.globalAlpha = 0.8;
-        CTX.fillText(ALERTS[i][0].toUpperCase(),
-            70, 22 + 20*(ALERTS.length - i - 1));
+        CTX.font = "14px Helvetica";
+        if (index == 0)
+            CTX.font = "24px Helvetica";
+        CTX.globalAlpha = Math.max(0, Math.min(1, ALERTS[i][1]));
+        if (SHOW_ALL_ALERTS)
+            CTX.globalAlpha = 0.8;
+        if (CTX.globalAlpha > 0)
+        {
+            CTX.globalAlpha = 0.8;
+            CTX.fillText(ALERTS[i][0].toUpperCase(), 70, 30 + 20*index);
+            ++index;
+        }
     }
 
     if (SHOW_OVERLAY || GAME_PAUSED)
@@ -1025,6 +916,8 @@ function draw()
             CTX.lineWidth = 2;
             CTX.strokeStyle = "black";
             CTX.globalAlpha = 1;
+            if (!GAME_PAUSED)
+                CTX.globalAlpha = 0.3;
             CTX.fillStyle = "white";
             CTX.fillRect(0, 0, w, h);
             CTX.globalAlpha = 0.5;
@@ -1075,7 +968,7 @@ function draw()
         drawKey(beginx + 35, beginy, w, h, '1', 'Zoom Out');
         drawKey(beginx + 70, beginy, w, h, '2', 'Zoom In');
 
-        if (GAME_PAUSED)
+        if (GAME_PAUSED && DEVELOPER)
         {
             drawKey(beginx + 105, beginy, w, h,
                 '3', 'Spawn as: Morrigan Class');
@@ -1097,12 +990,13 @@ function draw()
         drawKey(beginx + w*1.5 + 5, beginy + 35, w, h, '', '');
         drawKey(beginx + w*2.5 + 10, beginy + 35, w, h,
             'W', 'Accelerate');
-        drawKey(beginx + w*3.5 + 15, beginy + 35, w, h, '', '');
-        drawKey(beginx + w*4.5 + 20, beginy + 35, w, h,
-            'R', 'Toggle targeting mode');
+        drawKey(beginx + w*3.5 + 15, beginy + 35, w, h,
+            'E', 'Toggle targeting mode');
 
-        if (GAME_PAUSED)
+        if (GAME_PAUSED && DEVELOPER)
         {
+            drawKey(beginx + w*4.5 + 20, beginy + 35, w, h,
+                '', '');
             drawKey(beginx + w*5.5 + 25, beginy + 35, w, h,
                 'T', 'Center camera on object (debug)');
             drawKey(beginx + w*6.5 + 30, beginy + 35, w, h,
@@ -1120,10 +1014,10 @@ function draw()
         drawKey(beginx + w*1.7 + 5, beginy + 70, w, h, 'A', 'Turn left');
         drawKey(beginx + w*2.7 + 10, beginy + 70, w, h, '', '');
         drawKey(beginx + w*3.7 + 15, beginy + 70, w, h, 'D', 'Turn right');
-        drawKey(beginx + w*4.7 + 20, beginy + 70, w, h, 'F', 'Toggle weapons');
 
-        if (GAME_PAUSED)
+        if (GAME_PAUSED && DEVELOPER)
         {
+            drawKey(beginx + w*4.7 + 20, beginy + 70, w, h, '', '');
             drawKey(beginx + w*5.7 + 25, beginy + 70, w, h,
                 'G', 'Toggle keyboard overlay');
             drawKey(beginx + w*6.7 + 30, beginy + 70, w, h,
@@ -1141,11 +1035,11 @@ function draw()
             'Z', 'Take control of friendly vessel');
         drawKey(beginx + w*3.5 + 10, beginy + 105, w, h, '', '');
         drawKey(beginx + w*4.5 + 15, beginy + 105, w, h, '', '');
-        drawKey(beginx + w*5.5 + 20, beginy + 105, w, h,
-            'V', 'Toggle locked camera');
 
-        if (GAME_PAUSED)
+        if (GAME_PAUSED && DEVELOPER)
         {
+            drawKey(beginx + w*5.5 + 20, beginy + 105, w, h,
+                'V', 'Toggle locked camera');
             drawKey(beginx + w*6.5 + 25, beginy + 105, w, h,
                 'B', 'Toggle draw firing arcs (debug)');
             drawKey(beginx + w*7.5 + 30, beginy + 105, w, h,
@@ -1202,7 +1096,7 @@ function draw()
         CTX.stroke();
     }
 
-    if (PLAYER_SHIP.remove)
+    if (GAME_OVER)
     {
         CTX.textAlign = "left";
         CTX.font = "100px Helvetica";
@@ -1281,24 +1175,51 @@ function draw()
     else
         CTX.fillText(NUMBER_OF_ALLIES + " ALLIES REMAIN", WIDTH - 20, 75);
 
-    // CTX.textAlign = "right";
-    // CTX.strokeStyle = "black";
-    // CTX.globalAlpha = 0.4;
-    // CTX.fillStyle = UNN.radar;
-    // CTX.font = "15px Helvetica";
-    // CTX.fillRect(WIDTH - 130, 100, 15, 15);
-    // CTX.fillText("FRIENDLIES", WIDTH - 110, 113);
-    // CTX.fillStyle = MCRN.radar;
-    // CTX.fillRect(WIDTH - 130, 120, 15, 15);
-    // CTX.fillText("ENEMIES", WIDTH - 110, 133);
+    if (GAME_OVER || GAME_PAUSED)
+    {
+        CTX.textAlign = "right";
+        CTX.font = "28px Helvetica";
+        CTX.globalAlpha = 0.4;
+        CTX.fillStyle = CTX.strokeStyle = "gray";
+        CTX.fillText("SCROLL DOWN", WIDTH - 50,
+            HEIGHT/4 - 30 + window.pageYOffset);
+        CTX.fillText("FOR INFO", WIDTH - 50,
+            HEIGHT/4 + window.pageYOffset);
+        CTX.beginPath();
+        CTX.moveTo(WIDTH - 20, HEIGHT/4 - 25 + window.pageYOffset);
+        CTX.lineTo(WIDTH - 40, HEIGHT/4 - 40 + window.pageYOffset);
+        CTX.lineTo(WIDTH - 40, HEIGHT/4 - 10 + window.pageYOffset);
+        CTX.closePath();
+        CTX.fill();
+
+        CTX.globalAlpha = Math.min(1, 4*window.pageYOffset/HEIGHT);
+        CTX.fillStyle = "white";
+        CTX.fillRect(0, 0, WIDTH, HEIGHT);
+
+        CTX.globalAlpha = 0.4;
+        CTX.textAlign = "center";
+        CTX.fillStyle = CTX.strokeStyle = "gray";
+        let screenPos = 10 + window.pageYOffset +
+            100000000/Math.pow(window.pageYOffset, 3);
+        CTX.beginPath();
+        CTX.moveTo(WIDTH/2 - 15, screenPos + 20);
+        CTX.lineTo(WIDTH/2, screenPos);
+        CTX.lineTo(WIDTH/2 + 15, screenPos + 20);
+        CTX.closePath();
+        CTX.fill();
+        CTX.fillText("GO ALL THE WAY BACK", WIDTH/2, screenPos + 60);
+        CTX.fillText("TO RECAPTURE", WIDTH/2, screenPos + 90);
+    }
 }
 
 function start()
 {
+    processInput();
+
     for (let i in ALERTS) ALERTS[i][1] -= DT;
 
-    CAMERA_POS[0] += (CAMERA_TRACK_TARGET.pos[0] - CAMERA_POS[0])*CURRENT_DT*10; // 0.17*DT;
-    CAMERA_POS[1] += (CAMERA_TRACK_TARGET.pos[1] - CAMERA_POS[1])*CURRENT_DT*10; // 0.17;
+    CAMERA_POS[0] += (CAMERA_TRACK_TARGET.pos[0] - CAMERA_POS[0])*0.2;
+    CAMERA_POS[1] += (CAMERA_TRACK_TARGET.pos[1] - CAMERA_POS[1])*0.2;
 
     let targetTheta = CAMERA_TRACK_TARGET.theta;
     if (!LOCK_CAMERA) targetTheta = Math.PI/2;
@@ -1376,15 +1297,15 @@ function start()
     DT = (CURRENT - LAST)/1000;
     LAST = CURRENT;
 
-    if (ONE_KEY) TARGET_ZOOM += 120;
-    if (TWO_KEY) TARGET_ZOOM -= 120;
+    if (KEYPRESSES.has("1")) TARGET_ZOOM += 120;
+    if (KEYPRESSES.has("2")) TARGET_ZOOM -= 120;
     zoom();
 
     let ds = 5;
-    if (UP_KEY) MOUSE_SCREEN_POS[1] -= ds;
-    if (DOWN_KEY) MOUSE_SCREEN_POS[1] += ds;
-    if (LEFT_KEY) MOUSE_SCREEN_POS[0] -= ds;
-    if (RIGHT_KEY) MOUSE_SCREEN_POS[0] += ds;
+    if (KEYPRESSES.has("ArrowUp")) MOUSE_SCREEN_POS[1] -= ds;
+    if (KEYPRESSES.has("ArrowDown")) MOUSE_SCREEN_POS[1] += ds;
+    if (KEYPRESSES.has("ArrowLeft")) MOUSE_SCREEN_POS[0] -= ds;
+    if (KEYPRESSES.has("ArrowRight")) MOUSE_SCREEN_POS[0] += ds;
 
     if (TARGETING_STAMINA <= 0 && SLOW_TIME)
     {

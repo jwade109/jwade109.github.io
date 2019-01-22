@@ -6,7 +6,7 @@ const SMALL_DEBRIS = 6
 
 function Debris(pos, vel, theta, omega, radius)
 {
-    Collidable.call(this, radius, radius, radius);
+    Collidable.call(this, radius, radius, Math.pow(radius, 3)/500);
     this.pos = pos;
     this.vel = vel;
     this.theta = theta;

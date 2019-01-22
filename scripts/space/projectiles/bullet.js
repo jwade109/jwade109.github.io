@@ -31,6 +31,10 @@ Bullet.prototype.handleCollision = function(other)
     other.damage(BULLET_DAMAGE);
     this.remove = true;
 
+    if (other.isShip && Math.random() < 0.05)
+        WORLD.push(new Explosion(this.pos.slice(), other.vel.slice(),
+            Math.random()*20 + 20));
+
     if (!other.remove || Math.random() < 0.8) return true;
     let num_debris = Math.round(Math.random()*3 + 2);
     for (let i = 0; i < num_debris; ++i)

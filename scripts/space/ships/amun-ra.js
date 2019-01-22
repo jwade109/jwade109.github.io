@@ -47,7 +47,7 @@ function Amun_Ra(pos, theta)
         new TorpedoTube([this.length/3, 0], 0, this),
         new TorpedoTube([this.length/4, -this.width/6], 0, this),
         new TorpedoTube([this.length/4, this.width/6], 0, this),
-        new TorpedoTube([-this.length/6, -this.width/3], 0, this)
+        new TorpedoTube([-this.length/6, -this.width/3], Math.PI/5, this)
     ];
 
     this.thrusters = [
@@ -57,6 +57,7 @@ function Amun_Ra(pos, theta)
     this.railguns = [
         new RailgunLauncher([this.length/2, 0], 0, this, [0, 0])
     ];
+    this.railguns[0].nodraw = true;
 
     this.permanent = true;
     this.isShip = true;
@@ -104,20 +105,6 @@ Amun_Ra.prototype.skin = function(opacity)
         thruster.draw(CTX);
     }
 
-    if (!PLAYER_WEAPON_SELECT && this === PLAYER_SHIP)
-    {
-        CTX.save();
-        CTX.globalAlpha = 0.2;
-        CTX.strokeStyle = "red";
-        if (!this.railguns[0].canFire())
-            CTX.setLineDash([10*PIXELS, 20*PIXELS]);
-        CTX.beginPath();
-        CTX.moveTo(0, 0);
-        CTX.lineTo(1000*PIXELS, 0);
-        CTX.stroke();
-        CTX.restore();
-    }
-
     CTX.globalAlpha = opacity;
     CTX.fillStyle = this.faction.c4;
     CTX.strokeStyle = "black";
@@ -140,6 +127,7 @@ Amun_Ra.prototype.skin = function(opacity)
     CTX.restore();
     for (let pdc of this.pdcs) pdc.draw(opacity);
     for (let tube of this.tubes) tube.draw();
+    for (let railgun of this.railguns) railgun.draw(opacity);
 }
 
 // Amun_Ra.prototype.control = Controller.amunRaEnemy;

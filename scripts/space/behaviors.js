@@ -5,39 +5,32 @@ class Behaviors
 
 static playerControlled(self, dt)
 {
+    ON_RELEASE.set(32, function(duration)
+    {
+        if (TARGET_OBJECT === self)
+            self.launchTorpedo(null);
+        else self.launchTorpedo(TARGET_OBJECT);
+    });
+
     if (!GAME_OVER)
     {
-        if (SHIFT_KEY || W_KEY)
+        if (KEYPRESSES.has(16) || KEYPRESSES.has(87)) // shift/w
         {
             PLAYER_SHIP.applyForce(rot2d([self.max_acc*
                 self.mass, 0], self.theta));
         }
-        if (SPACE_KEY)
-        {
-            if (PLAYER_WEAPON_SELECT)
-                if (TARGET_OBJECT === self)
-                    self.launchTorpedo(null);
-                else self.launchTorpedo(TARGET_OBJECT);
-            else self.fireRailgun();
-            SPACE_KEY = false;
-        }
-        if (LEFT_CLICK || ENTER_KEY)
-        {
-            self.firePDC(TARGET_OBJECT);
-        }
-
-        if (A_KEY)
+        if (KEYPRESSES.has(65)) // a
         {
             self.applyMoment(self.max_alpha*self.izz);
         }
-        else if (D_KEY)
+        else if (KEYPRESSES.has(68)) // d
         {
             self.applyMoment(-self.max_alpha*self.izz);
         }
         else self.applyMoment(-self.omega*self.izz);
     }
 
-    if (LEFT_CLICK)
+    if (KEYPRESSES.has(0)) // left click
     {
         for (let pdc of self.pdcs)
         {
@@ -54,9 +47,7 @@ static playerControlled(self, dt)
         {
             let angle = angle2d([1, 0],
                 sub2d([MOUSEX, MOUSEY], rg.globalPos()));
-            if (!PLAYER_WEAPON_SELECT)
-                rg.seek(dt, angle);
-            // else rg.seek(dt, self.theta + rg.theta);
+            rg.seek(dt, angle);
         }
     }
 }

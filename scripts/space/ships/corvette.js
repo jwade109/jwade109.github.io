@@ -58,7 +58,9 @@ function Corvette(pos, theta)
     this.tubes = [
         new TorpedoTube([this.length/2, 3], 0, this),
         new TorpedoTube([this.length/2, 0], 0, this),
-        new TorpedoTube([this.length/2, -3], 0, this)
+        new TorpedoTube([this.length/2, -3], 0, this),
+        new TorpedoTube([this.length/6, -this.width/2.2], Math.PI/12, this),
+        new TorpedoTube([this.length/6, this.width/2.2], -Math.PI/12, this)
     ];
 }
 

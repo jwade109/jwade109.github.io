@@ -1,6 +1,6 @@
 // railgun-launcher.js
 
-const RAILGUN_VEL = 20000;
+const RAILGUN_VEL = 50000;
 const RAILGUN_COOLDOWN = 2.5;
 const RAILGUN_SPREAD = 0;
 
@@ -47,7 +47,6 @@ RailgunLauncher.prototype.seek = function(dt, setpoint)
     this.omega += this.alpha*dt;
     this.omega = Math.max(-2, Math.min(this.omega, 2));
     this.gamma += this.omega*dt;
-
 }
 
 RailgunLauncher.prototype.canFire = function()
@@ -81,7 +80,6 @@ RailgunLauncher.prototype.fire = function()
 
 RailgunLauncher.prototype.draw = function(opacity)
 {
-    if (this.nodraw) return;
     CTX.save();
     let gpos = this.globalPos();
     CTX.translate(gpos[0]*PIXELS, gpos[1]*PIXELS);
@@ -105,58 +103,65 @@ RailgunLauncher.prototype.draw = function(opacity)
         CTX.restore();
     }
 
-    if (!PLAYER_WEAPON_SELECT && this.object == PLAYER_SHIP)
+
+    //
+    // if (!PLAYER_WEAPON_SELECT && this.object == PLAYER_SHIP)
+    // {
+    CTX.save();
+    CTX.strokeStyle = "red";
+    CTX.globalAlpha = 0.2*opacity;
+    CTX.rotate(-this.gamma);
+    CTX.beginPath();
+    CTX.moveTo(0, 0);
+    if (TIME - this.lastFired < this.cooldown)
+        CTX.setLineDash([10*PIXELS, 20*PIXELS]);
+    CTX.lineTo(2000*PIXELS, 0);
+    CTX.stroke();
+    CTX.restore();
+
+    if (this.nodraw)
     {
+        CTX.restore();
+        return;
+    }
+
+    if (TARGET_OBJECT != null && SLOW_TIME)
+    {
+        let rvel = sub2d(TARGET_OBJECT.vel, this.object.vel);
+        let theta = -interceptSolution(TARGET_OBJECT.pos,
+            rvel, this.globalPos(), RAILGUN_VEL);
+        let pointing = this.object.theta + this.theta + this.gamma;
+        while (theta < this.gamma - Math.PI) theta += Math.PI*2;
+        while (theta > this.gamma + Math.PI) theta -= Math.PI*2;
         CTX.save();
-        CTX.strokeStyle = "red";
+        CTX.rotate(-theta + this.theta + this.object.theta);
         CTX.globalAlpha = 0.2*opacity;
-        CTX.rotate(-this.gamma);
-        CTX.beginPath();
-        CTX.moveTo(0, 0);
+        CTX.strokeStyle = "green";
         if (TIME - this.lastFired < this.cooldown)
             CTX.setLineDash([10*PIXELS, 20*PIXELS]);
+        CTX.beginPath();
+        CTX.moveTo(0, 0);
         CTX.lineTo(2000*PIXELS, 0);
         CTX.stroke();
-        CTX.restore();
-
-        if (TARGET_OBJECT != null && SLOW_TIME)
+        CTX.beginPath();
+        let arclen = ((theta - pointing) % Math.PI*2);
+        while (arclen < -Math.PI) arclen += Math.PI*2;
+        while (arclen > Math.PI) arclen -= Math.PI*2;
+        arclen = Math.max(-Math.PI, Math.min(Math.PI, arclen*20));
+        let bigr = 500;
+        let smallr = 400;
+        if (arclen > 0)
         {
-            let rvel = sub2d(TARGET_OBJECT.vel, this.object.vel);
-            let theta = -interceptSolution(TARGET_OBJECT.pos,
-                rvel, this.globalPos(), RAILGUN_VEL);
-            let pointing = this.object.theta + this.theta + this.gamma;
-            while (theta < this.gamma - Math.PI) theta += Math.PI*2;
-            while (theta > this.gamma + Math.PI) theta -= Math.PI*2;
-            CTX.save();
-            CTX.rotate(-theta + this.theta + this.object.theta);
-            CTX.globalAlpha = 0.2*opacity;
-            CTX.strokeStyle = "green";
-            if (TIME - this.lastFired < this.cooldown)
-                CTX.setLineDash([10*PIXELS, 20*PIXELS]);
-            CTX.beginPath();
-            CTX.moveTo(0, 0);
-            CTX.lineTo(2000*PIXELS, 0);
-            CTX.stroke();
-            CTX.beginPath();
-            let arclen = ((theta - pointing) % Math.PI*2);
-            while (arclen < -Math.PI) arclen += Math.PI*2;
-            while (arclen > Math.PI) arclen -= Math.PI*2;
-            arclen = Math.max(-Math.PI, Math.min(Math.PI, arclen*20));
-            let bigr = 500;
-            let smallr = 400;
-            if (arclen > 0)
-            {
-                CTX.arc(0, 0, bigr*PIXELS, 0, arclen, false);
-                CTX.arc(0, 0, smallr*PIXELS, arclen, 0, true);
-            }
-            else
-            {
-                CTX.arc(0, 0, bigr*PIXELS, arclen, 0, false);
-                CTX.arc(0, 0, smallr*PIXELS, 0, arclen, true);
-            }
-            CTX.fill();
-            CTX.restore();
+            CTX.arc(0, 0, bigr*PIXELS, 0, arclen, false);
+            CTX.arc(0, 0, smallr*PIXELS, arclen, 0, true);
         }
+        else
+        {
+            CTX.arc(0, 0, bigr*PIXELS, arclen, 0, false);
+            CTX.arc(0, 0, smallr*PIXELS, 0, arclen, true);
+        }
+        CTX.fill();
+        CTX.restore();
     }
 
     CTX.rotate(-this.gamma);
