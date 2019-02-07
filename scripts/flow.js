@@ -45,7 +45,7 @@ class Particle
         ctx.fillStyle = "blue";
         ctx.globalAlpha = 0.5;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, 3, 0, Math.PI*2);
+        ctx.arc(this.x, this.y, 4, 0, Math.PI*2);
         ctx.fill();
     }
 }
@@ -152,11 +152,10 @@ function draw()
         var ctx = canvas.getContext("2d");
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.canvas.width = document.body.clientWidth;
-        ctx.canvas.height = document.body.scrollHeight;
+        ctx.canvas.height = document.body.clientHeight;
         width = ctx.canvas.width;
         height = ctx.canvas.height;
         requestAnimationFrame(draw);
-
 
         var pixels = 30;
         var w = Math.round(width/pixels);
@@ -192,19 +191,37 @@ function draw()
                 particles[p].step(1/(fps*steps_per_frame));
         }
 
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.arc(width/3, height/2, 40, 0, Math.PI*2);
+        ctx.strokeStyle = "black";
+        ctx.stroke();
+        ctx.fillStyle = "lightgray";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(width*2/3, height/2, 55, 0, Math.PI*2);
+        ctx.strokeStyle = "black";
+        ctx.stroke();
+        ctx.fillStyle = "lightgray";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(width/2 + 20, height/4 + 20, 60, 0, Math.PI*2);
+        ctx.strokeStyle = "black";
+        ctx.stroke();
+        ctx.fillStyle = "lightgray";
+        ctx.fill();
+
     }, 1000/fps);
 }
 
-potential.push(uniform(0, 1))
-potential.push(vortex(width/2, height/4, 5000));
-potential.push(vortex(width/2, 3*height/4, -5000));
-potential.push(source(width/4, height/2, 1000));
-potential.push(source(3*width/4, height/2, -1000));
-// potential.push(doublet(mouseX, mouseY, 50000));
+potential.push(uniform(0, 5));
+potential.push(vortex(width/3, height/2, 6000));
+potential.push(vortex(width*2/3, height/2, -11000));
+potential.push(source(width/2, height/4, 2000));
 
 draw();
 
-for (var i = 0; i < 1000; ++i)
+for (var i = 0; i < 400; ++i)
 {
     particles.push(new Particle(Math.random()*width, Math.random()*height));
 }

@@ -36,7 +36,7 @@ function draw()
     {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.canvas.width = document.body.clientWidth;
-        ctx.canvas.height = document.body.scrollHeight;
+        ctx.canvas.height = document.body.clientHeight;
         width = ctx.canvas.width;
         height = ctx.canvas.height;
         requestAnimationFrame(draw);
