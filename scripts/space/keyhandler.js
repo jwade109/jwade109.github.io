@@ -144,6 +144,12 @@ ON_PRESS.set(84, function() // t
 
 ON_PRESS.set(90, function() { takeControl(TARGET_OBJECT); }); // z
 
+ON_PRESS.set(75, function() // k
+{
+    if (GAME_PAUSED && DEVELOPER) physics(SLOW_DT);
+    else if (BETWEEN_WAVES) RESPAWN_TIMER = 0;
+});
+
 if (DEVELOPER)
 {
     ON_PRESS.set(51, function() { respawn(0); }); // 3
@@ -175,11 +181,6 @@ if (DEVELOPER)
     });
 
     ON_PRESS.set(74, function() { if (GAME_PAUSED) physics(-SLOW_DT); }); // j
-    ON_PRESS.set(75, function() // k
-    {
-        if (GAME_PAUSED) physics(SLOW_DT);
-        else if (BETWEEN_WAVES) RESPAWN_TIMER = 0;
-    });
     ON_PRESS.set(76, function() // l
     {
         DRAW_TORPEDO_TUBES = !DRAW_TORPEDO_TUBES;

@@ -44,8 +44,8 @@ var TIME;
 const CANVAS = document.getElementById("canvas");
 const CTX = CANVAS.getContext("2d");
 
-const UNDERTRACK = new Audio("scripts/space/sounds/undertrack.mp3");
-const OVERTRACK = new Audio("scripts/space/sounds/overtrack.mp3");
+const UNDERTRACK = new Audio("scripts/space/sounds/strobotone-undertrack.mp3");
+const OVERTRACK = new Audio("scripts/space/sounds/strobotone-overtrack.mp3");
 
 var ALERTS;
 const ALERT_DISPLAY_TIME = 6;

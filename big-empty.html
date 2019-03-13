@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" type="image/x-icon" href="resources/favicon.ico">
+    <title>The Big Empty</title>
+  </head>
+
+  <body>
+    <canvas
+      id="canvas" style="border: 0; top: 0;
+      box-shadow: 0px 0px 8px 0px #BBBBBB; cursor: none">
+    </canvas>
+
+    <div class="center">
+      <h1 style="text-align: center">The Big Empty</h1>
+
+      <h2>How to Play</h2>
+      <p>
+        <b>Goal:</b> Survive.
+      </p>
+      <p>
+        <b>Evasion:</b> Use [SHIFT] to accelerate and dodge incoming
+        torpedoes. [A] and [D] will torque your spacecraft left
+        and right. Try not to get blown up.
+      </p>
+      <p>
+        <b>Defense:</b> If you can't dodge a torpedo, don't give up hope
+        just yet. You can press [E] to enter "targeting mode" (which
+        slows down time to help you aim) and try to shoot down the torpedo
+        with your point defense cannons (PDCs). Right clicking the torpedo
+        will increase your accuracy. Hurry up, though - you can only spend
+        a few seconds in targeting mode.
+      </p>
+      <p>
+        <b>Offense:</b> Your main offensive weapon will be torpedoes.
+        To fire them, right click on your target and press [SPACE] to fire.
+        Each torpedo tube on your vessel will need time to reload, but you
+        have an unlimited number of torpedoes to fire.
+        You can also fight in close quarters with PDC cannons, but they
+        don't do a lot of damage.
+      </p>
+      <p>
+        <b>Allies:</b> Every round you'll be greeted by a friendly vessel
+        which will tag along with you and help you fight. Don't shoot at
+        them! You need as many as you can get, since you can use them as
+        meatshields against progressively harder waves of enemies.
+        Additionally, they serve as extra lives in the event that you
+        are killed; a GAME OVER occurs when you and all friendly vessels
+        are destroyed.
+      </p>
+
+      <meta name="description" content="contact form">
+
+      <h2>What is this and why does it exist?</h2>
+      <p>
+        This is a small game I made. It is <b>heavily</b> inspired by the
+          TV show
+        <a href="https://en.wikipedia.org/wiki/The_Expanse_(TV_series)">
+          <i>The Expanse</i></a>, which now ranks among the best shows
+        I've ever seen. It features some of the best and most grounded
+        science fiction space combat in any sci-fi IP. You should go
+        watch it, by the way. All of the combat mechanics, vessels,
+        and even the title of the game ("The Big Empty" is the title
+        of the S1E2) are directly copied from the
+        universe of <i>The Expanse</i>.
+      </p>
+      <p>
+        This project was also inspired by
+        <a href="https://www.red3d.com/cwr/papers/1999/gdc99steer.pdf">
+          an excellent paper</a> I recently discovered
+        on steering behaviors by a magician of a computer scientist named
+        <a href="https://www.red3d.com/cwr/">
+          Craig Reynolds</a>.
+        He's spent his whole glorious career researching ways to simulate
+        natural phenomena, especially motion, in a programmatic way.
+        All of the AI-driven vessels, both friendlies and unfriendlies,
+        use the behaviors laid out in his 1999 paper, which centers around
+        the idea of altering a vehicle's trajectory by calculating and
+        applying a "steering force".
+      </p>
+      <p>
+        If you haven't heard of Coding Train, you're in for a treat.
+        It's a YouTube channel run by Daniel Shiffman, the Bob Ross
+        of programming. Ultimately he was my inspiration for learning
+        about steering behaviors in the first place. Here's
+        <a href="https://www.youtube.com/watch?v=4hA7G3gup-4">
+          one of his videos</a>
+        on the subject.
+      <p>The music is "<a href="https://www.youtube.com/watch?v=hrrPEHRqW5s"
+        >San Fran Interlude</a>" by Strobotone.</p>
+
+      <h2>User Feedback</h2>
+      <p>
+        Is this game too hard, or do you want to suggest a feature?
+        Yell at me about it here.
+      </p>
+      <form class="gform" method="POST"
+        style="text-align: center; margin: 15px 0px"
+        action="https://script.google.com/macros/s/AKfycbz-ygNaF39Ebj0rs-N2GlWVJiMK5e8gClB1ypT-b4OZ7Ein6g/exec">
+        <div style="display:none" class="thankyou_message">
+        <h2>Thanks for the feedback!</h2>
+        </div>
+        <input class="space" type="text" name="name"
+          placeholder="Bob the Builder">
+        <input class="space" type="text" name="message"
+          placeholder="Hey your game sucks, I really hate it.">
+        <input class="space" type="text" name="email"
+          placeholder="bob@builder.com"><br>
+        <input style="margin: 15px 0 0 0" type="submit" value="Submit">
+      </form>
+
+      <div id="version"></div>
+    </div>
+
+    <script src="scripts/global.js"></script>
+
+    <script src="scripts/space/collidable.js"></script>
+    <script src="scripts/space/names.js"></script>
+    <script src="scripts/space/hitbox.js"></script>
+    <script src="scripts/space/vector.js"></script>
+    <script src="scripts/space/thruster.js"></script>
+    <script src="scripts/space/explosion.js"></script>
+    <script src="scripts/space/behaviors.js"></script>
+    <script src="scripts/space/factions.js"></script>
+
+    <script src="scripts/space/ships/basilisk.js"></script>
+    <script src="scripts/space/ships/scirocco.js"></script>
+    <script src="scripts/space/ships/corvette.js"></script>
+    <script src="scripts/space/ships/morrigan.js"></script>
+    <script src="scripts/space/ships/donnager.js"></script>
+    <script src="scripts/space/ships/amun-ra.js"></script>
+    <script src="scripts/space/ships/station.js"></script>
+    <script src="scripts/space/ships/debris.js"></script>
+    <script src="scripts/space/ships/mine.js"></script>
+
+    <script src="scripts/space/projectiles/torpedo.js"></script>
+    <script src="scripts/space/projectiles/bullet.js"></script>
+    <script src="scripts/space/projectiles/railgun.js"></script>
+    <script src="scripts/space/projectiles/pdc.js"></script>
+    <script src="scripts/space/projectiles/railgun-launcher.js"></script>
+    <script src="scripts/space/projectiles/torpedo-tube.js"></script>
+    <script src="scripts/space/keyhandler.js"></script>
+    <script src="scripts/space/canvas.js"></script>
+
+    <script data-cfasync="false" type="text/javascript"
+      src="form-submission-handler.js"></script>
+  </body>
+
+</html>
