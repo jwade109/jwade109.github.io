@@ -1,4 +1,6 @@
 
+const DEVELOPER = false;
+
 var KEYPRESSES = new Map();
 
 let ON_PRESS = new Map();

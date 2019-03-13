@@ -93,7 +93,8 @@ var NAMES = [
     "Bravais",
     "Carnelian",
     "Sanguine",
-    "Karakum"
+    "Karakum",
+    "Churkun"
 ];
 
 var DEBRIS_NAMES = [

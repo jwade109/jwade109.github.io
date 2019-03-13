@@ -1,6 +1,6 @@
 // canvas.js
 
-const DEVELOPER = false;
+// const DEVELOPER = false;
 
 var PIXELS = 1;
 var DRAW_TRACE;
@@ -610,6 +610,22 @@ function draw()
                CAMERA_TRACK_TARGET.pos[1]*PIXELS);
     CTX.stroke();
 
+    CTX.save();
+    CTX.globalAlpha = Math.max(0, (VIEW_RADIUS - 1000)/MAX_ZOOM*0.1);
+    CTX.strokeStyle = "blue";
+    CTX.translate(CAMERA_TRACK_TARGET.pos[0]*PIXELS,
+        CAMERA_TRACK_TARGET.pos[1]*PIXELS);
+    CTX.rotate(-TIME/3);
+    gradient = CTX.createLinearGradient(0, 0, 1000, 0);
+    gradient.addColorStop(0, "blue");
+    gradient.addColorStop(1, "blue");
+    CTX.strokeStyle = gradient; // grd;
+    CTX.lineWidth = WORLD_RENDER_DISTANCE*PIXELS;
+    CTX.beginPath();
+    CTX.arc(0, 0, WORLD_RENDER_DISTANCE*PIXELS/2, 0, Math.PI/100);
+    CTX.stroke();
+    CTX.restore();
+
     for (let obj of WORLD) obj.draw(CTX);
 
     {
@@ -886,6 +902,9 @@ function draw()
     CTX.textAlign = "right";
     let ftime = (Math.round(TIME*100)/100).toLocaleString("en",
         {useGrouping: false, minimumFractionDigits: 2});
+    let dilation = (Math.round(CURRENT_DT/DT*10)/10).toLocaleString("en",
+        {useGrouping: false, minimumFractionDigits: 1});
+    CTX.fillText(dilation, WIDTH - 10, HEIGHT - 30);
     CTX.fillText(ftime, WIDTH - 10, HEIGHT - 10);
     CTX.textAlign = "left";
 
