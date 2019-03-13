@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" type="image/x-icon" href="resources/favicon.ico">
+    <title>Minesweeper</title>
+  </head>
+
+  <body>
+    <canvas
+      id="canvas" style="border: 0; top: 0;
+      box-shadow: 0px 0px 16px 0px #BBBBBB;">
+    </canvas>
+    <script src="scripts/minesweeper.js"></script>
+    <div class="center">
+
+      <div style="text-align: center; margin-top: 5px">
+        <button onclick="restart()">Restart</button>
+      </div>
+
+      <h1 style="text-align: center">Minesweeper</h1>
+      <p>
+        Stuff about Minesweeper.
+      </p>
+      <div id="version"></div>
+    </div>
+
+    <script src="scripts/global.js"></script>
+
+  </body>
+</html>
