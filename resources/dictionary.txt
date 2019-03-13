@@ -133,3 +133,6 @@ drov;drive;to drive;VRB
 riik;ruined;ruined;MOD
 riof;ruin;to ruin;VRB
 triaf;work;to work;VRB
+romp;computer;computer;NON
+dink;phone;phone;NON
+bab;baby;baby;NON
