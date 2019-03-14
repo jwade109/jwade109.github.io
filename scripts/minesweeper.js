@@ -14,6 +14,10 @@ let GAME_BOARD;
 const SQUARE_WIDTH = 35;
 const NUM_ROWS = Math.round(HEIGHT/SQUARE_WIDTH);
 const NUM_COLS = Math.round(WIDTH/SQUARE_WIDTH);
+const COLORS = ["#ffffff", "#c6c6ff", "#aaaaff",
+    "#8e8eff", "#7171ff", "#5555ff", "#3939ff", "#1c1cff"];
+
+let initialized = false;
 
 restart();
 start();
@@ -39,6 +43,14 @@ document.addEventListener('mousedown', function(event)
 {
     event.preventDefault();
     event.stopPropagation();
+
+    while (!initialized)
+    {
+        let cell = GAME_BOARD[MOUSE_BOARD_INDEX[1]][MOUSE_BOARD_INDEX[0]];
+        if (cell.neighbors == 0 && !cell.isBomb) initialized = true;
+        else restart();
+    }
+
     switch (event.button)
     {
         case 0: floodReveal(MOUSE_BOARD_INDEX[1], MOUSE_BOARD_INDEX[0]);
@@ -48,6 +60,8 @@ document.addEventListener('mousedown', function(event)
                 !GAME_BOARD[MOUSE_BOARD_INDEX[1]]
                 [MOUSE_BOARD_INDEX[0]].flagged;
     }
+
+    console.log(evaluate());
 });
 
 function restart()
@@ -86,6 +100,25 @@ function restart()
     }
 }
 
+function evaluate()
+{
+    let bombs = 0, flags = 0, correct = 0, lost = false;
+    for (let i = 0; i < NUM_COLS; ++i)
+    {
+        for (let j = 0; j < NUM_ROWS; ++j)
+        {
+            let cell = GAME_BOARD[i][j];
+            if (cell.revealed) cell.flagged = false;
+            if (cell.flagged) flags++;
+            if (cell.isBomb) bombs++;
+            if (cell.isBomb && cell.flagged) correct++;
+            if (cell.isBomb && cell.revealed) gameover = true;
+        }
+    }
+    let won = (bombs == correct);
+    return [won, lost, bombs, flags, correct];
+}
+
 function floodReveal(i, j)
 {
     if (i < 0 || j < 0) return;
@@ -105,6 +138,14 @@ function floodReveal(i, j)
     floodReveal(i + 1, j);
     floodReveal(i, j - 1);
     floodReveal(i, j + 1);
+
+    if (GAME_BOARD[i][j].neighbors == 0)
+    {
+        floodReveal(i - 1, j - 1);
+        floodReveal(i + 1, j - 1);
+        floodReveal(i - 1, j + 1);
+        floodReveal(i + 1, j + 1);
+    }
 }
 
 function draw()
@@ -119,7 +160,7 @@ function draw()
     let height = HEIGHT/NUM_ROWS;
 
     ctx.fillStyle = "black";
-    ctx.strokeStyle = "gray";
+    ctx.strokeStyle = "black";
     ctx.globalAlpha = 1;
     ctx.textAlign = "center";
     for (let i = 0; i < GAME_BOARD.length; ++i)
@@ -130,39 +171,54 @@ function draw()
 
             if (GAME_BOARD[i][j].isBomb)
             {
-                ctx.fillStyle = "black";
+                ctx.fillStyle = "red";
                 ctx.beginPath();
-                ctx.arc((i + 0.5)*width, (j + 0.5)*height,
-                    (width + height)/8, 0, Math.PI*2);
+                ctx.moveTo((i+0.5)*width, j*height);
+                ctx.lineTo((i+1)*width, (j+0.5)*height);
+                ctx.lineTo((i+0.5)*width, (j+1)*height);
+                ctx.lineTo(i*width, (j+0.5)*height);
                 ctx.fill();
             }
             else
             {
+                if (((i + j) % 2) == 0)
+                {
+                    ctx.globalAlpha = 0.4;
+                    ctx.fillStyle = "lightgray";
+                    ctx.fillRect(i*width, j*height, width, height);
+                }
+                ctx.fillStyle = COLORS[GAME_BOARD[i][j].neighbors];
+                ctx.globalAlpha = 0.4;
+                ctx.fillRect(i*width, j*height, width, height);
                 ctx.globalAlpha = 1;
                 ctx.fillStyle = "black";
                 ctx.textAlign = "center";
                 ctx.font = "20px Helvetica";
-                ctx.fillText(GAME_BOARD[i][j].neighbors,
-                    (i+0.5)*width, (j+0.75)*height);
+                if (GAME_BOARD[i][j].neighbors > 0)
+                    ctx.fillText(GAME_BOARD[i][j].neighbors,
+                        (i+0.5)*width, (j+0.75)*height);
             }
 
             if (!GAME_BOARD[i][j].revealed)
             {
                 ctx.globalAlpha = 1;
-                ctx.fillStyle = "gray";
+                let grd = ctx.createLinearGradient(
+                    i*width, j*height, i*width + 50, j*height + 100);
+                grd.addColorStop(0, "gray");
+                grd.addColorStop(1, "lightgray");
+                ctx.fillStyle = grd;
                 ctx.fillRect(i*width, j*height, width, height);
                 if (GAME_BOARD[i][j].flagged)
                 {
                     ctx.fillStyle = "red";
-                    ctx.beginPath();
-                    ctx.arc((i + 0.5)*width, (j + 0.5)*height,
-                        (width + height)/16, 0, Math.PI*2);
-                    ctx.fill();
+                    ctx.globalAlpha = 0.5;
+                    ctx.fillRect(i*width, j*height, width, height);
                 }
             }
 
             ctx.globalAlpha = 1;
-            ctx.strokeStyle = "lightgray";
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "white";
             ctx.strokeRect(i*width, j*height, width, height);
         }
     }
@@ -174,9 +230,10 @@ function draw()
         MOUSE_BOARD_INDEX[0] < GAME_BOARD.length &&
         MOUSE_BOARD_INDEX[1] < GAME_BOARD[MOUSE_BOARD_INDEX[0]].length)
     {
-        ctx.strokeStyle = "red";
+        ctx.fillStyle = "white";
+        ctx.globalAlpha = 0.4;
         ctx.lineWidth = 2;
-        ctx.strokeRect(MOUSE_BOARD_INDEX[1]*width,
+        ctx.fillRect(MOUSE_BOARD_INDEX[1]*width,
             MOUSE_BOARD_INDEX[0]*height, width, height);
     }
 
