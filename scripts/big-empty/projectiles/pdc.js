@@ -21,11 +21,6 @@ class PointDefenseCannon
         this.magColor = "gray";
         this.baseColor = "gray";
         this.nodraw = false;
-
-        this.audio = new Audio("scripts/space/sounds/" +
-            "Weapon Gun Rifle M16 Single Shot Interior Shooting Range 01.wav");
-        this.audio.volume = 0.02;
-        this.audio.playbackRate = 0;
     }
 
     globalPos()
@@ -93,12 +88,6 @@ class PointDefenseCannon
         b.faction = this.object.faction;
         WORLD.push(b);
         this.gamma = theta - this.theta - this.object.theta;
-
-        if (this.object === PLAYER_SHIP)
-        {
-            this.audio.currentTime = 0;
-            this.audio.play();
-        }
     }
 
     draw(opacity)

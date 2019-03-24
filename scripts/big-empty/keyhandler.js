@@ -1,5 +1,5 @@
 
-const DEVELOPER = false;
+const DEVELOPER = true;
 
 var KEYPRESSES = new Map();
 

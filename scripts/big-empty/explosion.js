@@ -24,7 +24,7 @@ class Explosion
         ]
         let randn = Math.floor(Math.random()*sources.length);
         this.audio = new Audio(
-            "scripts/space/sounds/" + sources[randn]);
+            "scripts/big-empty/sounds/" + sources[randn]);
         this.audio.volume = 0.1;
         this.audio.play();
     }

@@ -26,10 +26,16 @@ html, body
     height: 100%;
 }
 
-p
+p, blockquote
 {
     font-size: 20px;
     line-height: 1.4;
+}
+
+blockquote
+{
+    font-family: Cambria;
+    font-style: italic;
 }
 
 a

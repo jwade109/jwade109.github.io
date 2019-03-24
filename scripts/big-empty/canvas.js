@@ -1,6 +1,6 @@
 // canvas.js
 
-// const DEVELOPER = false;
+// const DEVELOPER = true;
 
 var PIXELS = 1;
 var DRAW_TRACE;
@@ -44,8 +44,8 @@ var TIME;
 const CANVAS = document.getElementById("canvas");
 const CTX = CANVAS.getContext("2d");
 
-const UNDERTRACK = new Audio("scripts/space/sounds/strobotone-undertrack.mp3");
-const OVERTRACK = new Audio("scripts/space/sounds/strobotone-overtrack.mp3");
+const UNDERTRACK = new Audio("scripts/big-empty/sounds/strobotone-undertrack.mp3");
+const OVERTRACK = new Audio("scripts/big-empty/sounds/strobotone-overtrack.mp3");
 
 var ALERTS;
 const ALERT_DISPLAY_TIME = 6;
@@ -66,7 +66,7 @@ var TARGET_OBJECT;
 var WAYPOINTS;
 
 var PLAYER_SHIP, CAMERA_TRACK_TARGET;
-var CAMERA_POS, CAMERA_THETA;
+var CAMERA_POS, CAMERA_THETA, CAMERA_VEL;
 
 initialize();
 start();
@@ -123,6 +123,7 @@ function initialize()
     respawn(1);
     CAMERA_TRACK_TARGET = PLAYER_SHIP;
     CAMERA_POS = CAMERA_TRACK_TARGET.pos.slice();
+    CAMERA_VEL = CAMERA_TRACK_TARGET.vel.slice();
     CAMERA_THETA = Math.PI/2;
 
     CURRENT = new Date().getTime(), LAST = CURRENT, DT = 0;
@@ -529,8 +530,6 @@ function draw()
 
         CTX.fillStyle = "black";
         CTX.globalAlpha = layer*0.3 + 0.4;
-
-        // TODO: apply parallax with layering
 
         let offset = mult2d(CAMERA_POS, 1 - layer);
         let parallax = add2d([xoff, yoff], offset);
@@ -1239,6 +1238,22 @@ function start()
 
     CAMERA_POS[0] += (CAMERA_TRACK_TARGET.pos[0] - CAMERA_POS[0])*0.2;
     CAMERA_POS[1] += (CAMERA_TRACK_TARGET.pos[1] - CAMERA_POS[1])*0.2;
+
+    // let center_pos = [0, 0];
+    // let count = 0;
+    // for (let object of WORLD)
+    // {
+    //     if (object.isShip &&
+    //         distance(CAMERA_TRACK_TARGET.pos, object.pos) < 4000)
+    //     {
+    //         center_pos = add2d(center_pos, object.pos);
+    //         ++count;
+    //     }
+    // }
+    // center_pos = div2d(center_pos, count);
+    //
+    // CAMERA_POS[0] += (center_pos[0] - CAMERA_POS[0])*0.1;
+    // CAMERA_POS[1] += (center_pos[1] - CAMERA_POS[1])*0.1;
 
     let targetTheta = CAMERA_TRACK_TARGET.theta;
     if (!LOCK_CAMERA) targetTheta = Math.PI/2;
