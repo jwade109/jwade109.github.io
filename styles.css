@@ -23,7 +23,9 @@ html, body
     font-family: Garamond, Cambria, SERIF;
     width: 100%;
     margin: 0;
+    padding: 0;
     height: 100%;
+    border: 1px white solid;
 }
 
 p, blockquote
@@ -86,17 +88,6 @@ input.loruun
     text-align: center;
     border-bottom: 1px solid lightgray;
     margin: 0;
-}
-
-button
-{
-    padding: 15px 15px 15px 15px;
-    outline: none;
-}
-
-button:active
-{
-    background-color: #DDDDDD;
 }
 
 h1
@@ -170,12 +161,25 @@ td
     margin: 0px;
 }
 
-button
+select
 {
-    border: 2px solid lightgray;
+    outline: none;
+}
+
+button, select
+{
+    padding: 10px;
+    border: 1px solid black;
+    font-family: monospace;
+    font-weight: bold;
+    outline: none;
     background-color: #FFFFFF;
     font-size: 16px;
-    font-family: monospace;
+}
+
+button:active
+{
+    background-color: #DDDDDD;
 }
 
 img.inline

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" type="image/x-icon" href="resources/favicon.ico">
+    <title>GPA Calculation</title>
+  </head>
+
+  <body>
+    <div class="center" style="text-align: center">
+
+      <div style="height: 20px"></div>
+
+      <h1>Reckless Overplanning</h1>
+
+      <h2>Forecast GPA: <span id="output">0.00</span></h2>
+      <div style="height: 20px"></div>
+
+      <table>
+        <tr>
+          <th>
+            <input id="currentGPA"
+              type="text"
+              name="input"
+              value="3.68"
+              placeholder="Current GPA"
+              onchange="compute()">
+            </input>
+          </th>
+          <th>
+            <input id="hoursAttempted"
+              type="text"
+              name="input"
+              value="86"
+              placeholder="Credits attempted"
+              onchange="compute()">
+            </input>
+          </th>
+        </tr>
+      </table>
+
+      <table>
+        <tr>
+          <th>
+            <h3>Class</h3>
+          </th>
+          <th>
+            <h3>Grade</h3>
+          </th>
+        </tr>
+        <tr>
+          <td>
+            <h3>Aerospace Structures</h3>
+          </td>
+          <td>
+            <select id="Grade 1" onchange="compute()">
+              <option value="A" selected>A</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B">B</option>
+              <option value="B-">B-</option>
+              <option value="C+">C+</option>
+              <option value="C">C</option>
+              <option value="C-">C-</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <h3>Aerothermal and Propulsion</h3>
+          </td>
+          <td>
+            <select id="Grade 2" onchange="compute()">
+              <option value="A">A</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B">B</option>
+              <option value="B-">B-</option>
+              <option value="C+" selected>C+</option>
+              <option value="C">C</option>
+              <option value="C-">C-</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <h3>Space Vehicle Dynamics</h3>
+          </td>
+          <td>
+            <select id="Grade 3" onchange="compute()">
+              <option value="A">A</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B">B</option>
+              <option value="B-" selected>B-</option>
+              <option value="C+">C+</option>
+              <option value="C">C</option>
+              <option value="C-">C-</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <h3>Experimental Methods</h3>
+          </td>
+          <td>
+            <select id="Grade 4" onchange="compute()">
+              <option value="A">A</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B" selected>B</option>
+              <option value="B-">B-</option>
+              <option value="C+">C+</option>
+              <option value="C">C</option>
+              <option value="C-">C-</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <h3>Data Structures and Algorithms</h3>
+          </td>
+          <td>
+            <select id="Grade 5" onchange="compute()">
+              <option value="A" selected>A</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B">B</option>
+              <option value="B-">B-</option>
+              <option value="C+">C+</option>
+              <option value="C">C</option>
+              <option value="C-">C-</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <h3>Compressible Aerodynamics</h3>
+          </td>
+          <td>
+            <select id="Grade 6" onchange="compute()">
+              <option value="A">A</option>
+              <option value="A-" selected>A-</option>
+              <option value="B+">B+</option>
+              <option value="B">B</option>
+              <option value="B-">B-</option>
+              <option value="C+">C+</option>
+              <option value="C">C</option>
+              <option value="C-">C-</option>
+            </select>
+          </td>
+        </tr>
+      </table>
+
+      <div id="version"></div>
+    </div>
+
+    <script>
+
+    const NUM_GRADES = 6;
+    const MAP = { "A": 4.0, "A-": 3.7, "B+": 3.3, "B": 3, "B-": 2.7,
+                  "C+": 2.3, "C": 2.0, "C-": 1.7 };
+
+    function compute()
+    {
+        let average = 0;
+        for (let i = 0; i < NUM_GRADES; i++)
+        {
+            let grade = document.getElementById("Grade " + (i + 1)).value;
+            let value = MAP[grade];
+            average += value;
+        }
+        average /= NUM_GRADES;
+        let currentGPA = document.getElementById("currentGPA").value;
+        let hoursAttempted = parseInt(document.getElementById("hoursAttempted").value);
+        let currentHours = 3*NUM_GRADES;
+        result = (average*currentHours + currentGPA*hoursAttempted)/
+            (hoursAttempted + currentHours);
+
+        document.getElementById("output").innerHTML = result.toFixed(3);
+    }
+
+    compute();
+
+    </script>
+
+    <script src="scripts/global.js"></script>
+
+  </body>
+</html>
