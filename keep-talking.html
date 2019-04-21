@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" type="image/x-icon" href="resources/favicon.ico">
+    <title>Keep Talking and No One Explodes</title>
+  </head>
+
+  <body>
+
+    <div class="center" style="text-align: center">
+
+      <div style="height: 30px"></div>
+
+      <!-- <select id="module" onchange="">
+        <option>Select a Module</option>
+        <option selected value="morse-code">Morse Code</option>
+      </select> -->
+
+      <div style="text-align: center">
+        <input style="margin-top: 60px" id="input"
+          class="loruun"
+          type="text"
+          name="input"
+          placeholder="Enter morse code here [. - / *]">
+        </input>
+      </div>
+
+      <div style="height: 75px">
+        <h1 id="translate"
+          style="word-break: break-all; word-wrap: break-word;">
+            <i>translation</i></h1>
+      </div>
+
+    </div>
+
+    <div class="center" style="text-align: center;
+      width: 100%; max-width: 1200px">
+
+      <table style="text-align: center" id="output">
+      </table>
+
+      <div id="version"></div>
+    </div>
+
+  </body>
+  <script src="scripts/global.js"></script>
+</html>
+
+<style>
+
+tr
+{
+    border: 0;
+}
+
+</style>
+
+<script>
+
+const INPUT = document.getElementById("input");
+const TRANSLATE = document.getElementById("translate");
+const OUTPUT = document.getElementById("output");
+
+const MORSE = {
+    A: ".-",
+    B: "-...",
+    C: "-.-.",
+    D: "-..",
+    E: ".",
+    F: "..-.",
+    G: "--.",
+    H: "....",
+    I: "..",
+    J: ".---",
+    K: "-.-",
+    L: ".-..",
+    M: "--",
+    N: "-.",
+    O: "---",
+    P: ".--.",
+    Q: "--.-",
+    R: ".-.",
+    S: "...",
+    T: "-",
+    U: "..-",
+    V: "...-",
+    W: ".--",
+    X: "-..-",
+    Y: "-.--",
+    Z: "--..",
+    " ": "*"
+}
+
+const FREQUENCIES = {
+    shell: 3.505,
+    halls: 3.515,
+    slick: 3.522,
+    trick: 3.532,
+    boxes: 3.535,
+    leaks: 3.542,
+    strobe: 3.545,
+    bistro: 3.552,
+    flick: 3.555,
+    bombs: 3.565,
+    break: 3.572,
+    brick: 3.575,
+    steak: 3.582,
+    sting: 3.592,
+    vector: 3.595,
+    beats: 3.6
+}
+
+var CODES = [];
+
+for (let p in FREQUENCIES)
+{
+    CODES[p] = str2morse(p);
+}
+
+update();
+
+INPUT.addEventListener("keyup", function(event)
+{
+    update();
+})
+
+function update()
+{
+    let input = INPUT.value;
+    OUTPUT.innerHTML = "";
+    let results = []
+
+    TRANSLATE.innerHTML = morse2str(input);
+
+    for (let str in FREQUENCIES)
+    {
+        results.push([str, CODES[str], compare(input, CODES[str])]);
+    }
+    results.sort(function(a, b) { return b[2] - a[2] });
+
+    OUTPUT.innerHTML += "<tr>" +
+        "<th><h1>Codeword</h1></th>" +
+        "<th><h1>Morse</h1></th>" +
+        "<th><h1>Frequency</h1></th>" +
+        "<th><h1>Match</h1></th></tr>"
+    for (let e of results)
+    {
+        let green = 255;
+        let red = 150 + Math.round(105*(1 - e[2])), blue = red;
+        let color = "#" + red.toString(16) +
+             green.toString(16) + blue.toString(16);
+        OUTPUT.innerHTML += "<tr bgcolor='" + color + "'>" +
+            "<td><h2>" + e[0] + "</h2></td>" +
+            "<td><h2>" + e[1] + "</h2></td>" +
+            "<td><h2>" + FREQUENCIES[e[0]] + "</h2></td>" +
+            "<td><h2>" + Math.round(e[2]*1000)/10 + "%</h2></td></tr>"
+    }
+}
+
+function str2morse(str)
+{
+    let morse = [];
+    str = str.toUpperCase();
+    for (let c of str)
+    {
+        if (typeof MORSE[c] != "undefined")
+            morse += MORSE[c] + "/";
+    }
+    return morse;
+}
+
+function morse2str(morse)
+{
+    let string = "";
+    let word = "";
+    for (let i in morse)
+    {
+        let c = morse[i];
+        if (c != "/")
+        {
+            word += c;
+        }
+        if (c == "/" || i == morse.length - 1)
+        {
+            let success = false;
+            for (let e in MORSE)
+            {
+                if (word == MORSE[e])
+                {
+                    string += e;
+                    success = true;
+                }
+            }
+            if (!success)
+            {
+                string += "_";
+            }
+            if (c == "/") word = "";
+        }
+    }
+    return string;
+}
+
+function compare(str1, str2)
+{
+    if (str2.length > str1.length)
+    {
+        let temp = str2;
+        str2 = str1;
+        str1 = temp;
+    }
+
+    if (str2.length == 0) return 0;
+
+    str1 = str1.toUpperCase();
+    str2 = str2.toUpperCase();
+    let maxSimilarity = 0;
+
+    for (let i = 0; i < str2.length; i++)
+    {
+        let rotated = "";
+        let similarity = 0;
+        let streak = 1;
+        for (let j = 0; j < str2.length; j++)
+        {
+            rotated += str2[(i + j) % str2.length];
+        }
+
+        for (let j = 0; j < str2.length; j++)
+        {
+            if (str1[j] == rotated[j]) similarity++;
+        }
+        maxSimilarity = Math.max(similarity, maxSimilarity);
+    }
+
+    return maxSimilarity/str2.length;
+}
+
+</script>
