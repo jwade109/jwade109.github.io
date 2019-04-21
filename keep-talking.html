@@ -49,9 +49,9 @@
 
 <style>
 
-tr
+tr, th, td
 {
-    border: 0;
+    border: 1px black solid;
 }
 
 </style>
@@ -147,7 +147,7 @@ function update()
     for (let e of results)
     {
         let green = 255;
-        let red = 150 + Math.round(105*(1 - e[2])), blue = red;
+        let red = Math.min(255, 160 + Math.round(150*(1 - e[2]*1.3))), blue = red;
         let color = "#" + red.toString(16) +
              green.toString(16) + blue.toString(16);
         OUTPUT.innerHTML += "<tr bgcolor='" + color + "'>" +
@@ -210,31 +210,36 @@ function compare(str1, str2)
         str2 = str1;
         str1 = temp;
     }
-
     if (str2.length == 0) return 0;
-
     str1 = str1.toUpperCase();
     str2 = str2.toUpperCase();
+
     let maxSimilarity = 0;
-
-    for (let i = 0; i < str2.length; i++)
+    for (let i = 0; i < str1.length; i++)
     {
-        let rotated = "";
         let similarity = 0;
-        let streak = 1;
         for (let j = 0; j < str2.length; j++)
         {
-            rotated += str2[(i + j) % str2.length];
-        }
-
-        for (let j = 0; j < str2.length; j++)
-        {
-            if (str1[j] == rotated[j]) similarity++;
+            if (str1[(i + j) % str1.length] == str2[j]) similarity++;
+            else similarity -= 0.3;
         }
         maxSimilarity = Math.max(similarity, maxSimilarity);
     }
 
     return maxSimilarity/str2.length;
+}
+
+function levenshtein(x, y)
+{
+    if (x.length == 0) return y.length;
+    if (y.length == 0) return x.length;
+
+    let sub = ((x[0] == y[0]) ? 0 : 1) +
+        levenshtein(x.substr(1), y.substr(1));
+    let ins = levenshtein(x, y.substr(1)) + 1;
+    let del = levenshtein(x.substr(1), y) + 1;
+
+    return Math.min(Math.min(sub, ins), del);
 }
 
 </script>
