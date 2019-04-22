@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="shortcut icon" type="image/x-icon" href="resources/favicon.ico">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="shortcut icon" type="image/x-icon" href="../resources/favicon.ico">
     <title>Keep Talking and Nobody Explodes</title>
   </head>
 
@@ -44,7 +44,7 @@
     </div>
 
   </body>
-  <script src="scripts/global.js"></script>
+  <script src="../scripts/global.js"></script>
 </html>
 
 <style>
@@ -303,7 +303,7 @@ function levenshtein(s, t)
         {
             let subCost = 1;
             if (s[i-1] == t[j-1]) subCost = 0;
-            d[i][j] = Math.min(Math.min(d[i-1][j] + 1, d[i][j-1] + 1),
+            d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1,
                 d[i-1][j-1] + subCost);
         }
     }
