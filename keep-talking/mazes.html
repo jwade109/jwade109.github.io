@@ -13,9 +13,26 @@
       <div id="module-select"></div>
       <script src="../scripts/keep-talking/module-select.js"></script>
 
-      <div style="height: 100px"></div>
-      <img src="../resources/under-construction.png" width=75%></img>
-      <div style="height: 100px"></div>
+      <div style="height: 50px"></div>
+
+      <select id='maze-select' onchange='update()'>
+        <option value='0' selected="selected">Maze 1</option>
+        <option value='1'>Maze 2</option>
+        <option value='2'>Maze 3</option>
+        <option value='3'>Maze 4</option>
+        <option value='4'>Maze 5</option>
+        <option value='5'>Maze 6</option>
+        <option value='6'>Maze 7</option>
+        <option value='7'>Maze 8</option>
+        <option value='8'>Maze 9</option>
+      </select>
+
+      <div style="height: 20px"></div>
+
+      <table style="text-align: center" id="output">
+      </table>
+
+      <!-- <img src="../resources/maze-reference.png" width="100%"></img> -->
 
       <div id="version"></div>
     </div>
@@ -23,3 +40,271 @@
   </body>
   <script src="../scripts/global.js"></script>
 </html>
+
+<style>
+
+tbody
+{
+    border: 4px solid black;
+}
+
+tr
+{
+    border: 0px;
+}
+
+td
+{
+    border: 1px solid lightgray;
+    width: 75px;
+    height: 75px;
+    padding: 5px;
+}
+
+td.neither
+{
+    border-right: 4px solid black;
+    border-bottom: 4px solid black;
+}
+
+td.right
+{
+    border-bottom: 4px solid black;
+}
+
+td.down
+{
+    border-right: 4px solid black
+}
+
+td.marker
+{
+    background-color: rgba(0, 255, 0, 0.5);
+}
+
+td.player
+{
+    background-color: rgba(255, 0, 0, 0.5);
+}
+
+td.goal
+{
+    background-color: rgba(0, 0, 255, 0.5);
+}
+
+p.cell
+{
+    font-family: Consolas, sans-serif;
+}
+
+</style>
+
+<script>
+
+const TABLE = document.getElementById("output");
+const GOAL = [Math.round(Math.random()*5), Math.round(Math.random()*5)];
+var MAZE_INDEX = 1;
+var PLAYER = [0, 0];
+
+const N = "neither"; // neither
+const R = "right"; // right
+const D = "down"; // down
+const B = "both"; // both
+
+const MAZES = [
+
+    {
+        maze: // 0
+        [
+            [B, R, D, B, R, N],
+            [D, B, N, R, R, D],
+            [D, R, D, B, R, D],
+            [D, R, R, N, R, D],
+            [B, R, D, B, N, D],
+            [R, N, R, N, R, N],
+        ],
+        markers: [[1, 0], [2, 5]]
+    },{
+        maze: // 1
+        [
+            [R, B, N, B, B, N],
+            [B, N, B, N, R, D],
+            [D, B, N, B, R, D],
+            [B, N, B, N, D, D],
+            [D, D, D, B, N, D],
+            [N, R, N, R, R, N]
+        ],
+        markers: [[3, 1], [1, 4]]
+    },{
+        maze: // 2
+        [
+            [B, R, D, D, B, D],
+            [N, D, D, R, N, D],
+            [B, D, D, B, D, D],
+            [D, D, D, D, D, D],
+            [D, R, N, D, D, D],
+            [R, R, R, N, R, N]
+        ],
+        markers: [[3, 3], [3, 5]]
+    },{
+        maze: // 3
+        [
+            [B, D, R, R, R, D],
+            [D, D, B, R, R, D],
+            [D, R, N, B, N, D],
+            [D, R, R, R, R, D],
+            [B, R, R, R, D, D],
+            [R, R, N, R, N, N]
+        ],
+        markers: [[0, 0], [3, 0]]
+    },{
+        maze: // 4
+        [
+            [R, R, R, R, B, D],
+            [B, R, R, B, N, N],
+            [B, D, R, N, B, D],
+            [D, R, R, D, N, D],
+            [D, B, R, R, N, D],
+            [N, R, R, R, R, N]
+        ],
+        markers: [[2, 4], [5, 3]]
+    },{
+        maze: // 5
+        [
+            [D, B, D, R, B, D],
+            [D, D, D, B, N, D],
+            [B, N, N, D, B, N],
+            [R, D, B, D, D, D],
+            [B, N, N, D, R, D],
+            [R, R, R, N, R, N]
+        ],
+        markers: [[0, 4], [4, 2]]
+    },{
+        maze: // 6
+        [
+            [B, R, R, D, B, D],
+            [D, B, N, R, N, D],
+            [R, N, B, N, B, N],
+            [B, D, B, R, N, D],
+            [D, N, R, R, D, D],
+            [R, R, R, R, R, N]
+        ],
+        markers: [[0, 1], [5, 1]]
+    },{
+        maze: // 7
+        [
+            [D, B, R, D, B, D],
+            [B, R, N, R, N, D],
+            [D, B, R, R, D, D],
+            [D, R, D, R, R, N],
+            [D, D, R, R, R, N],
+            [R, R, R, R, R, N]
+        ],
+        markers: [[0, 3], [3, 2]]
+    },{
+        maze: // 8
+        [
+            [D, B, R, R, B, D],
+            [D, D, B, N, D, D],
+            [B, R, N, B, N, D],
+            [D, D, B, N, R, D],
+            [D, D, D, B, D, N],
+            [R, N, R, N, R, N]
+        ],
+        markers: [[1, 2], [4, 0]]
+    }
+];
+
+document.getElementById("maze-select").selectedIndex = 0;
+update();
+
+document.addEventListener('keydown', function(event)
+{
+    switch(event.keyCode)
+    {
+        case 37: movePlayer("left"); return;
+        case 38: movePlayer("up"); return;
+        case 39: movePlayer("right"); return;
+        case 40: movePlayer("down"); return;
+    }
+})
+
+function update()
+{
+    let select = document.getElementById("maze-select");
+    MAZE_INDEX = select.value;
+    printMaze(MAZE_INDEX);
+    var tmp = document.createElement("input");
+    document.body.appendChild(tmp);
+    tmp.focus();
+    document.body.removeChild(tmp);
+}
+
+function printMaze(mazeNum)
+{
+    let maze = MAZES[mazeNum].maze;
+    let markers = MAZES[mazeNum].markers;
+
+    let output = "";
+    for (let r in maze)
+    {
+        output += "<tr>";
+        for (let c in maze[r])
+        {
+            let indicator = "";
+            for (let marker of markers)
+                if (marker[0] == r && marker[1] == c)
+                    indicator = "marker"
+            if (GOAL[0] == r && GOAL[1] == c)
+                indicator = "goal";
+            if (PLAYER[0] == r && PLAYER[1] == c)
+                indicator = "player";
+            let elem = maze[r][c];
+
+            let cellString = "";
+            if (r == 0) cellString = c;
+            else if (c == 0) cellString = r;
+
+            output += "<td class='" + elem + " " + indicator + "'>" +
+                "<p class='cell'>" + cellString + "</p></td>"
+        }
+        output += "</tr>";
+    }
+    TABLE.innerHTML = output;
+}
+
+function movePlayer(dir)
+{
+    let maze = MAZES[MAZE_INDEX].maze;
+    let pr = PLAYER[0];
+    let pc = PLAYER[1];
+
+    switch (dir)
+    {
+        case "down":
+            if (maze[pr][pc] == "down" || maze[pr][pc] == "both")
+                PLAYER[0] = Math.min(5, PLAYER[0] + 1);
+            break;
+
+        case "right":
+            if (maze[pr][pc] == "right" || maze[pr][pc] == "both")
+                PLAYER[1] = Math.min(5, PLAYER[1] + 1);
+            break;
+
+        case "left":
+            if (pc == 0) break;
+            if (maze[pr][pc-1] == "right" || maze[pr][pc-1] == "both")
+                PLAYER[1] = Math.max(0, PLAYER[1] - 1);
+            break;
+
+        case "up":
+            if (pr == 0) break;
+            if (maze[pr-1][pc] == "down" || maze[pr-1][pc] == "both")
+                PLAYER[0] = Math.max(0, PLAYER[0] - 1);
+            break;
+    }
+
+    printMaze(MAZE_INDEX);
+}
+
+</script>
