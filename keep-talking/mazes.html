@@ -223,9 +223,9 @@ document.addEventListener('keydown', function(event)
     switch(event.keyCode)
     {
         case 37: movePlayer("left"); return;
-        case 38: movePlayer("up"); return;
+        case 38: event.preventDefault(); movePlayer("up"); return;
         case 39: movePlayer("right"); return;
-        case 40: movePlayer("down"); return;
+        case 40: event.preventDefault(); movePlayer("down"); return;
     }
 })
 
