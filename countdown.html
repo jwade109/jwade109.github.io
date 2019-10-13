@@ -9,7 +9,7 @@
 
   <style>
 
-  .timer
+  .timers
   {
       font-family: Consolas;
       font-size: 72px;
@@ -19,75 +19,61 @@
 
   <body>
     <div class="center" style="text-align: center">
-
-      <h1>End of Spring Semester</h1>
-      <h1 id="school-timer" class="timer">
-        <span id="years"></span
-        >:<span id="days"></span
-        >:<span id="hours"></span
-        >:<span id="minutes"></span
-        >:<span id="seconds"></span>
-      </h1>
-
-      <h1>Easter</h1>
-      <h1 id="easter-timer" class="timer">
-        <span id="years"></span
-        >:<span id="days"></span
-        >:<span id="hours"></span
-        >:<span id="minutes"></span
-        >:<span id="seconds"></span>
-      </h1>
-
-      <h1>End of Life</h1>
-      <h1 id="death-timer" class="timer">
-        <span id="years"></span
-        >:<span id="days"></span
-        >:<span id="hours"></span
-        >:<span id="minutes"></span
-        >:<span id="seconds"></span>
-      </h1>
-
+      <div class="timers" id="timers"></div>
       <div id="version"></div>
     </div>
-
-    <script>
-
-    DATES = { "school": new Date("May 15 2019 3:05 PM"),
-              "death": new Date("January 12 2073 12:00 PM")}
-
-    function update()
-    {
-        for (let d of Object.entries(DATES))
-        {
-            name = d[0];
-            date = d[1];
-            var dt = Math.round((date.getTime() - new Date().getTime())/1000);
-            var seconds = dt % 60;
-            dt = (dt - seconds)/60;
-            var minutes = dt % 60;
-            dt = (dt - minutes)/60;
-            var hours = dt % 24;
-            dt = (dt - hours)/24;
-            var days = dt % 365;
-            dt = (dt - days)/365;
-            var years = dt;
-
-            timer = document.getElementById(name + "-timer");
-            timer.childNodes[1].innerHTML = (years + '').padStart(2, '0');
-            timer.childNodes[3].innerHTML = (days + '').padStart(2, '0');
-            timer.childNodes[5].innerHTML = (hours + '').padStart(2, '0');
-            timer.childNodes[7].innerHTML = (minutes + '').padStart(2, '0');
-            timer.childNodes[9].innerHTML = (seconds + '').padStart(2, '0');
-        }
-    }
-
-    update();
-
-    setInterval(update, 250);
-
-    </script>
 
     <script src="scripts/global.js"></script>
 
   </body>
 </html>
+
+
+<script>
+
+DATES =
+{
+    "End of the Semester": new Date("May 15 2019 3:05 PM"),
+    "First Day at Torc": new Date("May 20 2019 9:00 AM"),
+    "R@VT Test Launch": new Date("May 25 2019 12:00 PM"),
+    "R@VT Leaves for Arizona": new Date("June 12 2019 12:00 PM"),
+    "End of 3500C Lease": new Date("June 30 2019 12:00 AM"),
+    "Probabalistic End of Life": new Date("January 12 2073 12:00 PM")
+}
+
+TIMERS = document.getElementById("timers");
+
+function update()
+{
+    TIMERS.innerHTML = "";
+    for (let d of Object.entries(DATES))
+    {
+        name = d[0];
+        date = d[1];
+        var dt = Math.round((date.getTime() - new Date().getTime())/1000);
+        var seconds = dt % 60;
+        dt = (dt - seconds)/60;
+        var minutes = dt % 60;
+        dt = (dt - minutes)/60;
+        var hours = dt % 24;
+        dt = (dt - hours)/24;
+        var days = dt % 365;
+        dt = (dt - days)/365;
+        var years = dt;
+
+        TIMERS.innerHTML +=
+              "<h1 style='text-decoration: underline'>" + name + "</h1>" +
+              "<h1>" +
+              (years > 0 ? (years + '').padStart(2, '0') + ":" : "")
+               + (days + '').padStart(2, '0') +
+              ":" + (hours + '').padStart(2, '0') +
+              ":" + (minutes + '').padStart(2, '0') +
+              ":" + (seconds + '').padStart(2, '0') + "</h1>";
+    }
+}
+
+update();
+
+setInterval(update, 250);
+
+</script>
