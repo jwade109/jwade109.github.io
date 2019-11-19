@@ -23,7 +23,7 @@
             <input id="currentGPA"
               type="text"
               name="input"
-              value="3.68"
+              value="3.71"
               placeholder="Current GPA"
               onchange="compute()">
             </input>
@@ -32,7 +32,7 @@
             <input id="hoursAttempted"
               type="text"
               name="input"
-              value="86"
+              value="104"
               placeholder="Credits attempted"
               onchange="compute()">
             </input>
@@ -51,7 +51,7 @@
         </tr>
         <tr>
           <td>
-            <h3>Aerospace Structures</h3>
+            <h3>Senior Design</h3>
           </td>
           <td>
             <select id="Grade 1" onchange="compute()">
@@ -68,7 +68,7 @@
         </tr>
         <tr>
           <td>
-            <h3>Aerothermal and Propulsion</h3>
+            <h3>Senior Design Lab</h3>
           </td>
           <td>
             <select id="Grade 2" onchange="compute()">
@@ -85,7 +85,7 @@
         </tr>
         <tr>
           <td>
-            <h3>Space Vehicle Dynamics</h3>
+            <h3>State Space Theory</h3>
           </td>
           <td>
             <select id="Grade 3" onchange="compute()">
@@ -102,7 +102,7 @@
         </tr>
         <tr>
           <td>
-            <h3>Experimental Methods</h3>
+            <h3>Vector & Complex Analysis</h3>
           </td>
           <td>
             <select id="Grade 4" onchange="compute()">
@@ -119,29 +119,12 @@
         </tr>
         <tr>
           <td>
-            <h3>Data Structures and Algorithms</h3>
+            <h3>Numerical Methods</h3>
           </td>
           <td>
             <select id="Grade 5" onchange="compute()">
               <option value="A" selected>A</option>
               <option value="A-">A-</option>
-              <option value="B+">B+</option>
-              <option value="B">B</option>
-              <option value="B-">B-</option>
-              <option value="C+">C+</option>
-              <option value="C">C</option>
-              <option value="C-">C-</option>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <h3>Compressible Aerodynamics</h3>
-          </td>
-          <td>
-            <select id="Grade 6" onchange="compute()">
-              <option value="A">A</option>
-              <option value="A-" selected>A-</option>
               <option value="B+">B+</option>
               <option value="B">B</option>
               <option value="B-">B-</option>
@@ -158,7 +141,7 @@
 
     <script>
 
-    const NUM_GRADES = 6;
+    const NUM_GRADES = 5;
     const MAP = { "A": 4.0, "A-": 3.7, "B+": 3.3, "B": 3, "B-": 2.7,
                   "C+": 2.3, "C": 2.0, "C-": 1.7 };
 
