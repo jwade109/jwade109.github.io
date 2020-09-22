@@ -25,15 +25,15 @@
         <div>
           <p id="maze-id"></p>
         </div>
-        <button class="marker">Set Marker Position</button>
+        <button class="marker" onclick="setMarkers()">Set Marker Position</button>
         <div>
           <p id="marker-input" contenteditable></p>
         </div>
-        <button class="player">Set Player Position</button>
+        <button class="player" onclick="setPlayer()">Set Player Position</button>
         <div>
           <p id="player-input" contenteditable></p>
         </div>
-        <button class="goal">Set Goal Position</button>
+        <button class="goal" onclick="setGoal()">Set Goal Position</button>
         <div>
           <p id="goal-input" contenteditable></p>
         </div>
@@ -89,6 +89,11 @@
     font-family: Consolas, sans-serif;
     font-weight: bold;
     text-align: center;
+}
+
+#buttons div.filled
+{
+    background-color: lightgray;
 }
 
 #buttons p
@@ -262,6 +267,9 @@ const TABLE = document.getElementById("maze");
 var GOAL = null;
 var PLAYER = null;
 var MARKERS = [];
+var SETTING_MARKERS = false;
+var SETTING_PLAYER = true;
+var SETTING_GOAL = false;
 
 const N = "neither"; // neither
 const R = "right"; // right
@@ -403,6 +411,7 @@ $(document).ready(start);
 
 function start()
 {
+    reset();
     $("#marker-input").keydown(function(e) {
         // trap the return key being pressed
         if (e.keyCode === 13) {
@@ -477,6 +486,7 @@ function start()
 
 function reset()
 {
+    setMarkers();
     MARKERS = [];
     GOAL = null;
     PLAYER = null;
@@ -490,15 +500,50 @@ function render()
     maze_output = document.getElementById("maze");
     maze_output.innerHTML = '';
     maze_output.appendChild(maze);
-    marker_output = document.getElementById("maze-id");
-    marker_output.innerHTML = CURRENT_MAZE.id + (MATCH_QUALITY == 1 ? "?" : "")
+    maze_id = document.getElementById("maze-id");
+    maze_id.innerHTML = CURRENT_MAZE.id + (MATCH_QUALITY == 1 ? "?" : "")
     marker_output = document.getElementById("marker-input");
     marker_output.innerHTML = (MARKERS[0] ? MARKERS[0] : "None" )
       + "<br>" + (MARKERS[1] ? MARKERS[1] : "None" )
-    marker_output = document.getElementById("player-input");
-    marker_output.innerHTML = (PLAYER ? PLAYER : "None" )
-    marker_output = document.getElementById("goal-input");
-    marker_output.innerHTML = (GOAL ? GOAL : "None" )
+    marker_output.parentNode.classList.toggle("filled", SETTING_MARKERS);
+    player_output = document.getElementById("player-input");
+    player_output.innerHTML = (PLAYER ? PLAYER : "None" )
+    player_output.parentNode.classList.toggle("filled", SETTING_PLAYER);
+    goal_output = document.getElementById("goal-input");
+    goal_output.innerHTML = (GOAL ? GOAL : "None" )
+    goal_output.parentNode.classList.toggle("filled", SETTING_GOAL);
+}
+
+function setMarkers()
+{
+    SETTING_MARKERS = true;
+    SETTING_PLAYER = false;
+    SETTING_GOAL = false;
+    render();
+}
+
+function setPlayer()
+{
+    SETTING_MARKERS = false;
+    SETTING_PLAYER = true;
+    SETTING_GOAL = false;
+    render();
+}
+
+function setGoal()
+{
+    SETTING_MARKERS = false;
+    SETTING_PLAYER = false;
+    SETTING_GOAL = true;
+    render();
+}
+
+function setNothing()
+{
+    SETTING_MARKERS = false;
+    SETTING_PLAYER = false;
+    SETTING_GOAL = false;
+    render();
 }
 
 function matchMazes()
@@ -560,10 +605,6 @@ function matchMazes()
 
 function onClickCell(elem, row, col, event)
 {
-    SETTING_MARKERS = true;
-    SETTING_PLAYER = false;
-    SETTING_GOAL = false;
-
     if (SETTING_MARKERS)
     {
         let index = MARKERS.findIndex(x => x[0] == row && x[1] == col)
@@ -576,6 +617,34 @@ function onClickCell(elem, row, col, event)
             MARKERS.push([row, col]);
         }
         matchMazes();
+        if (MATCH_QUALITY == 2)
+        {
+            setPlayer();
+        }
+    }
+    else if (SETTING_PLAYER)
+    {
+        if (PLAYER != null && PLAYER[0] == row && PLAYER[1] == col)
+        {
+            PLAYER = null
+        }
+        else
+        {
+            PLAYER = [row, col];
+            setGoal();
+        }
+    }
+    else if (SETTING_GOAL)
+    {
+        if (GOAL != null && GOAL[0] == row && GOAL[1] == col)
+        {
+            GOAL = null
+        }
+        else
+        {
+            GOAL = [row, col];
+            setNothing();
+        }
     }
     render();
 }
