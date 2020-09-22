@@ -4,38 +4,54 @@
     <link rel="stylesheet" href="../styles.css">
     <link rel="shortcut icon" type="image/x-icon" href="../resources/favicon.ico">
     <title>Mazes (Keep Talking and Nobody Explodes)</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   </head>
 
   <body>
 
     <div class="center" style="text-align: center">
-
       <div id="module-select"></div>
       <script src="../scripts/keep-talking/module-select.js"></script>
-
-      <div style="height: 50px"></div>
-
-      <select id='maze-select' onchange='update()'>
-        <option value='0' selected="selected">Maze 1</option>
-        <option value='1'>Maze 2</option>
-        <option value='2'>Maze 3</option>
-        <option value='3'>Maze 4</option>
-        <option value='4'>Maze 5</option>
-        <option value='5'>Maze 6</option>
-        <option value='6'>Maze 7</option>
-        <option value='7'>Maze 8</option>
-        <option value='8'>Maze 9</option>
-      </select>
-
-      <div style="height: 20px"></div>
-
-      <table style="text-align: center" id="output">
-      </table>
-
-      <!-- <img src="../resources/maze-reference.png" width="100%"></img> -->
-
-      <div id="version"></div>
     </div>
+
+    <h1 style="text-align: center">On the Subject of Mazes</h1>
+
+    <div style="height: 50px"></div>
+
+    <div class="grid-container">
+
+      <div id="buttons">
+        <div>Identified Maze</div>
+        <div>
+          <p id="maze-id"></p>
+        </div>
+        <button class="marker">Set Marker Position</button>
+        <div>
+          <p id="marker-input" contenteditable></p>
+        </div>
+        <button class="player">Set Player Position</button>
+        <div>
+          <p id="player-input" contenteditable></p>
+        </div>
+        <button class="goal">Set Goal Position</button>
+        <div>
+          <p id="goal-input" contenteditable></p>
+        </div>
+        <button style="grid-column: 1 / -1" onclick="reset()">Reset</button>
+      </div>
+      <div id="maze"></div>
+      <div id="instructions">
+        <ol>
+          <li>Down 4</li>
+          <li>Left 3</li>
+          <li>Down 1</li>
+          <li>Right 2</li>
+          <li>Up 5</li>
+        </ol>
+      </div>
+
+    </div>
+    <div id="version"></div>
 
   </body>
   <script src="../scripts/global.js"></script>
@@ -43,28 +59,134 @@
 
 <style>
 
-tbody
+.grid-container
+{
+    display: grid;
+    width: 100%;
+    max-width: 1300px;
+    margin: 0 auto;
+    grid-template-columns: 1fr 2fr 1fr;
+    grid-gap: 5px;
+}
+
+#buttons
+{
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 5px;
+    /* overflow: hidden; */
+}
+
+#buttons div
+{
+    vertical-align: middle;
+    display: flex;
+    align-items: center;
+    border: 4px solid gray;
+    padding: 0 10px;
+    font-size: 24px;
+    font-family: Consolas, sans-serif;
+    font-weight: bold;
+    text-align: center;
+}
+
+#buttons p
+{
+    font-size: 28px;
+    font-style: italic;
+    width: 100%;
+    font-family: Consolas, sans-serif;
+    text-align: center;
+    margin: auto 0;
+}
+
+#buttons button
+{
+    font-size: 24px;
+    margin: 0;
+    font-weight: bold;
+    border: 4px solid black;
+}
+
+#buttons button.marker
+{
+    background-color: rgba(0, 255, 0, 0.3);
+}
+
+#buttons button.marker:active
+{
+    background-color: rgba(0, 255, 0, 0.9);
+}
+
+#buttons button.player
+{
+    background-color: rgba(0, 0, 255, 0.3);
+}
+
+#buttons button.player:active
+{
+    background-color: rgba(0, 0, 255, 0.7);
+}
+
+#buttons button.goal
+{
+    background-color: rgba(255, 0, 0, 0.3);
+}
+
+#buttons button.goal:active
+{
+    background-color: rgba(255, 0, 0, 0.7);
+}
+
+#instructions
 {
     border: 4px solid black;
+    padding: 0 10px 0 40px;
+    font-family: Consolas, sans-serif;
+}
+
+#instructions li
+{
+    font-size: 24px;
+}
+
+table
+{
+    box-sizing: border-box;
+    /* border: 7px solid black; */
+    padding: 0px;
+    margin: 0px auto;
 }
 
 tr
 {
+    box-sizing: border-box;
+    outline: 0px;
     border: 0px;
+    padding: 0px;
+    margin: 0px;
 }
 
 td
 {
-    border: 1px solid lightgray;
-    width: 75px;
-    height: 75px;
+    background-blend-mode: multiply;
+    box-sizing: border-box;
+    border: 4px solid rgba(0, 0, 0, 0.0);
+    width: 85px;
+    height: 85px;
     padding: 5px;
 }
 
-td.neither
+div.cell
 {
-    border-right: 4px solid black;
-    border-bottom: 4px solid black;
+    width: 100%;
+    height: 100%;
+    margin: 0px;
+    text-align: center;
+    font-family: Consolas, sans-serif;
+    display: flex;
+    align-items: center;
 }
 
 td.right
@@ -77,39 +199,86 @@ td.down
     border-right: 4px solid black
 }
 
-td.marker
+td.up
 {
-    background-color: rgba(0, 255, 0, 0.5);
+    border-top: 4px solid black;
+}
+
+td.left
+{
+    border-left: 4px solid black
+}
+
+td.mazemarker > div
+{
+    background-color: rgba(0, 255, 0, 0.3);
+    border-radius: 100px;
+}
+
+td.usermarker > div
+{
+    background-color: rgba(0, 255, 0, 0.8);
+    border-radius: 100px;
 }
 
 td.player
 {
-    background-color: rgba(255, 0, 0, 0.5);
+    background-color: rgba(0, 0, 255, 0.5);
 }
 
 td.goal
 {
-    background-color: rgba(0, 0, 255, 0.5);
+    background-color: rgba(255, 0, 0, 0.5);
+}
+
+td > div:hover
+{
+    outline: 2px solid gray;
 }
 
 p.cell
 {
     font-family: Consolas, sans-serif;
+    width: 100%;
+    margin: 0;
+}
+
+div:hover
+{
+    outline: 1px solid red;
 }
 
 </style>
 
 <script>
 
-const TABLE = document.getElementById("output");
-const GOAL = [Math.round(Math.random()*5), Math.round(Math.random()*5)];
-var MAZE_INDEX = 1;
-var PLAYER = [0, 0];
+const TABLE = document.getElementById("maze");
+var GOAL = null;
+var PLAYER = null;
+var MARKERS = [];
 
 const N = "neither"; // neither
 const R = "right"; // right
 const D = "down"; // down
 const B = "both"; // both
+
+const HYPOTHESIS_MAZE =
+{
+    maze:
+    [
+        [B, B, B, B, B, B],
+        [B, B, B, B, B, B],
+        [B, B, B, B, B, B],
+        [B, B, B, B, B, B],
+        [B, B, B, B, B, B],
+        [B, B, B, B, B, B],
+    ],
+    markers: [],
+    id: "None"
+}
+
+var CURRENT_MAZE = HYPOTHESIS_MAZE;
+var MATCH_QUALITY = 0;
 
 const MAZES = [
 
@@ -123,7 +292,8 @@ const MAZES = [
             [B, R, D, B, N, D],
             [R, N, R, N, R, N],
         ],
-        markers: [[1, 0], [2, 5]]
+        markers: [[1, 0], [2, 5]],
+        id: 1
     },{
         maze: // 1
         [
@@ -134,7 +304,8 @@ const MAZES = [
             [D, D, D, B, N, D],
             [N, R, N, R, R, N]
         ],
-        markers: [[3, 1], [1, 4]]
+        markers: [[3, 1], [1, 4]],
+        id: 2
     },{
         maze: // 2
         [
@@ -145,7 +316,8 @@ const MAZES = [
             [D, R, N, D, D, D],
             [R, R, R, N, R, N]
         ],
-        markers: [[3, 3], [3, 5]]
+        markers: [[3, 3], [3, 5]],
+        id: 3
     },{
         maze: // 3
         [
@@ -156,7 +328,8 @@ const MAZES = [
             [B, R, R, R, D, D],
             [R, R, N, R, N, N]
         ],
-        markers: [[0, 0], [3, 0]]
+        markers: [[0, 0], [3, 0]],
+        id: 4
     },{
         maze: // 4
         [
@@ -167,7 +340,8 @@ const MAZES = [
             [D, B, R, R, N, D],
             [N, R, R, R, R, N]
         ],
-        markers: [[2, 4], [5, 3]]
+        markers: [[2, 4], [5, 3]],
+        id: 5
     },{
         maze: // 5
         [
@@ -178,7 +352,8 @@ const MAZES = [
             [B, N, N, D, R, D],
             [R, R, R, N, R, N]
         ],
-        markers: [[0, 4], [4, 2]]
+        markers: [[0, 4], [4, 2]],
+        id: 6
     },{
         maze: // 6
         [
@@ -189,7 +364,8 @@ const MAZES = [
             [D, N, R, R, D, D],
             [R, R, R, R, R, N]
         ],
-        markers: [[0, 1], [5, 1]]
+        markers: [[0, 1], [5, 1]],
+        id: 7
     },{
         maze: // 7
         [
@@ -200,7 +376,8 @@ const MAZES = [
             [D, D, R, R, R, N],
             [R, R, R, R, R, N]
         ],
-        markers: [[0, 3], [3, 2]]
+        markers: [[0, 3], [3, 2]],
+        id: 8
     },{
         maze: // 8
         [
@@ -211,100 +388,289 @@ const MAZES = [
             [D, D, D, B, D, N],
             [R, N, R, N, R, N]
         ],
-        markers: [[1, 2], [4, 0]]
+        markers: [[1, 2], [4, 0]],
+        id: 9
     }
 ];
 
-document.getElementById("maze-select").selectedIndex = 0;
-update();
+$(document).ready(start);
 
-document.addEventListener('keydown', function(event)
+function start()
 {
-    switch(event.keyCode)
-    {
-        case 37: movePlayer("left"); return;
-        case 38: event.preventDefault(); movePlayer("up"); return;
-        case 39: movePlayer("right"); return;
-        case 40: event.preventDefault(); movePlayer("down"); return;
-    }
-})
-
-function update()
-{
-    let select = document.getElementById("maze-select");
-    MAZE_INDEX = select.value;
-    printMaze(MAZE_INDEX);
-    var tmp = document.createElement("input");
-    document.body.appendChild(tmp);
-    tmp.focus();
-    document.body.removeChild(tmp);
+    $("#marker-input").keydown(function(e) {
+        // trap the return key being pressed
+        if (e.keyCode === 13) {
+            e.preventDefault();
+            console.log(event.target.outerText);
+            nums = [];
+            sanitized = event.target.outerText.replace(/\D/g," ");
+            console.log(sanitized);
+            splits = sanitized.split(/[ ,]+/)
+            console.log(splits)
+            for (let split of splits)
+            {
+                nums.push(parseInt(split));
+            }
+            if (nums.length > 3)
+            {
+                MARKERS = [[nums[0], nums[1]], [nums[2], nums[3]]];
+            }
+            else if (nums.length > 1)
+            {
+                MARKERS = [[nums[0], nums[1]]];
+            }
+            matchMazes();
+            render();
+            return false;
+        }
+    });
+    $("#player-input").keydown(function(e) {
+        if (e.keyCode === 13) {
+            e.preventDefault();
+            console.log(event.target.outerText);
+            nums = [];
+            sanitized = event.target.outerText.replace(/\D/g," ");
+            console.log(sanitized);
+            splits = sanitized.split(/[ ,]+/)
+            console.log(splits)
+            for (let split of splits)
+            {
+                nums.push(parseInt(split));
+            }
+            if (nums.length > 1)
+            {
+                PLAYER = [nums[0], nums[1]];
+            }
+            render();
+            return false;
+        }
+    });
+    $("#goal-input").keydown(function(e) {
+        if (e.keyCode === 13) {
+            e.preventDefault();
+            console.log(event.target.outerText);
+            nums = [];
+            sanitized = event.target.outerText.replace(/\D/g," ");
+            console.log(sanitized);
+            splits = sanitized.split(/[ ,]+/)
+            console.log(splits)
+            for (let split of splits)
+            {
+                nums.push(parseInt(split));
+            }
+            if (nums.length > 1)
+            {
+                GOAL = [nums[0], nums[1]];
+            }
+            render();
+            return false;
+        }
+    });
+    render();
 }
 
-function printMaze(mazeNum)
+function reset()
 {
-    let maze = MAZES[mazeNum].maze;
-    let markers = MAZES[mazeNum].markers;
+    MARKERS = [];
+    GOAL = null;
+    PLAYER = null;
+    CURRENT_MAZE = HYPOTHESIS_MAZE;
+    render();
+}
 
-    let output = "";
+function render()
+{
+    maze = renderMaze(CURRENT_MAZE);
+    maze_output = document.getElementById("maze");
+    maze_output.innerHTML = '';
+    maze_output.appendChild(maze);
+    marker_output = document.getElementById("maze-id");
+    marker_output.innerHTML = CURRENT_MAZE.id + (MATCH_QUALITY == 1 ? "?" : "")
+    marker_output = document.getElementById("marker-input");
+    marker_output.innerHTML = (MARKERS[0] ? MARKERS[0] : "None" )
+      + "<br>" + (MARKERS[1] ? MARKERS[1] : "None" )
+    marker_output = document.getElementById("player-input");
+    marker_output.innerHTML = (PLAYER ? PLAYER : "None" )
+    marker_output = document.getElementById("goal-input");
+    marker_output.innerHTML = (GOAL ? GOAL : "None" )
+}
+
+function matchMazes()
+{
+    let matches = [];
+    for (i in MAZES)
+    {
+        maze = MAZES[i];
+        let intersect = [];
+        for (marker of maze.markers)
+        {
+            let index = MARKERS.findIndex(
+                item => item[0] == marker[0] && item[1] == marker[1]);
+            if (index > -1)
+                intersect.push(marker);
+        }
+        if (intersect.length > 0)
+        {
+            matches.push({quality: intersect.length, id: parseInt(i)});
+        }
+    }
+
+    single_matches = matches.filter(x => x.quality == 1)
+    double_matches = matches.filter(x => x.quality == 2)
+
+    let maze_index = -1;
+    if (double_matches.length > 0)
+    {
+        maze_index = double_matches[0].id;
+        console.log("Strong match for id " + maze_index);
+        MATCH_QUALITY = 2;
+    }
+    else if (single_matches.length == 1)
+    {
+        maze_index = single_matches[0].id;
+        console.log("Weak match for id " + maze_index);
+        MATCH_QUALITY = 1;
+    }
+    else if (single_matches.length > 1)
+    {
+        console.log("Ambiguous -- weak matches for multiple mazes.")
+        MATCH_QUALITY = 0;
+    }
+    else if (single_matches.length == 0 && double_matches.length == 0)
+    {
+        console.log("No matches for any maze.")
+        MATCH_QUALITY = 0;
+    }
+
+    if (maze_index > -1)
+    {
+        CURRENT_MAZE = MAZES[maze_index];
+    }
+    else
+    {
+        CURRENT_MAZE = HYPOTHESIS_MAZE;
+    }
+}
+
+function onClickCell(elem, row, col, event)
+{
+    SETTING_MARKERS = true;
+    SETTING_PLAYER = false;
+    SETTING_GOAL = false;
+
+    if (SETTING_MARKERS)
+    {
+        let index = MARKERS.findIndex(x => x[0] == row && x[1] == col)
+        if (index > -1)
+        {
+            MARKERS.splice(index, 1);
+        }
+        else if (MARKERS.length < 2)
+        {
+            MARKERS.push([row, col]);
+        }
+        matchMazes();
+    }
+    render();
+}
+
+function renderMaze(mazeDict)
+{
+    let maze = mazeDict.maze;
+    let markers = mazeDict.markers;
+
+    let table = document.createElement("table");
     for (let r in maze)
     {
-        output += "<tr>";
+        let row = document.createElement("tr");
         for (let c in maze[r])
         {
-            let indicator = "";
+            let cellString = r + ", " + c;
+            let td = document.createElement("td");
+            let div = document.createElement("div");
+            div.classList.add("cell");
+            for (let marker of MARKERS)
+                if (marker[0] == r && marker[1] == c)
+                    td.classList.add("usermarker");
             for (let marker of markers)
                 if (marker[0] == r && marker[1] == c)
-                    indicator = "marker"
-            if (GOAL[0] == r && GOAL[1] == c)
-                indicator = "goal";
-            if (PLAYER[0] == r && PLAYER[1] == c)
-                indicator = "player";
+                    td.classList.add("mazemarker");
+            if (GOAL !== null && GOAL[0] == r && GOAL[1] == c)
+            {
+                td.classList.add("goal");
+                cellString = "GOAL";
+            }
+            if (PLAYER !== null && PLAYER[0] == r && PLAYER[1] == c)
+            {
+                td.classList.add("player");
+                cellString = "PLAYER";
+            }
             let elem = maze[r][c];
-
-            let cellString = "";
-            if (r == 0) cellString = c;
-            else if (c == 0) cellString = r;
-
-            output += "<td class='" + elem + " " + indicator + "'>" +
-                "<p class='cell'>" + cellString + "</p></td>"
+            if (elem == "neither")
+            {
+                td.classList.add("down");
+                td.classList.add("right");
+            }
+            else if (elem != "both")
+                td.classList.add(elem);
+            if (parseInt(r) == 0)
+                td.classList.add("up");
+            if (parseInt(c) == 0)
+                td.classList.add("left");
+            if (parseInt(r) == maze.length - 1)
+                td.classList.add("right")
+            if (parseInt(c) == maze[r].length - 1)
+                td.classList.add("down")
+            let p = document.createElement("p");
+            p.classList.add("cell");
+            p.innerHTML = cellString;
+            div.appendChild(p);
+            td.appendChild(div);
+            td.r = parseInt(r);
+            td.c = parseInt(c);
+            td.onclick = function(event)
+            {
+                onClickCell(this, this.r, this.c, event)
+            }
+            row.appendChild(td);
         }
-        output += "</tr>";
+        table.appendChild(row);
     }
-    TABLE.innerHTML = output;
+    return table;
 }
 
-function movePlayer(dir)
-{
-    let maze = MAZES[MAZE_INDEX].maze;
-    let pr = PLAYER[0];
-    let pc = PLAYER[1];
-
-    switch (dir)
-    {
-        case "down":
-            if (maze[pr][pc] == "down" || maze[pr][pc] == "both")
-                PLAYER[0] = Math.min(5, PLAYER[0] + 1);
-            break;
-
-        case "right":
-            if (maze[pr][pc] == "right" || maze[pr][pc] == "both")
-                PLAYER[1] = Math.min(5, PLAYER[1] + 1);
-            break;
-
-        case "left":
-            if (pc == 0) break;
-            if (maze[pr][pc-1] == "right" || maze[pr][pc-1] == "both")
-                PLAYER[1] = Math.max(0, PLAYER[1] - 1);
-            break;
-
-        case "up":
-            if (pr == 0) break;
-            if (maze[pr-1][pc] == "down" || maze[pr-1][pc] == "both")
-                PLAYER[0] = Math.max(0, PLAYER[0] - 1);
-            break;
-    }
-
-    printMaze(MAZE_INDEX);
-}
+// function movePlayer(dir)
+// {
+//     let maze = MAZES[MAZE_INDEX].maze;
+//     let pr = PLAYER[0];
+//     let pc = PLAYER[1];
+//
+//     switch (dir)
+//     {
+//         case "down":
+//             if (maze[pr][pc] == "down" || maze[pr][pc] == "both")
+//                 PLAYER[0] = Math.min(5, PLAYER[0] + 1);
+//             break;
+//
+//         case "right":
+//             if (maze[pr][pc] == "right" || maze[pr][pc] == "both")
+//                 PLAYER[1] = Math.min(5, PLAYER[1] + 1);
+//             break;
+//
+//         case "left":
+//             if (pc == 0) break;
+//             if (maze[pr][pc-1] == "right" || maze[pr][pc-1] == "both")
+//                 PLAYER[1] = Math.max(0, PLAYER[1] - 1);
+//             break;
+//
+//         case "up":
+//             if (pr == 0) break;
+//             if (maze[pr-1][pc] == "down" || maze[pr-1][pc] == "both")
+//                 PLAYER[0] = Math.max(0, PLAYER[0] - 1);
+//             break;
+//     }
+//
+//     renderMaze(MAZE_INDEX);
+// }
 
 </script>
