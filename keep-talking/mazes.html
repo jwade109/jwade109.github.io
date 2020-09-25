@@ -238,24 +238,24 @@ td.left
 td.mazemarker > div
 {
     box-sizing: border-box;
-    background-color: rgba(0, 255, 0, 0.3);
-    border: 3px solid white;
+    background-color: rgba(200, 255, 200, 1);
+    border: 4px solid black;
     border-radius: 100px;
 }
 
 td.usermarker > div
 {
     box-sizing: border-box;
-    background-color: rgba(0, 0, 0, 0.2);
-    border: 3px solid white;
+    background-color: rgba(190, 190, 190, 1);
+    border: 4px solid black;
     border-radius: 100%;
 }
 
 td.usermarker.mazemarker > div
 {
     box-sizing: border-box;
-    background-color: rgba(0, 255, 0, 0.8);
-    border: 3px solid white;
+    background-color: rgba(30, 255, 30, 1);
+    border: 4px solid black;
     border-radius: 100%;
 }
 
@@ -452,10 +452,10 @@ function start()
         if (e.keyCode === 13) {
             e.preventDefault();
             console.log(event.target.outerText);
-            nums = [];
-            sanitized = event.target.outerText.replace(/\D/g," ");
+            let nums = [];
+            let sanitized = event.target.outerText.replace(/\D/g," ");
             console.log(sanitized);
-            splits = sanitized.split(/[ ,]+/)
+            let splits = sanitized.split(/[ ,]+/)
             console.log(splits)
             for (let split of splits)
             {
@@ -478,10 +478,10 @@ function start()
         if (e.keyCode === 13) {
             e.preventDefault();
             console.log(event.target.outerText);
-            nums = [];
-            sanitized = event.target.outerText.replace(/\D/g," ");
+            let nums = [];
+            let sanitized = event.target.outerText.replace(/\D/g," ");
             console.log(sanitized);
-            splits = sanitized.split(/[ ,]+/)
+            let splits = sanitized.split(/[ ,]+/)
             console.log(splits)
             for (let split of splits)
             {
@@ -491,6 +491,7 @@ function start()
             {
                 PLAYER = [nums[0], nums[1]];
             }
+            computeRoute();
             render();
             return false;
         }
@@ -499,10 +500,10 @@ function start()
         if (e.keyCode === 13) {
             e.preventDefault();
             console.log(event.target.outerText);
-            nums = [];
-            sanitized = event.target.outerText.replace(/\D/g," ");
+            let nums = [];
+            let sanitized = event.target.outerText.replace(/\D/g," ");
             console.log(sanitized);
-            splits = sanitized.split(/[ ,]+/)
+            let splits = sanitized.split(/[ ,]+/)
             console.log(splits)
             for (let split of splits)
             {
@@ -512,6 +513,7 @@ function start()
             {
                 GOAL = [nums[0], nums[1]];
             }
+            computeRoute();
             render();
             return false;
         }
@@ -793,7 +795,6 @@ function computeRoute()
     }
     else
     {
-        console.log("route nothing");
         ROUTE = [];
     }
 }
