@@ -274,6 +274,11 @@ td.goal
     background-color: rgba(255, 0, 0, 0.5);
 }
 
+td.player.goal
+{
+    background-color: #A32CC4;
+}
+
 td:hover
 {
     outline: 2px solid gray;
@@ -282,6 +287,7 @@ td:hover
 p.cell
 {
     font-family: Consolas, sans-serif;
+    font-size: 24px;
     width: 100%;
     margin: 0;
 }
@@ -515,6 +521,53 @@ function start()
             }
             computeRoute();
             render();
+            return false;
+        }
+    });
+    $(document).keydown(function(e)
+    {
+        if (e.which == 37)
+        {
+            console.log("left pressed");
+            if (PLAYER != null && CURRENT_MAZE.maze[PLAYER[0]][PLAYER[1]]["left"])
+            {
+                PLAYER[1] -= 1;
+                computeRoute();
+                render();
+            }
+            return false;
+        }
+        if (e.which == 38)
+        {
+            console.log("up pressed");
+            if (PLAYER != null && CURRENT_MAZE.maze[PLAYER[0]][PLAYER[1]]["up"])
+            {
+                PLAYER[0] -= 1;
+                computeRoute();
+                render();
+            }
+            return false;
+        }
+        if (e.which == 39)
+        {
+            console.log("right pressed");
+            if (PLAYER != null && CURRENT_MAZE.maze[PLAYER[0]][PLAYER[1]]["right"])
+            {
+                PLAYER[1] += 1;
+                computeRoute();
+                render();
+            }
+            return false;
+        }
+        if (e.which == 40)
+        {
+            console.log("down pressed");
+            if (PLAYER != null && CURRENT_MAZE.maze[PLAYER[0]][PLAYER[1]]["down"])
+            {
+                PLAYER[0] += 1;
+                computeRoute();
+                render();
+            }
             return false;
         }
     });
@@ -879,7 +932,7 @@ function renderMaze(mazeDict)
             else if (PLAYER !== null && PLAYER[0] == r && PLAYER[1] == c)
             {
                 td.classList.add("player");
-                cellString = "PLAYER";
+                cellString = "PLAY";
             }
             for (let direction in maze[r][c])
             {
