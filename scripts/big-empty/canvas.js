@@ -27,7 +27,7 @@ var RESPAWN_TIMER;
 var BETWEEN_WAVES;
 const PASSIVE_REGEN = 0.02; // percent per second
 
-const TARGETING_MAX = 14;
+const TARGETING_MAX = 0.2;
 var TARGETING_STAMINA;
 var TARGETING_LOCKOUT;
 
@@ -40,6 +40,7 @@ const NOMINAL_DT = 1/FPS;
 const SLOW_DT = NOMINAL_DT/30;
 var CURRENT_DT;
 var TIME;
+let FIRST_TIME_SPAWNING_ALLY = true;
 
 const CANVAS = document.getElementById("canvas");
 const CTX = CANVAS.getContext("2d");
@@ -454,7 +455,7 @@ function physics(dt)
     {
         if (!BETWEEN_WAVES)
         {
-            TIME_BONUS = Math.floor(60 - (TIME - WAVE_START));
+            TIME_BONUS = Math.max(Math.floor(60 - (TIME - WAVE_START)), 0);
             ALLY_BONUS = NUMBER_OF_ALLIES*20;
             PLAYER_SCORE += TIME_BONUS + ALLY_BONUS;
 
@@ -463,7 +464,7 @@ function physics(dt)
             pos = add2d(PLAYER_SHIP.pos, pos);
             let ally = new Morrigan(pos, 0);
             if (Math.random() < 0.3) ally = new Corvette(pos, 0);
-            if (CURRENT_WAVE == 5) ally = new Scirocco(pos, 0);
+            if (CURRENT_WAVE % 5 == 0) ally = new Scirocco(pos, 0);
             ally.faction = PLAYER_SHIP.faction;
             ally.behaviors = [Behaviors.genericAlly,
                 Behaviors.pdcDefense,
@@ -576,6 +577,80 @@ function draw()
                     drawStarTile(i, j, layer);
                 }
             }
+        }
+    }
+    
+    // if (PLAYER_SHIP != null)
+    // {
+    //     CTX.save();
+    //     CTX.globalAlpha = 0.3;
+    //     CTX.strokeStyle = "black";
+    //     CTX.setLineDash([40*PIXELS, 15*PIXELS]);
+    //     CTX.beginPath();
+    //     for (let i = Math.max(1, PLAYER_SHIP.pos_history.length - 25);
+    //         i < PLAYER_SHIP.pos_history.length; ++i)
+    //     {
+    //         CTX.lineTo(PLAYER_SHIP.pos_history[i][0]*PIXELS,
+    //                    PLAYER_SHIP.pos_history[i][1]*PIXELS);
+    //     }
+    //     CTX.stroke();
+    //     CTX.restore();
+    // }
+
+    if (PLAYER_SHIP != null && TARGET_OBJECT != null && SLOW_TIME)
+    {
+        CTX.globalAlpha = 0.2;
+        CTX.lineWidth = 1;
+        // CTX.setLineDash([5, 30]);
+
+        let firing_solution_exists = false
+        let label_pos = [0, 0];
+
+        for (let pdc of PLAYER_SHIP.pdcs)
+        {
+            let theta_t = pdc.computeFiringSolution(TARGET_OBJECT);
+            let theta = theta_t[0];
+            let t = theta_t[1];
+            if (isNaN(theta))
+            {
+                continue;
+            }
+
+            pdc.gamma = theta - pdc.theta - pdc.object.theta;
+            let pos = add2d(PLAYER_SHIP.pos, rot2d(pdc.pos, PLAYER_SHIP.theta));
+            let rvel = rot2d([PDC_VELOCITY, 0], theta);
+            let p_intercept = add2d(pos, mult2d(rvel, t))
+            if (!firing_solution_exists)
+            {
+                firing_solution_exists = true;
+                label_pos = add2d(pos, mult2d(rvel, t/2))
+            }
+
+            CTX.fillStyle = CTX.strokeStyle = "red";
+            CTX.beginPath();
+            CTX.moveTo(pos[0]*PIXELS, pos[1]*PIXELS);
+            CTX.lineTo(p_intercept[0]*PIXELS, p_intercept[1]*PIXELS);
+            CTX.closePath();
+            CTX.stroke();
+
+            CTX.fillStyle = CTX.strokeStyle = "blue";
+            CTX.beginPath();
+            CTX.moveTo(TARGET_OBJECT.pos[0]*PIXELS, TARGET_OBJECT.pos[1]*PIXELS);
+            CTX.lineTo(p_intercept[0]*PIXELS, p_intercept[1]*PIXELS);
+            CTX.closePath();
+            CTX.stroke();
+        }
+
+        if (firing_solution_exists)
+        {
+            CTX.globalAlpha = 0.5;
+            CTX.font = "11px Helvetica";
+            CTX.textAlign = "center";
+            CTX.fillStyle = "red";
+            CTX.fillText("[TARGET: " + TARGET_OBJECT.fullName().toUpperCase(),
+                label_pos[0]*PIXELS, label_pos[1]*PIXELS - 12);
+            CTX.fillText("PDC FIRING SOLUTION AVAILABLE]",
+                label_pos[0]*PIXELS, label_pos[1]*PIXELS);
         }
     }
 
@@ -823,7 +898,6 @@ function draw()
 
         if (PLAYER_SHIP.hasOwnProperty("tubes"))
         {
-            CTX.fillStyle = "gray";
             CTX.globalAlpha = 0.3;
             let num_tubes = PLAYER_SHIP.tubes.length;
             let height = (HEIGHT - 2*border -
@@ -833,6 +907,11 @@ function draw()
                 let tube = PLAYER_SHIP.tubes[i];
                 let percent = Math.min(1, (TIME -
                     tube.lastFired)/tube.cooldown);
+                CTX.fillStyle = "rgb(100, 100, 255, 1)";
+                if (percent < 1)
+                {
+                    CTX.fillStyle = "grey";
+                }
                 CTX.fillRect(border + cw + spacing,
                     border + height*(i + 1 - percent) + spacing*i,
                     cw, height*percent);
@@ -896,6 +975,13 @@ function draw()
     {
         CTX.textAlign = "center";
         CTX.fillText("RIGHT CLICK TO TARGET", WIDTH/2, HEIGHT - 10);
+    }
+
+    if (!SLOW_TIME)
+    {
+        CTX.font = "12px Helvetica";
+        CTX.textAlign = "center";
+        CTX.fillText("PRESS [E] TO ENTER TARGETING MODE", WIDTH/2, HEIGHT - 30);
     }
 
     CTX.textAlign = "right";
@@ -1101,18 +1187,18 @@ function draw()
     CTX.beginPath();
     CTX.arc(MOUSE_SCREEN_POS[0], MOUSE_SCREEN_POS[1], 4, 0, Math.PI*2);
     CTX.stroke();
-    if (TARGETING_STAMINA < TARGETING_MAX && TARGETING_STAMINA > 0)
-    {
-        CTX.beginPath();
-        CTX.arc(MOUSE_SCREEN_POS[0], MOUSE_SCREEN_POS[1], 8, -Math.PI/2,
-            Math.PI*2*TARGETING_STAMINA/TARGETING_MAX - Math.PI/2, false);
-        CTX.arc(MOUSE_SCREEN_POS[0], MOUSE_SCREEN_POS[1], 4,
-            Math.PI*2*TARGETING_STAMINA/TARGETING_MAX - Math.PI/2,
-            -Math.PI/2, true);
-        CTX.lineTo(MOUSE_SCREEN_POS[0], MOUSE_SCREEN_POS[1] - 8);
-        CTX.fill();
-        CTX.stroke();
-    }
+    // if (TARGETING_STAMINA < TARGETING_MAX && TARGETING_STAMINA > 0)
+    // {
+    //     CTX.beginPath();
+    //     CTX.arc(MOUSE_SCREEN_POS[0], MOUSE_SCREEN_POS[1], 8, -Math.PI/2,
+    //         Math.PI*2*TARGETING_STAMINA/TARGETING_MAX - Math.PI/2, false);
+    //     CTX.arc(MOUSE_SCREEN_POS[0], MOUSE_SCREEN_POS[1], 4,
+    //         Math.PI*2*TARGETING_STAMINA/TARGETING_MAX - Math.PI/2,
+    //         -Math.PI/2, true);
+    //     CTX.lineTo(MOUSE_SCREEN_POS[0], MOUSE_SCREEN_POS[1] - 8);
+    //     CTX.fill();
+    //     CTX.stroke();
+    // }
 
     if (GAME_OVER)
     {
@@ -1138,14 +1224,23 @@ function draw()
     if (TARGETING_STAMINA < TARGETING_MAX)
     {
         let grd = CTX.createRadialGradient(
-            WIDTH/2, HEIGHT/2, Math.min(WIDTH, HEIGHT)*0.4,
-            WIDTH/2, HEIGHT/2, Math.min(WIDTH, HEIGHT));
-        grd.addColorStop(0, "rgba(0, 0, 0, 0)");
-        grd.addColorStop(1, "black");
+            WIDTH/2, HEIGHT/2, Math.max(WIDTH, HEIGHT),
+            WIDTH/2, HEIGHT/2, Math.min(WIDTH, HEIGHT) / 2);
+        grd.addColorStop(0, "rgba(0, 0, 0, 1)");
+        grd.addColorStop(1, "rgba(0, 0, 0, 0)");
         CTX.fillStyle = grd;
-        CTX.globalAlpha = (1 - TARGETING_STAMINA/TARGETING_MAX);
+        CTX.globalAlpha = (1 - TARGETING_STAMINA/TARGETING_MAX) * 0.6;
         CTX.fillRect(0, 0, WIDTH, HEIGHT);
+        CTX.textAlign = "center";
+        CTX.font = "30px Helvetica";
+        CTX.globalAlpha = 0.7;
+        CTX.fillStyle = "darkgray";
+        CTX.strokeStyle = "darkgray";
+        CTX.fillText("TARGETING MODE - SIMULATION TIME DILATED", WIDTH/2, HEIGHT - 80);
+        CTX.font = "20px Helvetica";
+        CTX.fillText("PRESS [E] TO RETURN TO REAL TIME", WIDTH/2, HEIGHT - 50);
     }
+
     if (BETWEEN_WAVES && RESPAWN_TIMER > 0 && !GAME_PAUSED
         && SPAWN_ENEMIES && !GAME_OVER)
     {
@@ -1164,13 +1259,15 @@ function draw()
         }
         CTX.fillText("WAVE " + (CURRENT_WAVE + 1) + " IN T-" + rtime + "s",
             WIDTH/2 + 20, HEIGHT/2 - 20);
-        if (TIME_BONUS > 0 || ALLY_BONUS > 0)
+        if (PLAYER_SCORE > 0)
         {
-            CTX.fillText("TIME BONUS: " + TIME_BONUS + " POINTS",
-                WIDTH/2 + 20, HEIGHT/2 + 40);
-            CTX.fillText("ALLY BONUS: " + ALLY_BONUS + " POINTS",
-                WIDTH/2 + 20, HEIGHT/2 + 80);
-            CTX.fillText("PRESS [K] TO ADVANCE", WIDTH/2 + 20, HEIGHT/2 + 120);
+            CTX.fillText("TIME BONUS", WIDTH/2 + 20, HEIGHT/2 + 40);
+            CTX.fillText(TIME_BONUS, WIDTH/2 + 400, HEIGHT/2 + 40);
+            CTX.fillText("ALLY BONUS", WIDTH/2 + 20, HEIGHT/2 + 80);
+            CTX.fillText(ALLY_BONUS, WIDTH/2 + 400, HEIGHT/2 + 80);
+            CTX.fillText("TOTAL SCORE", WIDTH/2 + 20, HEIGHT/2 + 120);
+            CTX.fillText(PLAYER_SCORE, WIDTH/2 + 400, HEIGHT/2 + 120);
+            CTX.fillText("PRESS [K] TO ADVANCE", WIDTH/2 + 20, HEIGHT/2 + 160);
         }
         else
             CTX.fillText("PRESS [K] TO ADVANCE", WIDTH/2 + 20, HEIGHT/2 + 40);
@@ -1295,7 +1392,7 @@ function start()
             return setpoint;
         }
 
-        if (NUMBER_OF_ENEMIES == 0)
+        if (NUMBER_OF_ENEMIES == 0 || GAME_OVER)
         {
             UNDERTRACK.volume = fade(UNDERTRACK.volume, 0.15);
             OVERTRACK.volume = fade(OVERTRACK.volume, 0);
@@ -1341,9 +1438,9 @@ function start()
     if (KEYPRESSES.has("ArrowLeft")) MOUSE_SCREEN_POS[0] -= ds;
     if (KEYPRESSES.has("ArrowRight")) MOUSE_SCREEN_POS[0] += ds;
 
-    if (TARGETING_STAMINA <= 0 && SLOW_TIME)
-    {
-        SLOW_TIME = false;
-        TARGETING_LOCKOUT = true;
-    }
+    // if (TARGETING_STAMINA <= 0 && SLOW_TIME)
+    // {
+    //     SLOW_TIME = false;
+    //     TARGETING_LOCKOUT = true;
+    // }
 }

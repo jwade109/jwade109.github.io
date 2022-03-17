@@ -133,7 +133,7 @@ function interceptSolution(tpos, tvel, ipos, ivel)
     intercept[0] = tpos[0] + t*tvel[0] - ipos[0];
     intercept[1] = tpos[1] + t*tvel[1] - ipos[1];
 
-    return Math.atan2(intercept[1], intercept[0]);
+    return [Math.atan2(intercept[1], intercept[0]), t]
 }
 
 function distance(p1, p2)

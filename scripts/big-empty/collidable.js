@@ -6,6 +6,7 @@ function Collidable(length, width, max_health)
 {
     this.pos = [0, 0];
     this.pos_prev = [];
+    this.pos_history = [];
     this.vel = [0, 0];
     this.acc = [0, 0];
     this.theta = 0;
@@ -52,6 +53,11 @@ Collidable.prototype.fullName = function()
 Collidable.prototype.physics = function(dt)
 {
     this.time += dt;
+    this.pos_history.push(this.pos.slice());
+    while (this.pos_history.length > 100)
+    {
+        this.pos_history.shift();
+    }
     this.pos_prev = this.pos.slice();
 
     let bacc = rot2d(div2d(this.forces, this.mass), -this.theta);

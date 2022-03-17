@@ -103,33 +103,33 @@ RailgunLauncher.prototype.draw = function(opacity)
         CTX.restore();
     }
 
-
-    //
-    // if (!PLAYER_WEAPON_SELECT && this.object == PLAYER_SHIP)
-    // {
-    CTX.save();
-    CTX.strokeStyle = "red";
-    CTX.globalAlpha = 0.2*opacity;
-    CTX.rotate(-this.gamma);
-    CTX.beginPath();
-    CTX.moveTo(0, 0);
-    if (TIME - this.lastFired < this.cooldown)
-        CTX.setLineDash([10*PIXELS, 20*PIXELS]);
-    CTX.lineTo(2000*PIXELS, 0);
-    CTX.stroke();
-    CTX.restore();
-
     if (this.nodraw)
     {
         CTX.restore();
         return;
     }
 
-    if (TARGET_OBJECT != null && SLOW_TIME)
+    if (this.object == PLAYER_SHIP)
+    {
+        CTX.save();
+        CTX.strokeStyle = "red";
+        CTX.globalAlpha = 0.2*opacity;
+        CTX.rotate(-this.gamma);
+        CTX.beginPath();
+        CTX.moveTo(0, 0);
+        if (TIME - this.lastFired < this.cooldown)
+            CTX.setLineDash([10*PIXELS, 20*PIXELS]);
+        CTX.lineTo(2000*PIXELS, 0);
+        CTX.stroke();
+        CTX.restore();
+    }
+
+    if (TARGET_OBJECT != null && SLOW_TIME && this.object == PLAYER_SHIP)
     {
         let rvel = sub2d(TARGET_OBJECT.vel, this.object.vel);
-        let theta = -interceptSolution(TARGET_OBJECT.pos,
+        let theta_t = interceptSolution(TARGET_OBJECT.pos,
             rvel, this.globalPos(), RAILGUN_VEL);
+        let theta = -theta_t[0];
         let pointing = this.object.theta + this.theta + this.gamma;
         while (theta < this.gamma - Math.PI) theta += Math.PI*2;
         while (theta > this.gamma + Math.PI) theta -= Math.PI*2;

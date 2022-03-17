@@ -41,6 +41,20 @@ static playerControlled(self, dt)
         }
     }
 
+    if (KEYPRESSES.has(1)) // middle click
+    {
+        if (self.hasOwnProperty("railguns"))
+        {
+            for (let rg of self.railguns)
+            {
+                let angle = angle2d([1, 0],
+                    sub2d([MOUSEX, MOUSEY], rg.globalPos()));
+                rg.seek(dt, angle);
+                rg.fire()
+            }
+        }
+    }
+
     if (self.hasOwnProperty("railguns"))
     {
         for (let rg of self.railguns)
@@ -260,8 +274,9 @@ static railgunTargetScirocco(self, dt)
     let rvel = sub2d(closest.vel, self.vel);
     for (let gun of self.railguns)
     {
-        let theta = -interceptSolution(gun.globalPos(),
+        let theta_t = interceptSolution(gun.globalPos(),
             rvel, self.pos, RAILGUN_VEL);
+        let theta = -theta_t[0];
         if (!isNaN(theta))
             gun.seek(dt, theta);
     }

@@ -40,25 +40,37 @@ class PointDefenseCannon
         this.fireBullet(theta);
     }
 
-    intercept(target)
+    computeFiringSolution(target)
     {
-        if (target == null) return NaN;
+        if (target == null) return [NaN, NaN];
         if (distance(target.pos, this.globalPos()) > this.radius)
         {
-            // if (this.object === PLAYER_SHIP)
-            // throwAlert("Cannot fire PDC -- target exceeds tracking range.",
-            //     ALERT_DISPLAY_TIME);
-            return NaN;
+            return [NaN, NaN];
         }
 
         let gpos = this.globalPos();
         let rvel = sub2d(target.vel, this.object.vel);
-        let theta = -interceptSolution(target.pos,
+        let theta_t = interceptSolution(target.pos,
             rvel, gpos, PDC_VELOCITY);
+        let theta = -theta_t[0];
+        let t = theta_t[1];
+        let gun_orient = this.object.theta + this.theta;
+        let min = gun_orient - this.range[1];
+        let max = gun_orient - this.range[0];
+
+        while (theta < gun_orient - Math.PI) theta += Math.PI*2;
+        while (theta > gun_orient + Math.PI) theta -= Math.PI*2;
+        if (theta > max || theta < min) return [NaN, NaN];
+
+        return [theta, t]
+    }
+
+    intercept(target)
+    {
+        let theta_t = this.computeFiringSolution(target)
+        let theta = theta_t[0];
         if (isNaN(theta))
         {
-            // throwAlert("Cannot fire PDC -- intercept solution not found.",
-            //     ALERT_DISPLAY_TIME);
             return NaN;
         }
         this.fireBullet(theta);

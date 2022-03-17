@@ -42,7 +42,7 @@ TorpedoTube.prototype.fire = function(target)
         this.theta + this.object.theta, TORPEDO_THRUST);
     torp.target = target;
     torp.origin = this.object;
-    torp.name = this.object.name;
+    torp.name = this.object.name + " torpedo";
     torp.faction = this.object.faction;
     WORLD.push(torp);
 }
