@@ -102,7 +102,7 @@ function initialize()
     PLAYER_SCORE = 0;
     TIME_BONUS = ALLY_BONUS = 0;
 
-    CURRENT_DT = NOMINAL_DT;
+    CURRENT_DT = 0;
     TIME = 0;
 
     ALERTS = [];
@@ -1409,7 +1409,7 @@ function start()
     let time_passed = 0;
     if (!GAME_PAUSED && !SLOW_TIME)
     {
-        CURRENT_DT += (NOMINAL_DT - CURRENT_DT)*0.1;
+        CURRENT_DT += (DT - CURRENT_DT)*0.1;
         TARGETING_STAMINA += DT*2;
         if (TARGETING_STAMINA > TARGETING_MAX)
         {
