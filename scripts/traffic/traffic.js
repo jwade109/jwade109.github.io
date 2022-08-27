@@ -14,6 +14,7 @@ let MOUSE_PHYSICS = null;
 
 let HANDLE_INDEX = -1;
 let NEAREST_HANDLE_INDEX = -1;
+let PAUSED = false;
 
 canvas.oncontextmenu = function(e)
 {
@@ -52,6 +53,19 @@ for (let i = 0; i < N; i++)
 }
 let spline = new Spline(points);
 
+function add_point()
+{
+    spline.handles.push(new Vector2(Math.random() * WIDTH, Math.random() * HEIGHT));
+}
+
+function remove_point()
+{
+    if (spline.handles.length > 2)
+    {
+        spline.handles.pop();
+    }
+}
+
 function update(previous, now, frame)
 {
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
@@ -62,6 +76,9 @@ function update(previous, now, frame)
         console.log("Large timestep!")
         return;
     }
+
+    ctx.font = "30px Helvetica";
+    ctx.fillText("Order " + (spline.handles.length - 1) + " Bezier Curve", 10, 50);
 
     spline.render(ctx);
     let t = now/12 % 1;
@@ -92,8 +109,6 @@ function update(previous, now, frame)
         ctx.globalAlpha = 1;
     }
     e.render(ctx);
-
-    console.log(HANDLE_INDEX);
 
     if (LAST_MOUSE_POSITION != null)
     {
@@ -126,7 +141,7 @@ let frame_number = 0;
 
 var gameloop = setInterval(function()
 {
-    let now = new Date().getTime() / 1000
+    let now = new Date().getTime() / 1000;
     update(previous, now, frame_number)
     frame_number++;
     previous = now;
