@@ -12,6 +12,9 @@ let NOMINAL_DT = 1 / NOMINAL_FRAMERATE
 let LAST_MOUSE_POSITION = null;
 let MOUSE_PHYSICS = null;
 
+let HANDLE_INDEX = -1;
+let NEAREST_HANDLE_INDEX = -1;
+
 canvas.oncontextmenu = function(e)
 {
     e.preventDefault();
@@ -28,24 +31,31 @@ document.addEventListener('mousedown', function(event)
     event.preventDefault();
     event.stopPropagation();
 
-    // console.log("mousedown", event)
+    console.log("mousedown", event)
+    HANDLE_INDEX = NEAREST_HANDLE_INDEX;
 });
 
-let trackers = []
-for (let i = 0; i < 200; i++)
+document.addEventListener('mouseup', function(event)
 {
-    let pos = new Vector2(Math.random() * WIDTH, Math.random() * HEIGHT);
-    trackers.push(new Tracker(pos, 9, 0, 15));
+    event.preventDefault();
+    event.stopPropagation();
+
+    console.log("mouseup", event)
+    HANDLE_INDEX = -1;
+});
+
+let points = [];
+let N = Math.floor(Math.random() * 7 + 4);
+for (let i = 0; i < N; i++)
+{
+    points.push(new Vector2(Math.random() * WIDTH, Math.random() * HEIGHT));
 }
+let spline = new Spline(points);
 
 function update(previous, now, frame)
 {
+    ctx.clearRect(0, 0, WIDTH, HEIGHT);
     let dt = now - previous;
-
-    if (LAST_MOUSE_POSITION == null)
-    {
-        return;
-    }
 
     if (dt > NOMINAL_DT * 3)
     {
@@ -53,34 +63,61 @@ function update(previous, now, frame)
         return;
     }
 
-    let mpos = LAST_MOUSE_POSITION.copy();
-    let mvel = new Vector2(0, 0);
-    if (MOUSE_PHYSICS != null)
+    spline.render(ctx);
+    let t = now/12 % 1;
+    let e = spline.evaluate(t);
+    let inter = collapse_once(spline.handles, t);
+    while (inter.length > 1)
     {
-        mvel.x = (mpos.x - MOUSE_PHYSICS.pos.x) / dt;
-        mvel.y = (mpos.y - MOUSE_PHYSICS.pos.y) / dt;
-    }
-    MOUSE_PHYSICS = new Particle(mpos, mvel);
-
-    ctx.clearRect(0, 0, WIDTH, HEIGHT);
-    for (let i = 0; i < trackers.length; i++)
-    {
-        if (MOUSE_PHYSICS != null)
+        ctx.beginPath();
+        ctx.globalAlpha = 0.2;
+        for (let i = 0; i < inter.length; i++)
         {
-            let particle = MOUSE_PHYSICS.copy();
-            if (i != 0)
+            let pos = inter[i];
+            if (i == 0)
             {
-                particle = trackers[i-1].physics.copy();
+                ctx.moveTo(pos.x, pos.y);
             }
-            trackers[i].update(particle, dt);
+            else
+            {
+                ctx.lineTo(pos.x, pos.y);
+            }
         }
-        trackers[i].render(ctx);
-
-        trackers[i].physics.render(ctx);
+        ctx.stroke();
+        for (let pos of inter)
+        {
+            pos.render(ctx);
+        }
+        inter = collapse_once(inter, t);
+        ctx.globalAlpha = 1;
     }
-    if (MOUSE_PHYSICS != null)
+    e.render(ctx);
+
+    console.log(HANDLE_INDEX);
+
+    if (LAST_MOUSE_POSITION != null)
     {
-        MOUSE_PHYSICS.render(ctx);
+        let nearest = spline.nearestHandle(LAST_MOUSE_POSITION);
+        let index = nearest[0];
+        let dist = nearest[1];
+        if (dist < 25)
+        {
+            let pos = spline.handles[index];
+            pos.render(ctx);
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, 12, 0, 2 * Math.PI);
+            ctx.stroke();
+            NEAREST_HANDLE_INDEX = index;
+        }
+        else
+        {
+            NEAREST_HANDLE_INDEX = -1;
+        }
+    }
+
+    if (HANDLE_INDEX > -1)
+    {
+        spline.handles[HANDLE_INDEX] = LAST_MOUSE_POSITION;
     }
 }
 

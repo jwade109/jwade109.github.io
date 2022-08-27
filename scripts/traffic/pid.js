@@ -36,6 +36,20 @@ Vector2.prototype.copy = function()
     return new Vector2(this.x, this.y)
 }
 
+Vector2.prototype.dist = function(v)
+{
+    let dx = v.x - this.x;
+    let dy = v.y - this.y;
+    return Math.sqrt(dx*dx + dy*dy);
+}
+
+Vector2.prototype.render = function(ctx)
+{
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 5, 0, 2 * Math.PI);
+    ctx.fill();
+}
+
 function Particle(pos, vel)
 {
     this.pos = pos;
@@ -94,5 +108,105 @@ Tracker.prototype.render = function(ctx)
 {
     ctx.beginPath();
     ctx.arc(this.physics.pos.x, this.physics.pos.y, 10, 0, 2 * Math.PI);
+    ctx.stroke();
+}
+
+function Spline(handles)
+{
+    this.handles = handles;
+}
+
+function lerp(a, b, t)
+{
+    let ret = new Vector2(0, 0);
+    ret.x = a.x + (b.x - a.x) * t;
+    ret.y = a.y + (b.y - a.y) * t;
+    return ret;
+}
+
+function collapse_once(elements, s)
+{
+    if (elements.length < 2)
+    {
+        return elements;
+    }
+
+    let results = []
+    for (let i = 0; i + 1 < elements.length; i++)
+    {
+        let first = elements[i];
+        let second = elements[i+1];
+        let middle = lerp(first, second, s);
+        results.push(middle)
+    }
+    return results;
+}
+
+Spline.prototype.evaluate = function(s)
+{
+    let results = collapse_once(this.handles, s);
+    while (results.length > 1)
+    {
+        results = collapse_once(results, s);
+    }
+    return results[0]
+}
+
+Spline.prototype.nearestHandle = function(pos)
+{
+    let dist = Number.MAX_VALUE;
+    let best = -1;
+    for (let i = 0; i < this.handles.length; i++)
+    {
+        let h = this.handles[i];
+        let d = h.dist(pos);
+        if (d < dist)
+        {
+            best = i;
+            dist = d;
+        }
+    }
+    return [best, dist]
+}
+
+Spline.prototype.render = function(ctx)
+{
+    ctx.beginPath();
+    ctx.globalAlpha = 0.3;
+    for (let i = 0; i < this.handles.length; i++)
+    {
+        let pos = this.handles[i];
+        if (i == 0)
+        {
+            ctx.moveTo(pos.x, pos.y);
+        }
+        else
+        {
+            ctx.lineTo(pos.x, pos.y);
+        }
+    }
+    ctx.stroke();
+    for (let i = 0; i < this.handles.length; i++)
+    {
+        let pos = this.handles[i];
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, 3, 0, 2 * Math.PI);
+        ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.globalAlpha = 1;
+    let n = 100;
+    for (let t = 0; t <= n; t++)
+    {
+        let pos = this.evaluate(t/n);
+        if (t == 0)
+        {
+            ctx.moveTo(pos.x, pos.y);
+        }
+        else
+        {
+            ctx.lineTo(pos.x, pos.y);
+        }
+    }
     ctx.stroke();
 }
