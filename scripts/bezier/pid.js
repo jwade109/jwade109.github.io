@@ -169,8 +169,33 @@ Spline.prototype.nearestHandle = function(pos)
     return [best, dist]
 }
 
+Spline.prototype.nearestPoint = function(pos)
+{
+    let nh = this.nearestHandle(pos);
+    let index = nh[0];
+    let handle = this.handles[index];
+    let n = 500;
+    let dist = Number.MAX_VALUE;
+    let best = pos;
+    let best_t = 0;
+    for (let t = 0; t <= n; t++)
+    {
+        let p = this.evaluate(t/n);
+        let d = p.dist(pos);
+        if (d < dist)
+        {
+            dist = d;
+            best = p;
+            best_t = t/n;
+        }
+    }
+    return [best, best_t];
+}
+
 Spline.prototype.render = function(ctx)
 {
+    ctx.save();
+    ctx.strokeStyle = "black";
     ctx.beginPath();
     ctx.globalAlpha = 0.3;
     for (let i = 0; i < this.handles.length; i++)
@@ -186,16 +211,10 @@ Spline.prototype.render = function(ctx)
         }
     }
     ctx.stroke();
-    for (let i = 0; i < this.handles.length; i++)
-    {
-        let pos = this.handles[i];
-        ctx.beginPath();
-        ctx.arc(pos.x, pos.y, 3, 0, 2 * Math.PI);
-        ctx.stroke();
-    }
     ctx.beginPath();
     ctx.globalAlpha = 1;
-    let n = 100;
+    ctx.lineWidth = 3;
+    let n = 500;
     for (let t = 0; t <= n; t++)
     {
         let pos = this.evaluate(t/n);
@@ -209,4 +228,13 @@ Spline.prototype.render = function(ctx)
         }
     }
     ctx.stroke();
+    ctx.strokeStyle = "red";
+    for (let i = 0; i < this.handles.length; i++)
+    {
+        let pos = this.handles[i];
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, 3, 0, 2 * Math.PI);
+        ctx.stroke();
+    }
+    ctx.restore();
 }
