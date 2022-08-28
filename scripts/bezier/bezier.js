@@ -199,29 +199,34 @@ function update(previous, now, frame)
     }
 
     // re-centering
-    // if (HANDLE_INDEX == -1) // not currently moving anything
-    // {
-    //     let centroid = new Vector2(0, 0);
-    //     let n = 50;
-    //     for (let t = 0; t <= n; t++)
-    //     {
-    //         let e = spline.evaluate(t/n);
-    //         centroid.x += e.x;
-    //         centroid.y += e.y;
-    //     }
+    if (HANDLE_INDEX == -1) // not currently moving anything
+    {
+        let min = spline.handles[0].copy();
+        let max = spline.handles[0].copy();
+        for (const h of spline.handles)
+        {
+            min.x = Math.min(min.x, h.x);
+            min.y = Math.min(min.y, h.y);
+            max.x = Math.max(max.x, h.x);
+            max.y = Math.max(max.y, h.y);
+        }
 
-    //     centroid.x /= n;
-    //     centroid.y /= n;
+        let centroid = new Vector2(0, 0);
+        centroid.x = (min.x + max.x) / 2;
+        centroid.y = (min.y + max.y) / 2;
 
-    //     centroid.x -= WIDTH/2;
-    //     centroid.y -= HEIGHT/2;
+        // centroid.x /= n;
+        // centroid.y /= n;
 
-    //     for (let handle of spline.handles)
-    //     {
-    //         handle.x -= centroid.x * dt * 10;
-    //         handle.y -= centroid.y * dt * 10;
-    //     }
-    // }
+        centroid.x -= WIDTH/2;
+        centroid.y -= HEIGHT/2;
+
+        for (let handle of spline.handles)
+        {
+            handle.x -= centroid.x * dt * 10;
+            handle.y -= centroid.y * dt * 10;
+        }
+    }
 
     spline.render(ctx);
     T_SETPOINT = 0.5 * Math.sin(now/4 - Math.PI/2) + 0.5;
