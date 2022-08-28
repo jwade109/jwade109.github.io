@@ -13,7 +13,9 @@ let LAST_MOUSE_POSITION = null;
 let MOUSE_PHYSICS = null;
 
 let HANDLE_INDEX = -1;
+let INSERTION_INDEX = -1;
 let NEAREST_HANDLE_INDEX = -1;
+let NEAREST_INSERTION_POINT_INDEX = -1;
 let PAUSED = false;
 
 canvas.oncontextmenu = function(e)
@@ -33,9 +35,16 @@ document.addEventListener('mousedown', function(event)
     event.stopPropagation();
 
     console.log("mousedown", event);
-    HANDLE_INDEX = NEAREST_HANDLE_INDEX;
+    if (event.button == 0)
+    {
+        HANDLE_INDEX = NEAREST_HANDLE_INDEX;
+        INSERTION_INDEX = NEAREST_INSERTION_POINT_INDEX;
+        on_left_click();
+    }
     if (event.button == 2)
     {
+        HANDLE_INDEX = NEAREST_HANDLE_INDEX;
+        INSERTION_INDEX = NEAREST_INSERTION_POINT_INDEX;
         on_right_click();
     }
     if (event.button == 1)
@@ -56,6 +65,19 @@ document.addEventListener('keypress', function(event)
         randomize_spline();
     }
 });
+
+function on_left_click()
+{
+    if (INSERTION_INDEX > -1)
+    {
+        console.log("Adding a point at insertion index " + INSERTION_INDEX);
+        const p0 = spline.handles[INSERTION_INDEX];
+        const p1 = spline.handles[INSERTION_INDEX + 1];
+        const to_add = lerp(p0, p1, 0.5);
+        spline.handles.splice(INSERTION_INDEX + 1, 0, to_add);
+        HANDLE_INDEX = INSERTION_INDEX + 1;
+    }
+}
 
 function on_right_click()
 {
@@ -93,27 +115,27 @@ let spline = new Spline([]);
 function randomize_spline()
 {
     let points = [];
-    let N = Math.floor(Math.random() * 7 + 4);
+    let N = Math.floor(Math.random() * 5 + 3);
     for (let i = 0; i < N; i++)
     {
         let x = Math.random() * 4*WIDTH/6 + WIDTH/6;
         let y = Math.random() * 4*HEIGHT/6 + HEIGHT/6;
         points.push(new Vector2(x, y));
     }
-    points.sort(function(a, b)
-    {
-        let a1 = Math.atan2(a.y - HEIGHT/2, a.x - WIDTH/2);
-        let a2 = Math.atan2(b.y - HEIGHT/2, b.x - WIDTH/2);
-        if (a1 < a2)
-        {
-            return -1;
-        }
-        if (a2 > a1)
-        {
-            return 1;
-        }
-        return 0;
-    });
+    // points.sort(function(a, b)
+    // {
+    //     let a1 = Math.atan2(a.y - HEIGHT/2, a.x - WIDTH/2);
+    //     let a2 = Math.atan2(b.y - HEIGHT/2, b.x - WIDTH/2);
+    //     if (a1 < a2)
+    //     {
+    //         return -1;
+    //     }
+    //     if (a2 > a1)
+    //     {
+    //         return 1;
+    //     }
+    //     return 0;
+    // });
     spline.handles = points;
 }
 
@@ -246,12 +268,19 @@ function update(previous, now, frame)
     ctx.fillText(nth(order) + " Order Bezier Curve", 30, 50);
     ctx.fillText("t = " + GLOBAL_T.toFixed(2), 30, 90);
     ctx.font = "18px Garamond";
-    ctx.fillText("Double click to add a control point", 30, 140);
-    ctx.fillText("Click and drag to move control points", 30, 165);
-    ctx.fillText("Right click on a control point to delete it", 30, 190);
-    ctx.fillText("Middle click to toggle mouse tracking/animation", 30, 215);
-    ctx.fillText("Press S to save your drawing to the page URL (shareable)", 30, 240);
-    ctx.fillText("Press R to generate random curve", 30, 265);
+    let height = 115;
+    let dh = 25;
+    ctx.fillText("Double click to add a control point", 30, height += dh);
+    ctx.fillText("Click on a green marker to insert a control point", 30, height += dh);
+    ctx.fillText("Click and drag to move control points", 30, height += dh);
+    ctx.fillText("Right click on a control point to delete it", 30, height += dh);
+    ctx.fillText("Middle click to toggle mouse tracking/animation", 30, height += dh);
+    ctx.fillText("Press S to save your drawing to the page URL (shareable)", 30, height += dh);
+    ctx.fillText("Press R to generate a random curve", 30, height += dh);
+    if (WIDTH < HEIGHT)
+    {
+        ctx.fillText("(Sorry, this isn't designed for mobile devices)", 30, height += dh);
+    }
 
     let e = spline.evaluate(GLOBAL_T);
     let inter = collapse_once(spline.handles, GLOBAL_T);
@@ -281,6 +310,43 @@ function update(previous, now, frame)
     }
     e.render(ctx);
 
+    let insertion_points = collapse_once(spline.handles, 0.5);
+    for (const ip of insertion_points)
+    {
+        ip.render(ctx, 5, "green");
+    }
+
+    if (LAST_MOUSE_POSITION != null)
+    {
+        let nearest = spline.nearestHandle(LAST_MOUSE_POSITION);
+        let index = nearest[0];
+        let dist = nearest[1];
+        if (dist < 15)
+        {
+            let pos = spline.handles[index];
+            pos.render(ctx, 8, "red");
+            NEAREST_HANDLE_INDEX = index;
+        }
+        else
+        {
+            NEAREST_HANDLE_INDEX = -1;
+        }
+
+        nearest = nearest_point(insertion_points, LAST_MOUSE_POSITION);
+        index = nearest[0];
+        dist = nearest[1];
+        if (dist < 15)
+        {
+            let pos = insertion_points[index];
+            pos.render(ctx, 8, "green");
+            NEAREST_INSERTION_POINT_INDEX = index;
+        }
+        else
+        {
+            NEAREST_INSERTION_POINT_INDEX = -1;
+        }
+    }
+
     if (LAST_MOUSE_POSITION != null)
     {
         let nearest = spline.nearestHandle(LAST_MOUSE_POSITION);
@@ -289,13 +355,7 @@ function update(previous, now, frame)
         if (dist < 60)
         {
             let pos = spline.handles[index];
-            pos.render(ctx);
-            ctx.save();
-            ctx.fillStyle = "red";
-            ctx.beginPath();
-            ctx.arc(pos.x, pos.y, 8, 0, 2 * Math.PI);
-            ctx.fill();
-            ctx.restore();
+            pos.render(ctx, 8, "red");
             NEAREST_HANDLE_INDEX = index;
         }
         else

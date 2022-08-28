@@ -43,11 +43,14 @@ Vector2.prototype.dist = function(v)
     return Math.sqrt(dx*dx + dy*dy);
 }
 
-Vector2.prototype.render = function(ctx)
+Vector2.prototype.render = function(ctx, radius=5, fill_style="black")
 {
+    ctx.save();
     ctx.beginPath();
-    ctx.arc(this.x, this.y, 5, 0, 2 * Math.PI);
+    ctx.fillStyle = fill_style;
+    ctx.arc(this.x, this.y, radius, 0, 2 * Math.PI);
     ctx.fill();
+    ctx.restore();
 }
 
 function Particle(pos, vel)
@@ -152,21 +155,26 @@ Spline.prototype.evaluate = function(s)
     return results[0]
 }
 
-Spline.prototype.nearestHandle = function(pos)
+function nearest_point(points, test_point)
 {
     let dist = Number.MAX_VALUE;
     let best = -1;
-    for (let i = 0; i < this.handles.length; i++)
+    for (let i = 0; i < points.length; i++)
     {
-        let h = this.handles[i];
-        let d = h.dist(pos);
+        let h = points[i];
+        let d = h.dist(test_point);
         if (d < dist)
         {
             best = i;
             dist = d;
         }
     }
-    return [best, dist]
+    return [best, dist];
+}
+
+Spline.prototype.nearestHandle = function(pos)
+{
+    return nearest_point(spline.handles, pos);
 }
 
 Spline.prototype.nearestPoint = function(pos)
