@@ -2,13 +2,9 @@ var width = document.body.clientWidth;
 var height = document.body.scrollHeight;
 var potential = [];
 var particles = [];
-var scale = 5;
-var mx = width/2, my = height/2;
 
-var OFFSET_RATE_X = 0;
-var OFFSET_RATE_Y = 0;
-var OFFSET_X = 0;
-var OFFSET_Y = 0;
+let NOMINAL_FRAMERATE = 25;
+let NOMINAL_DT = 1 / NOMINAL_FRAMERATE;
 
 document.addEventListener('keypress', function(event)
 {
@@ -35,22 +31,9 @@ class Particle
     {
         var v = add2d(velocityAt(this.pos[0], this.pos[1]),
                 [Math.random() * 2 - 1, Math.random() * 2 - 1]);
-        this.pos[0] += v[0]*dt*10;
-        this.pos[1] += v[1]*dt*10;
-        let d = 0;
-        if (this.history.length > 0)
-        {
-            const last = this.history[this.history.length-1];
-            d = distance(last, this.pos);
-        }
-        if (d > 100)
-        {
-            this.history = [];
-        }
-        if (this.history.length == 0 || (d > 15 && d < 100))
-        {
-            this.history.push(this.pos.slice());
-        }
+        this.pos[0] += v[0] * dt;
+        this.pos[1] += v[1] * dt;
+        this.history.push(this.pos.slice());
         if (this.pos[0] > width*1.5 && v[0] > 0)
         {
             this.pos[0] = -10;
@@ -76,7 +59,7 @@ class Particle
             this.history = []
         }
 
-        const n = 40;
+        const n = 150;
         if (this.history.length > n)
         {
             this.history = this.history.slice(-n);
@@ -92,11 +75,16 @@ class Particle
         // ctx.arc(this.pos[0], this.pos[1], 4, 0, Math.PI*2);
         // ctx.fill();
         ctx.beginPath();
+        let last = this.pos;
         ctx.moveTo(this.pos[0], this.pos[1]);
-        for (let i = 0; i < this.history.length; i++)
+        for (let i = 1; i < this.history.length; i++)
         {
-            const pos = this.history[this.history.length - i - 1];
-            ctx.lineTo(pos[0], pos[1]);
+            const a = this.history[this.history.length - i - 1];
+            if (distance(last, a) > 15 || i + 1 == this.history.length)
+            {
+                ctx.lineTo(a[0], a[1]);
+                last = a;
+            }
         }
         ctx.lineWidth = 4;
         ctx.stroke();
@@ -120,7 +108,7 @@ function velocityAt(x, y)
     var vy = (potentialAt(x, y+r) - potentialAt(x, y-r))/(2*r);
     if (isNaN(vx)) vx = 0;
     if (isNaN(vy)) vy = 0;
-    return [vx + OFFSET_X, vy + OFFSET_Y];
+    return [vx, vy];
 }
 
 function vortex(x0, y0, gamma)
@@ -143,7 +131,6 @@ function source(x0, y0, lambda)
 
 function uniform(theta, v)
 {
-
     return function(x, y)
     {
         return v*x*Math.cos(-theta) + v*y*Math.sin(-theta);
@@ -178,111 +165,66 @@ function doublet(x0, y0, kappa)
     }
 }
 
-canvas.onmousemove = function(e)
-{
-    var rect = canvas.getBoundingClientRect();
-    mx = e.clientX - rect.left;
-    my = e.clientY - rect.top;
-}
+FRAME_DT_BUFFER = [];
 
-function mouseX()
+function update(previous, now, frame_number)
 {
-    return mx;
-}
-
-function mouseY()
-{
-    return my;
-}
-
-function draw()
-{
-    var fps = 50;
-    var steps_per_frame = 5;
-    setTimeout(function()
+    const dt = now - previous;
+    if (Math.abs(dt) > NOMINAL_DT * 3)
     {
-        var canvas = document.getElementById("canvas");
-        var ctx = canvas.getContext("2d");
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.canvas.width = document.body.clientWidth;
-        ctx.canvas.height = document.body.clientHeight;
-        width = ctx.canvas.width;
-        height = ctx.canvas.height;
-        requestAnimationFrame(draw);
+        console.log("Large timestep: " + dt.toFixed(3) + " (nominally "
+            + NOMINAL_DT.toFixed(3) + ")");
+        return;
+    }
 
-        var pixels = 30;
-        var w = Math.round(width/pixels);
-        var h = Math.round(height/pixels);
-        var px = width/w;
-        var py = height/h;
-        // for (var i = 0; i < w; ++i)
-        // {
-        //     var cx = px/2 + i*px;
-        //     for (var j = 0; j < h; ++j)
-        //     {
-        //         var cy = py/2 + j*py;
-        //         var vel = velocityAt(cx, cy);
-        //         var mag = 2*Math.sqrt(vel[0]*vel[0] + vel[1]*vel[1]);
-        //         ctx.strokeStyle = "black";
-        //         ctx.globalAlpha = 0.3;
-        //         ctx.beginPath();
-        //         ctx.moveTo(cx, cy);
-        //         ctx.lineTo(cx + vel[0]*pixels/mag, cy + vel[1]*pixels/mag);
-        //         ctx.stroke();
-        //         ctx.beginPath();
-        //         ctx.strokeStyle = "black";
-        //         ctx.globalAlpha = 0.1;
-        //         ctx.arc(cx, cy, 1, 0, Math.PI*2);
-        //         ctx.stroke();
-        //     }
-        // }
+    var fps = 50;
+    var steps_per_frame = 2;
 
-        const dt = 1/(fps*steps_per_frame);
-        OFFSET_RATE_X =+ Math.random() * 0.2 - 0.1;
-        OFFSET_RATE_Y =+ Math.random() * 0.2 - 0.1;
-        OFFSET_X =+ OFFSET_RATE_X * dt;
-        OFFSET_Y =+ OFFSET_RATE_Y * dt;
+    var canvas = document.getElementById("canvas");
+    var ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.canvas.width = document.body.clientWidth;
+    ctx.canvas.height = document.body.clientHeight;
+    width = ctx.canvas.width;
+    height = ctx.canvas.height;
 
-        for (var p in particles)
-        {
-            particles[p].draw(ctx);
-            for (var f = 0; f < steps_per_frame; ++f)
-                particles[p].step(dt);
-        }
+    FRAME_DT_BUFFER.push([now, dt]);
+    if (FRAME_DT_BUFFER.length > 100)
+    {
+        FRAME_DT_BUFFER = FRAME_DT_BUFFER.slice(-100);
+    }
 
-        ctx.fillStyle = "black";
-        ctx.globalAlpha = 1;
-        ctx.font = "36px Garamond Bold";
-        ctx.fillText("Ideal Flow Numerical Simulation", 30, 50);
-        ctx.font = "18px Garamond";
-        let th = 60;
-        let dh = 25;
-        ctx.fillText("Press G to regenerate particles", 30, th += dh);
-        ctx.fillText("Press R to randomize the potential field", 30, th += dh);
+    for (var p in particles)
+    {
+        particles[p].draw(ctx);
+        for (var f = 0; f < steps_per_frame; ++f)
+            particles[p].step(dt);
+    }
 
-        // ctx.beginPath();
-        // ctx.arc(width/3, height/2, 40, 0, Math.PI*2);
-        // ctx.strokeStyle = "black";
-        // ctx.stroke();
-        // ctx.fillStyle = "lightgray";
-        // ctx.fill();
-        // ctx.beginPath();
-        // ctx.arc(width*2/3, height/2, 55, 0, Math.PI*2);
-        // ctx.strokeStyle = "black";
-        // ctx.stroke();
-        // ctx.fillStyle = "lightgray";
-        // ctx.fill();
-        // ctx.beginPath();
-        // ctx.arc(width/2 + 20, height/4 + 20, 60, 0, Math.PI*2);
-        // ctx.strokeStyle = "black";
-        // ctx.stroke();
-        // ctx.fillStyle = "lightgray";
-        // ctx.fill();
-
-    }, 1000/fps);
+    ctx.fillStyle = "black";
+    ctx.globalAlpha = 1;
+    ctx.font = "36px Garamond Bold";
+    ctx.fillText("Ideal Flow Numerical Simulation", 30, 50);
+    ctx.font = "18px Garamond";
+    let th = 60;
+    let dh = 25;
+    ctx.fillText("Press G to regenerate particles", 30, th += dh);
+    ctx.fillText("Press R to randomize the potential field", 30, th += dh);
+    let avg = 0;
+    for (let e of FRAME_DT_BUFFER)
+    {
+        avg += e[1];
+    }
+    let min = FRAME_DT_BUFFER[0][0]
+    let max = FRAME_DT_BUFFER[FRAME_DT_BUFFER.length - 1][0]
+    avg /= FRAME_DT_BUFFER.length;
+    let framerate = (FRAME_DT_BUFFER.length - 1) / (max - min);
+    ctx.fillText("dt = " + avg.toFixed(4) + "s", 30, th += dh);
+    if (FRAME_DT_BUFFER.length > 5)
+    {
+        ctx.fillText("Framerate = " + framerate.toFixed(1) + " Hz", 30, th += dh);
+    }
 }
-
-draw();
 
 function randomize_field()
 {
@@ -292,29 +234,46 @@ function randomize_field()
     {
         let x = Math.random() * 4*width/6 + width/6;
         let y = Math.random() * 4*height/6 + height/6;
-        let strength = Math.random() * 120000 - 60000;
+        let strength = Math.random() * 400000 - 200000;
         potential.push(vortex(x, y, strength));
     }
 
-    potential.push(uniform(Math.random() * 30 + 12, Math.random() * 30 + 12)); // Math.random() * 40 - 20));
+    let theta = Math.random() * Math.PI * 2;
+    let strength = Math.random() * 80 + 30;
+    potential.push(uniform(theta, strength));
     for (const p of particles)
     {
         p.history = [];
     }
-    let x = Math.random() * 4*width/6 + width/6;
-    let y = Math.random() * 4*height/6 + height/6;
 }
 
 function regenerate_particles()
 {
     particles = [];
-    for (var i = 0; i < 1200; ++i)
+    for (var i = 0; i < 800; ++i)
     {
-        particles.push(new Particle(Math.random()*width*2 - width/2,
-                                    Math.random()*height*2 - height/2));
+        particles.push(
+            new Particle(Math.random()*width*2 - width/2,
+                         Math.random()*height*2 - height/2));
     }
 }
 
 randomize_field();
 
 regenerate_particles();
+
+let START_TIME = new Date().getTime() / 1000;
+let previous = null;
+let frame_number = 0;
+
+var gameloop = setInterval(function()
+{
+    let now = new Date().getTime() / 1000 - START_TIME;
+    if (previous != null)
+    {
+        update(previous, now, frame_number)
+        frame_number++;
+    }
+    previous = now;
+
+}, NOMINAL_DT * 1000);
