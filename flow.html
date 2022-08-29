@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html style="border: 0; overflow: hidden;">
 
   <head>
     <link rel="stylesheet" href="styles.css">
@@ -7,26 +7,10 @@
     <title>Flow</title>
   </head>
 
-  <body>
-
-    <canvas
-      id="canvas" style="border: 0; top: 0;
-      box-shadow: 0px 0px 8px 0px #BBBBBB;">
-    </canvas>
+  <body style="border: 0; margin: 0; padding: 0">
+    <canvas id="canvas"></canvas>
+    <script src="scripts/big-empty/vector.js"></script>
     <script src="scripts/flow/flow.js"></script>
-
-    <div class="center">
-      <h1 style="text-align: center">Potential Flow in Aerodynamics</h1>
-
-      <p>
-        <a href="https://en.wikipedia.org/wiki/Potential_flow">
-          Potential flow theory</a> is very cool.
-        It's not very useful for predicting drag, though.
-      </p>
-
-      <div id="version"></div>
-    </div>
-
   </body>
-  <script src="scripts/global.js"></script>
+
 </html>
