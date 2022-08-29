@@ -190,17 +190,23 @@ function update_url_with_handles()
 
 function nth(n)
 {
-    if (n == 1)
+    const digit_2 = Math.floor(n / 10) % 10;
+    const digit_1 = n % 10;
+    if (digit_2 == 1)
     {
-        return "1st";
+        return n + "th";
     }
-    if (n == 2)
+    if (digit_1 == 1)
     {
-        return "2nd";
+        return n + "st";
     }
-    if (n == 3)
+    if (digit_1 == 2)
     {
-        return "3rd";
+        return n + "nd";
+    }
+    if (digit_1 == 3)
+    {
+        return n + "rd";
     }
     return n + "th";
 }
@@ -211,14 +217,16 @@ let T_TRACK_MOUSE = false;
 
 function update(previous, now, frame)
 {
-    ctx.clearRect(0, 0, WIDTH, HEIGHT);
     let dt = now - previous;
 
     if (Math.abs(dt) > NOMINAL_DT * 3)
     {
-        console.log("Large timestep!")
+        console.log("Large timestep: " + dt.toFixed(3) + " (nominally "
+            + NOMINAL_DT.toFixed(3) + ")");
         return;
     }
+
+    ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
     // re-centering
     if (HANDLE_INDEX == -1) // not currently moving anything

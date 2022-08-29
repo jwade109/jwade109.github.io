@@ -145,14 +145,37 @@ function collapse_once(elements, s)
     return results;
 }
 
-Spline.prototype.evaluate = function(s)
+let FACTORIAL_CACHE = [/* 0! = */ 1, /* 1! = */ 1, /* 2! = */ 2];
+
+function factorial(n)
 {
-    let results = collapse_once(this.handles, s);
-    while (results.length > 1)
+    while (FACTORIAL_CACHE.length < n + 1)
     {
-        results = collapse_once(results, s);
+        const x = FACTORIAL_CACHE[FACTORIAL_CACHE.length - 1];
+        const y = FACTORIAL_CACHE.length;
+        FACTORIAL_CACHE.push(x*y)
     }
-    return results[0]
+    return FACTORIAL_CACHE[n];
+}
+
+function n_choose_k(n, k)
+{
+    // expects that n >= k >= 0
+    return factorial(n) / (factorial(k) * factorial(n - k));
+}
+
+Spline.prototype.evaluate = function(t)
+{
+    let sum = new Vector2(0, 0);
+    let n = this.handles.length - 1;
+    for (let i = 0; i <= n; i++)
+    {
+        const scalar = n_choose_k(n, i) * Math.pow((1 - t), n - i) * Math.pow(t, i);
+        const vector = this.handles[i];
+        sum.x += vector.x * scalar;
+        sum.y += vector.y * scalar;
+    }
+    return sum;
 }
 
 function nearest_point(points, test_point)
