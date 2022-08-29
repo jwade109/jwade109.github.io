@@ -289,14 +289,6 @@ function update(previous, now, frame)
     }
     render2d(e, ctx);
 
-    if (LAST_MOUSE_POSITION != null)
-    {
-        let car_pos = LAST_MOUSE_POSITION;
-        let physics = new Particle(car_pos, [0, 0]);
-        tracker.update(physics, dt);
-        tracker.render(ctx);
-    }
-
     let insertion_points = collapse_once(spline.handles, 0.5);
     for (const ip of insertion_points)
     {
