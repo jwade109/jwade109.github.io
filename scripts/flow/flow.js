@@ -87,10 +87,10 @@ class Particle
     {
         ctx.fillStyle = "black";
         ctx.strokeStyle = "black";
-        ctx.globalAlpha = 0.3;
-        ctx.beginPath();
-        ctx.arc(this.pos[0], this.pos[1], 4, 0, Math.PI*2);
-        ctx.fill();
+        ctx.globalAlpha = 0.2;
+        // ctx.beginPath();
+        // ctx.arc(this.pos[0], this.pos[1], 4, 0, Math.PI*2);
+        // ctx.fill();
         ctx.beginPath();
         ctx.moveTo(this.pos[0], this.pos[1]);
         for (let i = 0; i < this.history.length; i++)
@@ -98,7 +98,7 @@ class Particle
             const pos = this.history[this.history.length - i - 1];
             ctx.lineTo(pos[0], pos[1]);
         }
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 4;
         ctx.stroke();
     }
 }
@@ -301,12 +301,14 @@ function randomize_field()
     {
         p.history = [];
     }
+    let x = Math.random() * 4*width/6 + width/6;
+    let y = Math.random() * 4*height/6 + height/6;
 }
 
 function regenerate_particles()
 {
     particles = [];
-    for (var i = 0; i < 600; ++i)
+    for (var i = 0; i < 1200; ++i)
     {
         particles.push(new Particle(Math.random()*width*2 - width/2,
                                     Math.random()*height*2 - height/2));
