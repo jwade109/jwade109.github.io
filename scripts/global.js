@@ -1,3 +1,3 @@
 document.getElementById("version").innerHTML =
-    "2022.08.29e" + " - <a href='/'>Home</a><br><br>" +
+    "2022.08.29f" + " - <a href='/'>Home</a><br><br>" +
     "<img src='/resources/favicon.ico' height=25px></img>";

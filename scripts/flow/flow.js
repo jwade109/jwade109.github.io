@@ -1,10 +1,19 @@
+"use strict";
+
 var width = document.body.clientWidth;
 var height = document.body.scrollHeight;
-var potential = [];
+var velocity_fields = [];
 var particles = [];
 
 let NOMINAL_FRAMERATE = 25;
 let NOMINAL_DT = 1 / NOMINAL_FRAMERATE;
+let LAST_MOUSE_POSITION = null;
+
+document.addEventListener('mousemove', function(event)
+{
+    var box = canvas.getBoundingClientRect();
+    LAST_MOUSE_POSITION = [event.clientX - box.left, event.clientY - box.top];
+});
 
 document.addEventListener('keypress', function(event)
 {
@@ -19,47 +28,53 @@ document.addEventListener('keypress', function(event)
     }
 });
 
+function rgb_to_color(color)
+{
+    return "rgb(" + color[0] + ", " + color[1] + ", " + color[2] + ")";
+}
+
 class Particle
 {
     constructor(x, y)
     {
         this.pos = [x, y];
+        this.vel = [0, 0];
         this.history = []
     }
 
     step(dt)
     {
-        var v = add2d(velocityAt(this.pos[0], this.pos[1]),
+        this.vel = add2d(velocityAt(this.pos[0], this.pos[1]),
                 [Math.random() * 2 - 1, Math.random() * 2 - 1]);
-        this.pos[0] += v[0] * dt;
-        this.pos[1] += v[1] * dt;
+        this.pos[0] += this.vel[0] * dt;
+        this.pos[1] += this.vel[1] * dt;
         this.history.push(this.pos.slice());
-        if (this.pos[0] > width*1.5 && v[0] > 0)
+        if (this.pos[0] > width*1.5 && this.vel[0] > 0)
         {
             this.pos[0] = -10;
             this.pos[1] = Math.random()*height*2 - height;
             this.history = []
         }
-        if (this.pos[0] < -width/2 && v[0] < 0)
+        if (this.pos[0] < -width/2 && this.vel[0] < 0)
         {
             this.pos[0] = width + 10;
             this.pos[1] = Math.random()*height*2 - height;
             this.history = []
         }
-        if (this.pos[1] > height*1.5 && v[1] > 0)
+        if (this.pos[1] > height*1.5 && this.vel[1] > 0)
         {
             this.pos[0] = Math.random()*width*2 - width;
             this.pos[1] = -10;
             this.history = []
         }
-        if (this.pos[1] < -height/2 && v[1] < 0)
+        if (this.pos[1] < -height/2 && this.vel[1] < 0)
         {
             this.pos[0] = Math.random()*width*2 - width;
             this.pos[1] = height + 10;
             this.history = []
         }
 
-        const n = 150;
+        const n = 20;
         if (this.history.length > n)
         {
             this.history = this.history.slice(-n);
@@ -68,19 +83,21 @@ class Particle
 
     draw(ctx)
     {
-        ctx.fillStyle = "black";
-        ctx.strokeStyle = "black";
-        ctx.globalAlpha = 0.2;
-        // ctx.beginPath();
-        // ctx.arc(this.pos[0], this.pos[1], 4, 0, Math.PI*2);
-        // ctx.fill();
+        // ctx.fillStyle = "black";
+        // ctx.strokeStyle = "black";
+        let vmag = mag2d(this.vel);
+        let s = Math.atan(vmag / 1000);
+        let r = Math.floor(256 * s);
+        let color = [r, 0, 256 - r];
+        ctx.strokeStyle = rgb_to_color(color);
+        ctx.globalAlpha = 0.1 * s + 0.2;
         ctx.beginPath();
         let last = this.pos;
         ctx.moveTo(this.pos[0], this.pos[1]);
         for (let i = 1; i < this.history.length; i++)
         {
             const a = this.history[this.history.length - i - 1];
-            if (distance(last, a) > 15 || i + 1 == this.history.length)
+            if (distance(last, a) > 8 || i + 1 == this.history.length)
             {
                 ctx.lineTo(a[0], a[1]);
                 last = a;
@@ -91,50 +108,59 @@ class Particle
     }
 }
 
-function potentialAt(x, y)
+function velocityAt(x, y)
 {
-    var sum = 0;
-    for (var p in potential)
+    let sum = [0, 0];
+    for (const field of velocity_fields)
     {
-        sum += potential[p](x, y);
+        sum = add2d(sum, field.evaluate([x, y]));
     }
     return sum;
 }
 
-function velocityAt(x, y)
-{
-    var r = 0.001;
-    var vx = (potentialAt(x+r, y) - potentialAt(x-r, y))/(2*r);
-    var vy = (potentialAt(x, y+r) - potentialAt(x, y-r))/(2*r);
-    if (isNaN(vx)) vx = 0;
-    if (isNaN(vy)) vy = 0;
-    return [vx, vy];
-}
-
 function vortex(x0, y0, gamma)
 {
-    return function(x, y)
+    let ret = {};
+    ret.origin = [x0, y0];
+    ret.magnitude = gamma;
+    ret.type = "vortex";
+    ret.evaluate = function(pos)
     {
-        var theta = Math.atan2(y - y0, x - x0);
-        return gamma*theta/(Math.PI*2)
+        let dpos = sub2d(pos, this.origin);
+        let theta = Math.atan2(dpos[1], dpos[0]);
+        let basis = [-Math.sin(theta), Math.cos(theta)];
+        let r = mag2d(dpos);
+        let vel = mult2d(basis, this.magnitude / (2 * Math.PI * r));
+        return vel;
     }
+    return ret;
 }
 
 function source(x0, y0, lambda)
 {
-    return function(x, y)
+    let ret = {};
+    ret.origin = [x0, y0];
+    ret.magnitude = lambda;
+    ret.type = "source";
+    ret.evaluate = function(pos)
     {
-        var r = Math.sqrt(Math.pow(x - x0, 2) + Math.pow(y - y0, 2));
-        return lambda*Math.log(r)/(Math.PI*2);
-    }
+        let dpos = sub2d(pos, this.origin);
+        let r2 = magsq2d(dpos);
+        let vel = mult2d(dpos, lambda / (Math.PI * 2 * r2));
+        return vel;
+    };
+    return ret;
 }
 
-function uniform(theta, v)
+function uniform(vx, vy)
 {
-    return function(x, y)
+    let ret = {};
+    ret.type = "uniform";
+    ret.evaluate = function()
     {
-        return v*x*Math.cos(-theta) + v*y*Math.sin(-theta);
-    }
+        return [vx, vy];
+    };
+    return ret;
 }
 
 function doublet(x0, y0, kappa)
@@ -165,7 +191,7 @@ function doublet(x0, y0, kappa)
     }
 }
 
-FRAME_DT_BUFFER = [];
+let FRAME_DT_BUFFER = [];
 
 function update(previous, now, frame_number)
 {
@@ -224,23 +250,43 @@ function update(previous, now, frame_number)
     {
         ctx.fillText("Framerate = " + framerate.toFixed(1) + " Hz", 30, th += dh);
     }
+
+    ctx.save();
+    ctx.textAlign = "center";
+    for (let field of velocity_fields)
+    {
+        if (typeof field.origin != "undefined")
+        {
+            ctx.fillText(field.type, field.origin[0], field.origin[1] - 10);
+            ctx.beginPath();
+            ctx.arc(field.origin[0], field.origin[1], 4, 0, Math.PI*2);
+            ctx.fill();
+        }
+    }
+    ctx.restore();
+
+    if (LAST_MOUSE_POSITION != null)
+    {
+        velocity_fields[0].origin = LAST_MOUSE_POSITION;
+    }
 }
 
 function randomize_field()
 {
-    potential = [];
-    let num_vortices = Math.round(Math.random() * 6 + 2);
+    velocity_fields = [];
+    let num_vortices = Math.round(Math.random() * 2 + 2);
     for (let i = 0; i < num_vortices; i++)
     {
         let x = Math.random() * 4*width/6 + width/6;
         let y = Math.random() * 4*height/6 + height/6;
-        let strength = Math.random() * 400000 - 200000;
-        potential.push(vortex(x, y, strength));
+        let strength = Math.random() * 1500000 - 750000;
+        velocity_fields.push(vortex(x, y, strength));
     }
 
-    let theta = Math.random() * Math.PI * 2;
-    let strength = Math.random() * 80 + 30;
-    potential.push(uniform(theta, strength));
+    let x = Math.random() * 4*width/6 + width/6;
+    let y = Math.random() * 4*height/6 + height/6;
+    velocity_fields.push(source(x, y, 50000));
+    velocity_fields.push(uniform(200, 0));
     for (const p of particles)
     {
         p.history = [];
@@ -250,7 +296,7 @@ function randomize_field()
 function regenerate_particles()
 {
     particles = [];
-    for (var i = 0; i < 800; ++i)
+    for (var i = 0; i < 3000; ++i)
     {
         particles.push(
             new Particle(Math.random()*width*2 - width/2,

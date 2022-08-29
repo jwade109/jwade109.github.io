@@ -141,6 +141,16 @@ function distance(p1, p2)
     return Math.sqrt(Math.pow(p1[0] - p2[0], 2) + Math.pow(p1[1] - p2[1], 2));
 }
 
+function mag2d(v)
+{
+    return distance(v, [0, 0]);
+}
+
+function magsq2d(v)
+{
+    return v[0]*v[0] + v[1]*v[1];
+}
+
 function lerp2d(a, b, t)
 {
     return add2d(a, mult2d(sub2d(b, a), t));
