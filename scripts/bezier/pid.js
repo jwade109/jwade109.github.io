@@ -25,34 +25,6 @@ PID.prototype.update = function(error, error_rate, dt)
     return this.evaluate()
 }
 
-function Vector2(x, y)
-{
-    this.x = x;
-    this.y = y;
-}
-
-Vector2.prototype.copy = function()
-{
-    return new Vector2(this.x, this.y)
-}
-
-Vector2.prototype.dist = function(v)
-{
-    let dx = v.x - this.x;
-    let dy = v.y - this.y;
-    return Math.sqrt(dx*dx + dy*dy);
-}
-
-Vector2.prototype.render = function(ctx, radius=5, fill_style="black")
-{
-    ctx.save();
-    ctx.beginPath();
-    ctx.fillStyle = fill_style;
-    ctx.arc(this.x, this.y, radius, 0, 2 * Math.PI);
-    ctx.fill();
-    ctx.restore();
-}
-
 function Particle(pos, vel)
 {
     this.pos = pos;
@@ -61,10 +33,10 @@ function Particle(pos, vel)
 
 Particle.prototype.step = function(dt, acc)
 {
-    this.pos.x += this.vel.x * dt;
-    this.pos.y += this.vel.y * dt;
-    this.vel.x += acc.x * dt;
-    this.vel.y += acc.y * dt;
+    this.pos[0] += this.vel[0] * dt;
+    this.pos[1] += this.vel[1] * dt;
+    this.vel[0] += acc[0] * dt;
+    this.vel[1] += acc[1] * dt;
 }
 
 Particle.prototype.copy = function()
@@ -75,197 +47,41 @@ Particle.prototype.copy = function()
 Particle.prototype.render = function(ctx)
 {
     ctx.beginPath();
-    ctx.arc(this.pos.x, this.pos.y, 10, 0, 2 * Math.PI);
+    ctx.arc(this.pos[0], this.pos[1], 10, 0, 2 * Math.PI);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(this.pos.x, this.pos.y);
-    ctx.lineTo(this.pos.x + this.vel.x / 4,
-               this.pos.y + this.vel.y / 4);
+    ctx.moveTo(this.pos[0], this.pos[1]);
+    ctx.lineTo(this.pos[0] + this.vel[0] / 4,
+               this.pos[1] + this.vel[1] / 4);
     ctx.stroke();
 }
 
 function Tracker(pos, kp, ki, kd)
 {
-    this.pid = new Vector2(0, 0);
-    this.pid.x = new PID(kp, ki, kd);
-    this.pid.y = new PID(kp, ki, kd);
-    this.physics = new Particle(pos, new Vector2(0, 0))
+    this.pid = [0, 0];
+    this.pid[0] = new PID(kp, ki, kd);
+    this.pid[1] = new PID(kp, ki, kd);
+    this.physics = new Particle(pos, [0, 0])
 }
 
 Tracker.prototype.update = function(physics, dt)
 {
-    let error = new Vector2(0, 0);
-    let error_rate = new Vector2(0, 0);
-    error.x = physics.pos.x - this.physics.pos.x;
-    error.y = physics.pos.y - this.physics.pos.y;
-    error_rate.x = physics.vel.x - this.physics.vel.x;
-    error_rate.y = physics.vel.y - this.physics.vel.y;
+    let error = [0, 0];
+    let error_rate = [0, 0];
+    error[0] = physics.pos[0] - this.physics.pos[0];
+    error[1] = physics.pos[1] - this.physics.pos[1];
+    error_rate[0] = physics.vel[0] - this.physics.vel[0];
+    error_rate[1] = physics.vel[1] - this.physics.vel[1];
 
-    let acc = new Vector2(0, 0);
-    acc.x = this.pid.x.update(error.x, error_rate.x, dt);
-    acc.y = this.pid.y.update(error.y, error_rate.y, dt);
+    let acc = [0, 0];
+    acc[0] = this.pid[0].update(error[0], error_rate[0], dt);
+    acc[1] = this.pid[1].update(error[1], error_rate[1], dt);
     this.physics.step(dt, acc)
 }
 
 Tracker.prototype.render = function(ctx)
 {
     ctx.beginPath();
-    ctx.arc(this.physics.pos.x, this.physics.pos.y, 10, 0, 2 * Math.PI);
+    ctx.arc(this.physics.pos[0], this.physics.pos[1], 10, 0, 2 * Math.PI);
     ctx.stroke();
-}
-
-function Spline(handles)
-{
-    this.handles = handles;
-}
-
-function lerp(a, b, t)
-{
-    let ret = new Vector2(0, 0);
-    ret.x = a.x + (b.x - a.x) * t;
-    ret.y = a.y + (b.y - a.y) * t;
-    return ret;
-}
-
-function collapse_once(elements, s)
-{
-    if (elements.length < 2)
-    {
-        return elements;
-    }
-
-    let results = []
-    for (let i = 0; i + 1 < elements.length; i++)
-    {
-        let first = elements[i];
-        let second = elements[i+1];
-        let middle = lerp(first, second, s);
-        results.push(middle)
-    }
-    return results;
-}
-
-let FACTORIAL_CACHE = [/* 0! = */ 1, /* 1! = */ 1, /* 2! = */ 2];
-
-function factorial(n)
-{
-    while (FACTORIAL_CACHE.length < n + 1)
-    {
-        const x = FACTORIAL_CACHE[FACTORIAL_CACHE.length - 1];
-        const y = FACTORIAL_CACHE.length;
-        FACTORIAL_CACHE.push(x*y)
-    }
-    return FACTORIAL_CACHE[n];
-}
-
-function n_choose_k(n, k)
-{
-    // expects that n >= k >= 0
-    return factorial(n) / (factorial(k) * factorial(n - k));
-}
-
-Spline.prototype.evaluate = function(t)
-{
-    let sum = new Vector2(0, 0);
-    let n = this.handles.length - 1;
-    for (let i = 0; i <= n; i++)
-    {
-        const scalar = n_choose_k(n, i) * Math.pow((1 - t), n - i) * Math.pow(t, i);
-        const vector = this.handles[i];
-        sum.x += vector.x * scalar;
-        sum.y += vector.y * scalar;
-    }
-    return sum;
-}
-
-function nearest_point(points, test_point)
-{
-    let dist = Number.MAX_VALUE;
-    let best = -1;
-    for (let i = 0; i < points.length; i++)
-    {
-        let h = points[i];
-        let d = h.dist(test_point);
-        if (d < dist)
-        {
-            best = i;
-            dist = d;
-        }
-    }
-    return [best, dist];
-}
-
-Spline.prototype.nearestHandle = function(pos)
-{
-    return nearest_point(spline.handles, pos);
-}
-
-Spline.prototype.nearestPoint = function(pos)
-{
-    let nh = this.nearestHandle(pos);
-    let index = nh[0];
-    let handle = this.handles[index];
-    let n = 500;
-    let dist = Number.MAX_VALUE;
-    let best = pos;
-    let best_t = 0;
-    for (let t = 0; t <= n; t++)
-    {
-        let p = this.evaluate(t/n);
-        let d = p.dist(pos);
-        if (d < dist)
-        {
-            dist = d;
-            best = p;
-            best_t = t/n;
-        }
-    }
-    return [best, best_t];
-}
-
-Spline.prototype.render = function(ctx)
-{
-    ctx.save();
-    ctx.strokeStyle = "black";
-    ctx.beginPath();
-    ctx.globalAlpha = 0.3;
-    for (let i = 0; i < this.handles.length; i++)
-    {
-        let pos = this.handles[i];
-        if (i == 0)
-        {
-            ctx.moveTo(pos.x, pos.y);
-        }
-        else
-        {
-            ctx.lineTo(pos.x, pos.y);
-        }
-    }
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.globalAlpha = 1;
-    ctx.lineWidth = 3;
-    let n = 500;
-    for (let t = 0; t <= n; t++)
-    {
-        let pos = this.evaluate(t/n);
-        if (t == 0)
-        {
-            ctx.moveTo(pos.x, pos.y);
-        }
-        else
-        {
-            ctx.lineTo(pos.x, pos.y);
-        }
-    }
-    ctx.stroke();
-    ctx.strokeStyle = "red";
-    for (let i = 0; i < this.handles.length; i++)
-    {
-        let pos = this.handles[i];
-        ctx.beginPath();
-        ctx.arc(pos.x, pos.y, 3, 0, 2 * Math.PI);
-        ctx.stroke();
-    }
-    ctx.restore();
 }

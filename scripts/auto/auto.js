@@ -15,12 +15,11 @@ feet = meters/3.28084; // pixels per foot
 mph = meters/2.23694; // pixels/s per mph
 
 var cars = [];
-var height = document.body.scrollHeight;
-var width = document.body.clientWidth;
 
 var fps = 50;
 var canvas = document.getElementById("canvas");
-var mx = width/2, my = height/2;
+canvas.width = document.body.clientWidth;
+canvas.height = document.body.clientHeight;
 var follow = false;
 
 var old_sx = 0, old_sy = 0;
@@ -431,11 +430,9 @@ function draw()
     setTimeout(function()
     {
         var ctx = canvas.getContext("2d");
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.canvas.width = document.body.clientWidth;
         ctx.canvas.height = document.body.clientHeight;
-        width = ctx.canvas.width;
-        height = ctx.canvas.height;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         requestAnimationFrame(draw);
 
         for (var c in cars)
@@ -443,23 +440,23 @@ function draw()
             cars[c].draw(canvas);
             cars[c].step(1/fps);
 
-            var dx = cars[c].x - mx;
-            var dy = cars[c].y - my;
-            var des_x = cars[c].r*Math.cos(Math.atan2(dy, dx))*30 + mx;
-            var des_y = cars[c].r*Math.sin(Math.atan2(dy, dx))*30 + my;
+            var dx = cars[c].x - canvas.width/2;
+            var dy = cars[c].y - canvas.height/2;
+            var des_x = cars[c].r*Math.cos(Math.atan2(dy, dx))*30 + canvas.width/2;
+            var des_y = cars[c].r*Math.sin(Math.atan2(dy, dx))*30 + canvas.height/2;
             if (orbitCursor)
             {
                 cars[c].seekVel(-dy, dx);
                 cars[c].arrive(des_x, des_y);
             }
 
-            if (seekCursor) cars[c].arrive(mx, my);
+            if (seekCursor) cars[c].arrive(canvas.width/2, canvas.height/2);
             if (avoidCars) cars[c].avoid(cars);
             if (followLeader)
             {
                 if (c == 0 && follow)
                 {
-                    cars[c].arrive(mx, my);
+                    cars[c].arrive(canvas.width/2, canvas.height/2);
                 }
                 else if (c == 0)
                 {
@@ -475,7 +472,7 @@ function draw()
         ctx.globalAlpha = 1;
         ctx.fillStyle = "red";
         ctx.beginPath();
-        ctx.arc(mx + shiftx, my + shifty, 2, 0, Math.PI*2);
+        ctx.arc(canvas.width/2 + shiftx, canvas.height/2 + shifty, 2, 0, Math.PI*2);
         ctx.fill();
 
     }, 1000/fps);
@@ -484,11 +481,6 @@ function draw()
 canvas.onmousemove = function(e)
 {
     var rect = canvas.getBoundingClientRect();
-    if (follow)
-    {
-        mx = e.clientX - rect.left - shiftx;
-        my = e.clientY - rect.top - shifty;
-    }
     if (moving)
     {
         deltax = e.clientX - rect.left - initx;
@@ -528,25 +520,21 @@ canvas.addEventListener("click", function(e)
 {
     follow = !follow;
     var rect = canvas.getBoundingClientRect();
-        mx = e.clientX - rect.left - shiftx;
-        my = e.clientY - rect.top - shifty;
 }, false);
 
 canvas.addEventListener("mousescroll", function(e)
 {
     follow = !follow;
     var rect = canvas.getBoundingClientRect();
-    mx = e.clientX - rect.left;
-    my = e.clientY - rect.top;
 }, false);
 
 for (var i = 0; i < 50; ++i)
 {
-    cars.push(new Car(Math.random()*width,
-                      Math.random()*height,
+    cars.push(new Car(Math.random()*canvas.width,
+                      Math.random()*canvas.height,
                       Math.random()*2*Math.PI));
-    var dx = cars[i].x - width/2;
-    var dy = cars[i].y - height/2;
+    var dx = cars[i].x - canvas.width/2;
+    var dy = cars[i].y - canvas.height/2;
     cars[i].r = 7; // Math.floor(Math.random()*14) + 2;
 }
 draw();

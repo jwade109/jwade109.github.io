@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html style="border: 0; overflow: hidden;">
 
   <head>
     <link rel="stylesheet" href="styles.css">
@@ -7,7 +7,7 @@
     <title>Autos</title>
   </head>
 
-  <body>
+  <body style="border: 0; margin: 0; padding: 0">
 
     <div style="position: absolute; z-index: 10; left: 20px;
                 font-family: Consolas, monospace; margin-top: 30px">
@@ -35,13 +35,10 @@
         onchange="toggleStop()">All Stop<br>
     </div>
 
-    <canvas
-      id="canvas" style="border: 0; top: 0;
-      box-shadow: 0px 0px 8px 0px #BBBBBB;">
-    </canvas>
+    <canvas id="canvas"></canvas>
 
     <script src="scripts/auto/auto.js"></script>
-    <script src="scripts/auto/vector.js"></script>
+    <script src="scripts/big-empty/vector.js"></script>
     <script>
     function toggleVelocity()
     {
@@ -83,29 +80,6 @@
         allStop = !allStop;
     }
     </script>
-
-    <div class="center">
-      <h1 style="text-align: center">Autos</h1>
-
-      <p>
-        Autonomous vehicles are the future. In the coming decades,
-        self-driving cars will slowly displace all human-driven cars,
-        because humans are pretty terrible at driving.
-        Eventually, I hope, driving a car manually will be made illegal
-        on all but the sketchiest of back roads.
-      </p>
-      <p>
-        CGPGrey believes autonomous cars should be given the moniker
-        "autos", and I agree. Here's a
-        <a href="https://www.youtube.com/watch?v=iHzzSao6ypE">
-          cool video</a>
-        he did on the potential benefits of autonomous cars.
-      </p>
-
-      <div id="version"></div>
-    </div>
-
-    <script src="scripts/global.js"></script>
 
   </body>
 </html>

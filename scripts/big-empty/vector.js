@@ -140,3 +140,49 @@ function distance(p1, p2)
 {
     return Math.sqrt(Math.pow(p1[0] - p2[0], 2) + Math.pow(p1[1] - p2[1], 2));
 }
+
+function lerp2d(a, b, t)
+{
+    return add2d(a, mult2d(sub2d(b, a), t));
+}
+
+function render2d(v, ctx, radius=5, fill_style="black")
+{
+    ctx.save();
+    ctx.beginPath();
+    ctx.fillStyle = fill_style;
+    ctx.arc(v[0], v[1], radius, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.restore();
+}
+
+function get_bounds(points)
+{
+    let min = points[0].slice();
+    let max = points[0].slice();
+    for (const p of points)
+    {
+        min[0] = Math.min(min[0], p[0]);
+        min[1] = Math.min(min[1], p[1]);
+        max[0] = Math.max(max[0], p[0]);
+        max[1] = Math.max(max[1], p[1]);
+    }
+    return [min, max];
+}
+
+function nearest_point(points, test_point)
+{
+    let dist = Number.MAX_VALUE;
+    let best = -1;
+    for (let i = 0; i < points.length; i++)
+    {
+        let h = points[i];
+        let d = distance(h, test_point);
+        if (d < dist)
+        {
+            best = i;
+            dist = d;
+        }
+    }
+    return [best, dist];
+}
