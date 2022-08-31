@@ -256,16 +256,23 @@ function update(previous, now, frame_number)
             "ms / " + (1000 * ideal_avg_dt).toFixed(1) + "ms", 30, th += dh);
         ctx.fillText("Framerate = " + framerate.toFixed(0) + " Hz", 30, th += dh);
     }
-    if (true_avg_dt < 0.6/NOMINAL_FRAMERATE)
+    const target_dt = 0.6*NOMINAL_DT;
+    const delta_dt = target_dt - true_avg_dt;
+    let delta_pop = Math.round((delta_dt / target_dt) * particles.length / 100);
+    if (!particles.length)
     {
-        for (let i = 0; i < 5; i++)
+        delta_pop = 250;
+    }
+    if (delta_pop > 0)
+    {
+        for (let i = 0; i < delta_pop; i++)
         {
             add_new_particle();
         }
     }
-    if (true_avg_dt > 0.8/NOMINAL_FRAMERATE)
+    else
     {
-        for (let i = 0; i < 5; i++)
+        for (let i = 0; i < -delta_pop; i++)
         {
             remove_particle();
         }
@@ -297,18 +304,21 @@ function update(previous, now, frame_number)
 function randomize_field()
 {
     velocity_fields = [];
-    let num_vortices = Math.round(Math.random() * 2 + 2);
-    for (let i = 0; i < num_vortices; i++)
+    let num_fields = Math.round(Math.random() * 4 + 2);
+    for (let i = 0; i < num_fields; i++)
     {
         let x = Math.random() * 4*width/6 + width/6;
         let y = Math.random() * 4*height/6 + height/6;
         let strength = Math.random() * 1500000 - 750000;
-        velocity_fields.push(vortex(x, y, strength));
+        let field = vortex(x, y, strength);
+        if (Math.random() < 0.5)
+        {
+            strength = Math.random() * 50000 + 20000;
+            field = source(x, y, strength);
+        }
+        velocity_fields.push(field);
     }
 
-    let x = Math.random() * 4*width/6 + width/6;
-    let y = Math.random() * 4*height/6 + height/6;
-    velocity_fields.push(source(x, y, 50000));
     velocity_fields.push(uniform(200, 0));
     for (const p of particles)
     {
@@ -330,7 +340,7 @@ function remove_particle()
 
 function regenerate_particles()
 {
-    let N = 2000;
+    let N = 0;
     if (particles.length)
     {
         N = particles.length;
