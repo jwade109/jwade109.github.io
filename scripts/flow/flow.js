@@ -5,7 +5,7 @@ var height = document.body.scrollHeight;
 var velocity_fields = [];
 var particles = [];
 
-let NOMINAL_FRAMERATE = 25;
+let NOMINAL_FRAMERATE = 50;
 let NOMINAL_DT = 1 / NOMINAL_FRAMERATE;
 let LAST_MOUSE_POSITION = null;
 
@@ -196,6 +196,7 @@ let FRAME_DT_BUFFER = [];
 function update(previous, now, frame_number)
 {
     const dt = now - previous;
+    const update_start = new Date().getTime() / 1000;
     if (Math.abs(dt) > NOMINAL_DT * 3)
     {
         console.log("Large timestep: " + dt.toFixed(3) + " (nominally "
@@ -214,10 +215,9 @@ function update(previous, now, frame_number)
     width = ctx.canvas.width;
     height = ctx.canvas.height;
 
-    FRAME_DT_BUFFER.push([now, dt]);
-    if (FRAME_DT_BUFFER.length > 100)
+    if (FRAME_DT_BUFFER.length > NOMINAL_FRAMERATE)
     {
-        FRAME_DT_BUFFER = FRAME_DT_BUFFER.slice(-100);
+        FRAME_DT_BUFFER = FRAME_DT_BUFFER.slice(-NOMINAL_FRAMERATE);
     }
 
     for (var p in particles)
@@ -236,19 +236,39 @@ function update(previous, now, frame_number)
     let dh = 25;
     ctx.fillText("Press G to regenerate particles", 30, th += dh);
     ctx.fillText("Press R to randomize the potential field", 30, th += dh);
-    let avg = 0;
-    for (let e of FRAME_DT_BUFFER)
+    ctx.fillText(particles.length + " test particles", 30, th += dh);
+
+    let true_avg_dt = 0;
+    if (FRAME_DT_BUFFER.length)
     {
-        avg += e[1];
+        let ideal_avg_dt = 0;
+        for (let e of FRAME_DT_BUFFER)
+        {
+            ideal_avg_dt += e[1];
+            true_avg_dt += e[2];
+        }
+        ideal_avg_dt /= FRAME_DT_BUFFER.length;
+        true_avg_dt /= FRAME_DT_BUFFER.length;
+        let min = FRAME_DT_BUFFER[0][0]
+        let max = FRAME_DT_BUFFER[FRAME_DT_BUFFER.length - 1][0]
+        let framerate = (FRAME_DT_BUFFER.length - 1) / (max - min);
+        ctx.fillText("dt = " + (1000 * true_avg_dt).toFixed(1) +
+            "ms / " + (1000 * ideal_avg_dt).toFixed(1) + "ms", 30, th += dh);
+        ctx.fillText("Framerate = " + framerate.toFixed(0) + " Hz", 30, th += dh);
     }
-    let min = FRAME_DT_BUFFER[0][0]
-    let max = FRAME_DT_BUFFER[FRAME_DT_BUFFER.length - 1][0]
-    avg /= FRAME_DT_BUFFER.length;
-    let framerate = (FRAME_DT_BUFFER.length - 1) / (max - min);
-    ctx.fillText("dt = " + avg.toFixed(4) + "s", 30, th += dh);
-    if (FRAME_DT_BUFFER.length > 5)
+    if (true_avg_dt < 0.6/NOMINAL_FRAMERATE)
     {
-        ctx.fillText("Framerate = " + framerate.toFixed(1) + " Hz", 30, th += dh);
+        for (let i = 0; i < 5; i++)
+        {
+            add_new_particle();
+        }
+    }
+    if (true_avg_dt > 0.8/NOMINAL_FRAMERATE)
+    {
+        for (let i = 0; i < 5; i++)
+        {
+            remove_particle();
+        }
     }
 
     ctx.save();
@@ -269,6 +289,9 @@ function update(previous, now, frame_number)
     {
         velocity_fields[0].origin = LAST_MOUSE_POSITION;
     }
+    const update_end = new Date().getTime() / 1000;
+    const real_dt = update_end - update_start;
+    FRAME_DT_BUFFER.push([now, dt, real_dt]);
 }
 
 function randomize_field()
@@ -293,14 +316,29 @@ function randomize_field()
     }
 }
 
+function add_new_particle()
+{
+    particles.push(new Particle(
+        Math.random() * width  * 2 - width  / 2,
+        Math.random() * height * 2 - height / 2));
+}
+
+function remove_particle()
+{
+    particles.pop();
+}
+
 function regenerate_particles()
 {
-    particles = [];
-    for (var i = 0; i < 3000; ++i)
+    let N = 2000;
+    if (particles.length)
     {
-        particles.push(
-            new Particle(Math.random()*width*2 - width/2,
-                         Math.random()*height*2 - height/2));
+        N = particles.length;
+    }
+    particles = [];
+    for (var i = 0; i < N; ++i)
+    {
+        add_new_particle();
     }
 }
 
