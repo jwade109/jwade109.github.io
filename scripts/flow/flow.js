@@ -26,6 +26,28 @@ document.addEventListener('keypress', function(event)
     {
         regenerate_particles();
     }
+    if (event.code == "KeyV")
+    {
+        if (LAST_MOUSE_POSITION != null)
+        {
+            let x = LAST_MOUSE_POSITION[0];
+            let y = LAST_MOUSE_POSITION[1];
+            let strength = Math.random() * 750000 + 200000;
+            let field = vortex(x, y, strength);
+            velocity_fields.push(field);
+        }
+    }
+    if (event.code == "KeyS")
+    {
+        if (LAST_MOUSE_POSITION != null)
+        {
+            let x = LAST_MOUSE_POSITION[0];
+            let y = LAST_MOUSE_POSITION[1];
+            let strength = Math.random() * 50000 + 20000;
+            let field = source(x, y, strength);
+            velocity_fields.push(field);
+        }
+    }
 });
 
 function rgb_to_color(color)
@@ -197,19 +219,12 @@ function update(previous, now, frame_number)
 {
     const dt = now - previous;
     const update_start = new Date().getTime() / 1000;
-    if (Math.abs(dt) > NOMINAL_DT * 3)
-    {
-        console.log("Large timestep: " + dt.toFixed(3) + " (nominally "
-            + NOMINAL_DT.toFixed(3) + ")");
-        return;
-    }
 
     var fps = 50;
     var steps_per_frame = 2;
 
     var canvas = document.getElementById("canvas");
     var ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.canvas.width = document.body.clientWidth;
     ctx.canvas.height = document.body.clientHeight;
     width = ctx.canvas.width;
@@ -220,28 +235,11 @@ function update(previous, now, frame_number)
         FRAME_DT_BUFFER = FRAME_DT_BUFFER.slice(-NOMINAL_FRAMERATE);
     }
 
-    for (var p in particles)
-    {
-        particles[p].draw(ctx);
-        for (var f = 0; f < steps_per_frame; ++f)
-            particles[p].step(dt);
-    }
-
-    ctx.fillStyle = "black";
-    ctx.globalAlpha = 1;
-    ctx.font = "36px Garamond Bold";
-    ctx.fillText("Ideal Flow Numerical Simulation", 30, 50);
-    ctx.font = "18px Garamond";
-    let th = 60;
-    let dh = 25;
-    ctx.fillText("Press G to regenerate particles", 30, th += dh);
-    ctx.fillText("Press R to randomize the potential field", 30, th += dh);
-    ctx.fillText(particles.length + " test particles", 30, th += dh);
-
+    let ideal_avg_dt = 0;
     let true_avg_dt = 0;
+    let framerate = 0;
     if (FRAME_DT_BUFFER.length)
     {
-        let ideal_avg_dt = 0;
         for (let e of FRAME_DT_BUFFER)
         {
             ideal_avg_dt += e[1];
@@ -251,10 +249,7 @@ function update(previous, now, frame_number)
         true_avg_dt /= FRAME_DT_BUFFER.length;
         let min = FRAME_DT_BUFFER[0][0]
         let max = FRAME_DT_BUFFER[FRAME_DT_BUFFER.length - 1][0]
-        let framerate = (FRAME_DT_BUFFER.length - 1) / (max - min);
-        ctx.fillText("dt = " + (1000 * true_avg_dt).toFixed(1) +
-            "ms / " + (1000 * ideal_avg_dt).toFixed(1) + "ms", 30, th += dh);
-        ctx.fillText("Framerate = " + framerate.toFixed(0) + " Hz", 30, th += dh);
+        framerate = (FRAME_DT_BUFFER.length - 1) / (max - min);
     }
     const target_dt = 0.6*NOMINAL_DT;
     const delta_dt = target_dt - true_avg_dt;
@@ -278,6 +273,40 @@ function update(previous, now, frame_number)
         }
     }
 
+    if (Math.abs(dt) > NOMINAL_DT * 4)
+    {
+        console.log("Large timestep: " + dt.toFixed(3) + " (nominally "
+            + NOMINAL_DT.toFixed(3) + ")");
+        const update_end = new Date().getTime() / 1000;
+        const real_dt = update_end - update_start;
+        FRAME_DT_BUFFER.push([now, dt, real_dt]);
+        return;
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (var p in particles)
+    {
+        particles[p].draw(ctx);
+        for (var f = 0; f < steps_per_frame; ++f)
+            particles[p].step(dt);
+    }
+
+    ctx.fillStyle = "black";
+    ctx.globalAlpha = 1;
+    ctx.font = "36px Garamond Bold";
+    ctx.fillText("Ideal Flow Numerical Simulation", 30, 50);
+    ctx.font = "18px Garamond";
+    let th = 60;
+    let dh = 25;
+    ctx.fillText("Press G to regenerate particles", 30, th += dh);
+    ctx.fillText("Press R to randomize the potential field", 30, th += dh);
+    ctx.fillText(particles.length + " test particles", 30, th += dh);
+    ctx.fillText("dt = " + (1000 * true_avg_dt).toFixed(1) +
+        "ms / " + (1000 * ideal_avg_dt).toFixed(1) + "ms", 30, th += dh);
+    ctx.fillText("Framerate = " + framerate.toFixed(0) + " Hz", 30, th += dh);
+
+    ctx.globalAlpha = 1;
     ctx.save();
     ctx.textAlign = "center";
     for (let field of velocity_fields)
@@ -292,10 +321,6 @@ function update(previous, now, frame_number)
     }
     ctx.restore();
 
-    if (LAST_MOUSE_POSITION != null)
-    {
-        velocity_fields[0].origin = LAST_MOUSE_POSITION;
-    }
     const update_end = new Date().getTime() / 1000;
     const real_dt = update_end - update_start;
     FRAME_DT_BUFFER.push([now, dt, real_dt]);
@@ -304,22 +329,26 @@ function update(previous, now, frame_number)
 function randomize_field()
 {
     velocity_fields = [];
-    let num_fields = Math.round(Math.random() * 4 + 2);
-    for (let i = 0; i < num_fields; i++)
-    {
-        let x = Math.random() * 4*width/6 + width/6;
-        let y = Math.random() * 4*height/6 + height/6;
-        let strength = Math.random() * 1500000 - 750000;
-        let field = vortex(x, y, strength);
-        if (Math.random() < 0.5)
-        {
-            strength = Math.random() * 50000 + 20000;
-            field = source(x, y, strength);
-        }
-        velocity_fields.push(field);
-    }
+    // let num_fields = Math.round(Math.random() * 4 + 2);
+    // for (let i = 0; i < num_fields; i++)
+    // {
+    //     let x = Math.random() * 4*width/6 + width/6;
+    //     let y = Math.random() * 4*height/6 + height/6;
+    //     let strength = Math.random() * 1500000 - 750000;
+    //     let field = vortex(x, y, strength);
+    //     if (Math.random() < 0.5)
+    //     {
+    //         strength = Math.random() * 50000 + 20000;
+    //         field = source(x, y, strength);
+    //     }
+    //     velocity_fields.push(field);
+    // }
 
-    velocity_fields.push(uniform(200, 0));
+    let theta = Math.random() * Math.PI * 2;
+    let vel = 200;
+    let vx = Math.cos(theta) * vel;
+    let vy = Math.sin(theta) * vel;
+    velocity_fields.push(uniform(vx, vy));
     for (const p of particles)
     {
         p.history = [];
@@ -340,7 +369,7 @@ function remove_particle()
 
 function regenerate_particles()
 {
-    let N = 0;
+    let N = 1000;
     if (particles.length)
     {
         N = particles.length;
