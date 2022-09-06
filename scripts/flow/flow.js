@@ -5,7 +5,7 @@ var height = document.body.scrollHeight;
 var velocity_fields = [];
 var particles = [];
 
-let NOMINAL_FRAMERATE = 50;
+let NOMINAL_FRAMERATE = 60;
 let NOMINAL_DT = 1 / NOMINAL_FRAMERATE;
 let LAST_MOUSE_POSITION = null;
 
@@ -220,8 +220,7 @@ function update(previous, now, frame_number)
     const dt = now - previous;
     const update_start = new Date().getTime() / 1000;
 
-    var fps = 50;
-    var steps_per_frame = 2;
+    var steps_per_frame = 1;
 
     var canvas = document.getElementById("canvas");
     var ctx = canvas.getContext("2d");
@@ -230,9 +229,9 @@ function update(previous, now, frame_number)
     width = ctx.canvas.width;
     height = ctx.canvas.height;
 
-    if (FRAME_DT_BUFFER.length > NOMINAL_FRAMERATE)
+    if (FRAME_DT_BUFFER.length > NOMINAL_FRAMERATE*3)
     {
-        FRAME_DT_BUFFER = FRAME_DT_BUFFER.slice(-NOMINAL_FRAMERATE);
+        FRAME_DT_BUFFER = FRAME_DT_BUFFER.slice(-NOMINAL_FRAMERATE*3);
     }
 
     let ideal_avg_dt = 0;
@@ -251,9 +250,10 @@ function update(previous, now, frame_number)
         let max = FRAME_DT_BUFFER[FRAME_DT_BUFFER.length - 1][0]
         framerate = (FRAME_DT_BUFFER.length - 1) / (max - min);
     }
-    const target_dt = 0.6*NOMINAL_DT;
-    const delta_dt = target_dt - true_avg_dt;
-    let delta_pop = Math.round((delta_dt / target_dt) * particles.length / 100);
+    const target_dt = NOMINAL_DT;
+    const delta_dt = target_dt - ideal_avg_dt;
+    console.log(delta_dt);
+    let delta_pop = Math.round((delta_dt / target_dt) * particles.length / 500);
     if (!particles.length)
     {
         delta_pop = 250;
@@ -277,9 +277,6 @@ function update(previous, now, frame_number)
     {
         console.log("Large timestep: " + dt.toFixed(3) + " (nominally "
             + NOMINAL_DT.toFixed(3) + ")");
-        const update_end = new Date().getTime() / 1000;
-        const real_dt = update_end - update_start;
-        FRAME_DT_BUFFER.push([now, dt, real_dt]);
         return;
     }
 
@@ -300,7 +297,9 @@ function update(previous, now, frame_number)
     let th = 60;
     let dh = 25;
     ctx.fillText("Press G to regenerate particles", 30, th += dh);
-    ctx.fillText("Press R to randomize the potential field", 30, th += dh);
+    ctx.fillText("Press R to reset the potential field", 30, th += dh);
+    ctx.fillText("Press S to add a source", 30, th += dh);
+    ctx.fillText("Press V to add a vortex", 30, th += dh);
     ctx.fillText(particles.length + " test particles", 30, th += dh);
     ctx.fillText("dt = " + (1000 * true_avg_dt).toFixed(1) +
         "ms / " + (1000 * ideal_avg_dt).toFixed(1) + "ms", 30, th += dh);
@@ -309,6 +308,7 @@ function update(previous, now, frame_number)
     ctx.globalAlpha = 1;
     ctx.save();
     ctx.textAlign = "center";
+    ctx.globalAlpha = 0.3;
     for (let field of velocity_fields)
     {
         if (typeof field.origin != "undefined")
@@ -385,7 +385,7 @@ randomize_field();
 
 regenerate_particles();
 
-let START_TIME = new Date().getTime() / 1000;
+const START_TIME = new Date().getTime() / 1000;
 let previous = null;
 let frame_number = 0;
 
@@ -399,4 +399,4 @@ var gameloop = setInterval(function()
     }
     previous = now;
 
-}, NOMINAL_DT * 1000);
+}, NOMINAL_DT / 2 * 1000);
