@@ -166,6 +166,21 @@ function render2d(v, ctx, radius=5, fill_style="black")
     ctx.restore();
 }
 
+function render_line(vs, ctx, width=2, stroke_style="black")
+{
+    ctx.save();
+    ctx.beginPath();
+    ctx.strokeStyle = stroke_style;
+    ctx.lineWidth = width;
+    ctx.moveTo(vs[0][0], vs[0][1]);
+    for (let i = 1; i < vs.length; ++i)
+    {
+        ctx.lineTo(vs[i][0], vs[i][1]);
+    }
+    ctx.stroke();
+    ctx.restore();
+}
+
 function get_bounds(points)
 {
     let min = points[0].slice();
@@ -178,6 +193,41 @@ function get_bounds(points)
         max[1] = Math.max(max[1], p[1]);
     }
     return [min, max];
+}
+
+function get_centroid(points)
+{
+    let sum = [0, 0];
+    for (const p of points)
+    {
+        sum = add2d(sum, p);
+    }
+    return div2d(sum, points.length);
+}
+
+function center_on(points, center)
+{
+    const centroid = get_centroid(points);
+    const offset = sub2d(center, centroid);
+    let ret = []
+    for (const p of points)
+    {
+        ret.push(add2d(p, offset));
+    }
+    return ret;
+}
+
+function center_bounds_on(points, center)
+{
+    const [min, max] = get_bounds(points);
+    const centroid = div2d(add2d(max, min), 2);
+    const offset = sub2d(center, centroid);
+    let ret = []
+    for (const p of points)
+    {
+        ret.push(add2d(p, offset));
+    }
+    return ret;
 }
 
 function nearest_point(points, test_point)
@@ -195,4 +245,29 @@ function nearest_point(points, test_point)
         }
     }
     return [best, dist];
+}
+
+function shrink_to_within_wh(points, width, height)
+{
+    const [min, max] = get_bounds(points);
+    const [w, h] = sub2d(max, min);
+    const centroid = div2d(add2d(min, max), 2);
+
+    const wr = width / w;
+    const hr = height / h;
+    const scale = Math.min(wr, hr);
+
+    if (scale >= 1)
+    {
+        return points;
+    }
+
+    let ret = []
+    for (const p of points)
+    {
+        let offset = sub2d(p, centroid);
+        offset = mult2d(offset, scale);
+        ret.push(add2d(centroid, offset));
+    }
+    return ret;
 }
