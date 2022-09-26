@@ -22,22 +22,7 @@ document.addEventListener('mousemove', function(event)
 
 document.addEventListener('mousedown', function(event)
 {
-    // event.preventDefault();
-    // event.stopPropagation();
 
-    // console.log("mousedown", event);
-    // if (event.button == 0)
-    // {
-    //     on_left_click();
-    // }
-    // if (event.button == 2)
-    // {
-    //     on_right_click();
-    // }
-    // if (event.button == 1)
-    // {
-    //     on_middle_click();
-    // }
 });
 
 document.addEventListener('keypress', function(event)
@@ -64,6 +49,58 @@ function on_middle_click()
 
 }
 
+function get_user_axiom()
+{
+    const text_input = document.getElementById("axiom");
+    return text_input.value;
+}
+
+function get_user_ruleset()
+{
+    const text_input = document.getElementById("ruleset");
+    const re = new RegExp("(.) -> (.+)");
+    const inputs = text_input.value.split(",");
+
+    let ret = {};
+    for (const input of inputs)
+    {
+        let m = input.match(re);
+        if (m)
+        {
+            ret[m[1]] = m[2];
+        }
+    }
+    return ret;
+}
+
+function get_user_order()
+{
+    const text_input = document.getElementById("iterations");
+    const n = parseInt(text_input.value);
+    if (isNaN(n))
+    {
+        return 0;
+    }
+    return Math.min(n, 17);
+}
+
+function get_user_angle()
+{
+    const text_input = document.getElementById("angle");
+    const a = parseFloat(text_input.value);
+    if (isNaN(a))
+    {
+        return Math.PI / 2;
+    }
+    return a * Math.PI / 180;
+}
+
+function get_user_draw_symbols()
+{
+    const text_input = document.getElementById("draw");
+    return text_input.value;
+}
+
 document.addEventListener('dblclick', function(event)
 {
     console.log("dblclick", event);
@@ -84,23 +121,25 @@ document.addEventListener("wheel", function(event)
 {
     console.log("scroll", event)
 
-    TARGET_ANGLE += Math.sign(event.deltaY) * Math.PI / 8;
+    TARGET_ANGLE += Math.sign(event.deltaY) * Math.PI / 12;
 });
 
 function update(previous, now, frame)
 {
     let dt = now - previous;
 
-    if (Math.abs(dt) > NOMINAL_DT * 3)
-    {
-        console.log("Large timestep: " + dt.toFixed(3) + " (nominally "
-            + NOMINAL_DT.toFixed(3) + ")");
-        return;
-    }
+    // if (Math.abs(dt) > NOMINAL_DT * 3)
+    // {
+    //     console.log("Large timestep: " + dt.toFixed(3) + " (nominally "
+    //         + NOMINAL_DT.toFixed(3) + ")");
+    //     return;
+    // }
 
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    let n = 12;
+    get_user_ruleset();
+
+    const n = get_user_order();
 
     ctx.font = "36px Garamond Bold";
     ctx.fillText("Lindenmayer Curves", 30, 50);
@@ -108,34 +147,23 @@ function update(previous, now, frame)
     let height = 65;
     let dh = 25;
     ctx.fillText("https://en.wikipedia.org/wiki/L-system", 30, height += dh);
-    ctx.fillText("Dragon Curve (order " + n + ")", 30, height += dh);
     if (ctx.canvas.width < ctx.canvas.height)
     {
         ctx.fillText("(Sorry, this isn't designed for mobile devices)", 30, height += dh);
     }
 
-    let a = Math.PI / 2;
+    let a = get_user_angle();
     let d = 30;
-    const axiom = "F";
-    const rules = { "F": "F+G", "G": "F-G" };
-    const draw_forward = "FG";
-    const turn_left = "+";
-    const turn_right = "-";
-
-    // koch curve
-    // const lstring = iterate_rules("F-G-G", {"F": "F-G+F+G-F", "G": "GG"}, n);
-    // let line = render_string(lstring, Math.PI/1.5, 50, "+", "-", "FG")
-
-    // sierpinski arrowhead
-    // const lstring = iterate_rules("A", {"A": "B-A-B", "B": "A+B+A"}, n);
-    // let line = render_string(lstring, Math.PI/3, 15, "+", "-", "AB");
+    const axiom = get_user_axiom();
+    const rules = get_user_ruleset();
+    const draw_forward = get_user_draw_symbols();
 
     const lstring = iterate_rules(axiom, rules, n);
-    let line = render_string(lstring, a, d, turn_left, turn_right, draw_forward);
-    line = shrink_to_within_wh(line, WIDTH*0.9, HEIGHT*0.9);
-    line = center_bounds_on(line, [WIDTH/2, HEIGHT/2]);
-    line = rotate_about(line, [WIDTH/2, HEIGHT/2], CURRENT_ANGLE);
-    render_line(line, ctx, 1, "black");
+    let lines = render_string(lstring, a, d, draw_forward);
+    lines = rotate_about(lines, [WIDTH/2, HEIGHT/2], CURRENT_ANGLE);
+    lines = center_bounds_on(lines, [WIDTH/2, HEIGHT/2]);
+    lines = shrink_to_within_wh(lines, WIDTH*0.9, HEIGHT*0.9);
+    render_lines(lines, ctx, 1, "black");
 
     CURRENT_ANGLE += (TARGET_ANGLE - CURRENT_ANGLE) * dt * 6;
 }

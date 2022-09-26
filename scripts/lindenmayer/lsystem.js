@@ -28,30 +28,42 @@ function iterate_rules(axiom, rules, n)
     return res;
 }
 
-function render_string(lstring, angle, d, turn_left, turn_right, draw_forward)
+function render_string(lstring, angle, d, draw_forward)
 {
     let pos = [0, 0];
     let heading = 0;
     const dvec = [d, 0];
 
-    let ret = [pos];
+    let posstack = []
+    let ret = [[pos]];
 
     for (let i = 0; i < lstring.length; ++i)
     {
         const c = lstring[i];
-        if (turn_left.includes(c))
+        if (c == "+")
         {
             heading += angle;
         }
-        else if (turn_right.includes(c))
+        else if (c == "-")
         {
             heading -= angle;
+        }
+        else if (c == "[")
+        {
+            posstack.push([pos.slice(), heading]);
+        }
+        else if (c == "]")
+        {
+            const [p, h] = posstack.pop();
+            pos = p.slice();
+            heading = h;
+            ret.push([pos]);
         }
         else if (draw_forward.includes(c))
         {
             let delta = rot2d(dvec, heading)
             pos = add2d(pos, delta);
-            ret.push(pos);
+            ret[ret.length - 1].push(pos);
         }
     }
 

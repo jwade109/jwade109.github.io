@@ -7,7 +7,7 @@ input
   position: absolute;
   left: 20px;
   z-index: 10;
-  width: 25%;
+  width: 200px;
 }
 
 </style>
@@ -17,16 +17,28 @@ input
   <head>
     <link rel="stylesheet" href="styles.css">
     <link rel="shortcut icon" type="image/x-icon" href="resources/favicon.ico">
-    <title>Not Not Flirting With You</title>
+    <title>L-Systems</title>
   </head>
 
   <body style="border: 0; margin: 0; padding: 0">
     <canvas id="canvas" style="position: absolute"></canvas>
-    <!-- <form autocomplete="off">
-    <input type="text" id="lstring" style="bottom: 20px;"/>
-    <input type="text" id="lstring" style="bottom: 70px;"/>
-    <input type="text" id="lstring" style="bottom: 120px;"/>
-    </form> -->
+    <form autocomplete="off">
+    <input type="text" id="axiom"
+      value="X" style="bottom: 220px;"
+      placeholder="start conditions"/>
+    <input type="text" id="iterations"
+      value="6" style="bottom: 170px;"
+      placeholder="generation order"/>
+    <input type="text" id="angle"
+      value="25" style="bottom: 120px;"
+      placeholder="turn angle"/>
+    <input type="text" id="draw"
+      value="F" style="bottom: 70px"
+      placeholder="draw"/>
+    <input type="text" id="ruleset"
+      value="X -> F+[[X]-X]-F[-FX]+X, F -> FF" style="bottom: 20px; width: 85%"
+      placeholder="ruleset"/>
+    </form>
     <script src="scripts/big-empty/vector.js"></script>
     <script src="scripts/lindenmayer/lsystem.js"></script>
     <script src="scripts/lindenmayer/main.js"></script>

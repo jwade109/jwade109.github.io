@@ -181,6 +181,14 @@ function render_line(vs, ctx, width=2, stroke_style="black")
     ctx.restore();
 }
 
+function render_lines(ls, ctx, width=2, stroke_style="black")
+{
+    for (const vs of ls)
+    {
+        render_line(vs, ctx, width, stroke_style);
+    }
+}
+
 function get_bounds(points)
 {
     let min = points[0].slice();
@@ -217,15 +225,33 @@ function center_on(points, center)
     return ret;
 }
 
-function center_bounds_on(points, center)
+function flatten_lines_to_points(lines)
 {
+    let ret = []
+    for (const line of lines)
+    {
+        for (const p of line)
+        {
+            ret.push(p);
+        }
+    }
+    return ret;
+}
+
+function center_bounds_on(lines, center)
+{
+    const points = flatten_lines_to_points(lines);
     const [min, max] = get_bounds(points);
     const centroid = div2d(add2d(max, min), 2);
     const offset = sub2d(center, centroid);
     let ret = []
-    for (const p of points)
+    for (const line of lines)
     {
-        ret.push(add2d(p, offset));
+        ret.push([]);
+        for (const p of line)
+        {
+            ret[ret.length - 1].push(add2d(p, offset));
+        }
     }
     return ret;
 }
@@ -247,8 +273,9 @@ function nearest_point(points, test_point)
     return [best, dist];
 }
 
-function shrink_to_within_wh(points, width, height)
+function shrink_to_within_wh(lines, width, height)
 {
+    const points = flatten_lines_to_points(lines);
     const [min, max] = get_bounds(points);
     const [w, h] = sub2d(max, min);
     const centroid = div2d(add2d(min, max), 2);
@@ -259,27 +286,35 @@ function shrink_to_within_wh(points, width, height)
 
     if (scale >= 1)
     {
-        return points;
+        return lines;
     }
 
     let ret = []
-    for (const p of points)
+    for (const line of lines)
     {
-        let offset = sub2d(p, centroid);
-        offset = mult2d(offset, scale);
-        ret.push(add2d(centroid, offset));
+        ret.push([]);
+        for (const p of line)
+        {
+            let offset = sub2d(p, centroid);
+            offset = mult2d(offset, scale);
+            ret[ret.length - 1].push(add2d(centroid, offset));
+        }
     }
     return ret;
 }
 
-function rotate_about(points, center, angle)
+function rotate_about(lines, center, angle)
 {
     let ret = []
-    for (const p of points)
+    for (const line of lines)
     {
-        let offset = sub2d(p, center);
-        offset = rot2d(offset, angle);
-        ret.push(add2d(center, offset));
+        ret.push([]);
+        for (const p of line)
+        {
+            let offset = sub2d(p, center);
+            offset = rot2d(offset, angle);
+            ret[ret.length - 1].push(add2d(center, offset));
+        }
     }
     return ret;
 }
