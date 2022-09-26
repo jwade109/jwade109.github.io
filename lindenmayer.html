@@ -26,12 +26,10 @@ input
     <input type="text" id="axiom"
       value="X" style="bottom: 220px;"
       placeholder="start conditions"/>
-    <input type="text" id="iterations"
-      value="6" style="bottom: 170px;"
-      placeholder="generation order"/>
-    <input type="text" id="angle"
-      value="25" style="bottom: 120px;"
-      placeholder="turn angle"/>
+    <input type="range" class="slider" min="1" max="8" value="6" id="iterations"
+      style="bottom: 170px"/>
+    <input type="range" class="slider" min="1" max="120" value="25" id="angle"
+      style="bottom: 120px"/>
     <input type="text" id="draw"
       value="F" style="bottom: 70px"
       placeholder="draw"/>
