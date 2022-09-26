@@ -165,7 +165,7 @@ function update(previous, now, frame)
     lines = shrink_to_within_wh(lines, WIDTH*0.9, HEIGHT*0.9);
     render_lines(lines, ctx, 1, "black");
 
-    CURRENT_ANGLE += (TARGET_ANGLE - CURRENT_ANGLE) * dt * 6;
+    CURRENT_ANGLE += (TARGET_ANGLE - CURRENT_ANGLE) * 0.25;
 }
 
 let START_TIME = new Date().getTime() / 1000;
