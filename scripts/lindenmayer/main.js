@@ -124,6 +124,11 @@ document.addEventListener("wheel", function(event)
     TARGET_ANGLE += Math.sign(event.deltaY) * Math.PI / 12;
 });
 
+function request_redraw()
+{
+    console.log("wow");
+}
+
 function update(previous, now, frame)
 {
     let dt = now - previous;
