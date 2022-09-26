@@ -5,7 +5,7 @@ const ctx = canvas.getContext("2d");
 ctx.canvas.width = document.body.clientWidth;
 ctx.canvas.height = document.body.clientHeight;
 
-let NOMINAL_FRAMERATE = 5
+let NOMINAL_FRAMERATE = 30
 let NOMINAL_DT = 1 / NOMINAL_FRAMERATE
 let LAST_MOUSE_POSITION = null;
 
@@ -77,6 +77,16 @@ document.addEventListener('mouseup', function(event)
     console.log("mouseup", event);
 });
 
+let TARGET_ANGLE = 0
+let CURRENT_ANGLE = 0
+
+document.addEventListener("wheel", function(event)
+{
+    console.log("scroll", event)
+
+    TARGET_ANGLE += Math.sign(event.deltaY) * Math.PI / 8;
+});
+
 function update(previous, now, frame)
 {
     let dt = now - previous;
@@ -124,7 +134,10 @@ function update(previous, now, frame)
     let line = render_string(lstring, a, d, turn_left, turn_right, draw_forward);
     line = shrink_to_within_wh(line, WIDTH*0.9, HEIGHT*0.9);
     line = center_bounds_on(line, [WIDTH/2, HEIGHT/2]);
+    line = rotate_about(line, [WIDTH/2, HEIGHT/2], CURRENT_ANGLE);
     render_line(line, ctx, 1, "black");
+
+    CURRENT_ANGLE += (TARGET_ANGLE - CURRENT_ANGLE) * dt * 6;
 }
 
 let START_TIME = new Date().getTime() / 1000;

@@ -271,3 +271,15 @@ function shrink_to_within_wh(points, width, height)
     }
     return ret;
 }
+
+function rotate_about(points, center, angle)
+{
+    let ret = []
+    for (const p of points)
+    {
+        let offset = sub2d(p, center);
+        offset = rot2d(offset, angle);
+        ret.push(add2d(center, offset));
+    }
+    return ret;
+}
