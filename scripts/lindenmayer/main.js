@@ -142,8 +142,7 @@ function update(previous, now, frame)
 
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    get_user_ruleset();
-
+    const a = get_user_angle();
     const n = get_user_order();
 
     ctx.font = "36px Garamond Bold";
@@ -152,12 +151,13 @@ function update(previous, now, frame)
     let height = 65;
     let dh = 25;
     ctx.fillText("https://en.wikipedia.org/wiki/L-system", 30, height += dh);
+    ctx.fillText("Curve Order: " + n, 30, height += dh);
+    ctx.fillText("Turn Angle: " + Math.round(a * 180 / Math.PI), 30, height += dh);
     if (ctx.canvas.width < ctx.canvas.height)
     {
         ctx.fillText("(Sorry, this isn't designed for mobile devices)", 30, height += dh);
     }
 
-    let a = get_user_angle();
     let d = 30;
     const axiom = get_user_axiom();
     const rules = get_user_ruleset();
