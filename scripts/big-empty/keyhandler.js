@@ -1,6 +1,4 @@
 
-const DEVELOPER = true;
-
 var KEYPRESSES = new Map();
 
 let ON_PRESS = new Map();
@@ -67,6 +65,7 @@ document.addEventListener('mousewheel', function(event)
 
 function handle(code, state)
 {
+    console.log("Key", code, "state", state);
     if (state && !KEYPRESSES.has(code))
     {
         KEYPRESSES.set(code, Date.now());
@@ -80,7 +79,6 @@ function handle(code, state)
         KEYPRESSES.delete(code);
         onRelease(code, dur);
     }
-    console.log(KEYPRESSES);
 }
 
 function onPress(code)
@@ -128,12 +126,7 @@ ON_PRESS.set(69, function() // e
 {
     if (!TARGETING_LOCKOUT) SLOW_TIME = !SLOW_TIME;
 });
-ON_PRESS.set(71, function() // g
-{
-    SHOW_OVERLAY = !SHOW_OVERLAY;
-    let str = SHOW_OVERLAY ? "enabled." : "disabled."
-    throwAlert("SHOW_OVERLAY " + str, ALERT_DISPLAY_TIME);
-});
+
 ON_PRESS.set(84, function() // t
 {
     if (TARGET_OBJECT != null && TARGET_OBJECT != CAMERA_TRACK_TARGET)
@@ -146,83 +139,91 @@ ON_PRESS.set(90, function() { takeControl(TARGET_OBJECT); }); // z
 
 ON_PRESS.set(75, function() // k
 {
-    if (GAME_PAUSED && DEVELOPER) physics(SLOW_DT);
+    if (GAME_PAUSED) physics(SLOW_DT);
     else if (BETWEEN_WAVES) RESPAWN_TIMER = 0;
 });
 
-if (DEVELOPER)
+ON_PRESS.set(51, function() { respawn(0); }); // 3
+ON_PRESS.set(52, function() { respawn(1); });
+ON_PRESS.set(53, function() { respawn(2); });
+ON_PRESS.set(54, function() { respawn(3); }); // 6
+ON_PRESS.set(55, function() { respawn(4); });
+ON_PRESS.set(56, function() { respawn(5); });
+ON_PRESS.set(57, function() // 9
 {
-    ON_PRESS.set(51, function() { respawn(0); }); // 3
-    ON_PRESS.set(52, function() { respawn(1); });
-    ON_PRESS.set(53, function() { respawn(2); });
-    ON_PRESS.set(54, function() { respawn(3); }); // 6
-    ON_PRESS.set(55, function() { respawn(4); });
-    ON_PRESS.set(56, function() { respawn(5); });
-    ON_PRESS.set(57, function() // 9
-    {
-        if (PLAYER_SHIP.faction.name == "MCRN")
-            PLAYER_SHIP.faction = UNN;
-        else if (PLAYER_SHIP.faction.name == "UNN")
-            PLAYER_SHIP.faction = MCRN;
-    });
+    if (PLAYER_SHIP.faction.name == "MCRN")
+        PLAYER_SHIP.faction = UNN;
+    else if (PLAYER_SHIP.faction.name == "UNN")
+        PLAYER_SHIP.faction = MCRN;
+});
 
-    ON_PRESS.set(66, function() // b
-    {
-        DRAW_FIRING_ARC = !DRAW_FIRING_ARC;
-        let str = DRAW_FIRING_ARC ? "enabled." : "disabled."
-        throwAlert("DRAW_FIRING_ARC " + str, ALERT_DISPLAY_TIME);
-    });
+ON_PRESS.set(66, function() // b
+{
+    DRAW_FIRING_ARC = !DRAW_FIRING_ARC;
+    let str = DRAW_FIRING_ARC ? "enabled." : "disabled."
+    throwAlert("DRAW_FIRING_ARC " + str, ALERT_DISPLAY_TIME);
+});
 
-    ON_PRESS.set(72, function() // h
-    {
-        DRAW_ACCEL = !DRAW_ACCEL;
-        let str = DRAW_ACCEL ? "enabled." : "disabled."
-        throwAlert("DRAW_ACCEL " + str, ALERT_DISPLAY_TIME);
-    });
+ON_PRESS.set(72, function() // h
+{
+    DRAW_ACCEL = !DRAW_ACCEL;
+    let str = DRAW_ACCEL ? "enabled." : "disabled."
+    throwAlert("DRAW_ACCEL " + str, ALERT_DISPLAY_TIME);
+});
 
-    ON_PRESS.set(74, function() { if (GAME_PAUSED) physics(-SLOW_DT); }); // j
-    ON_PRESS.set(76, function() // l
-    {
-        DRAW_TORPEDO_TUBES = !DRAW_TORPEDO_TUBES;
-        let str = DRAW_TORPEDO_TUBES ? "enabled." : "disabled."
-        throwAlert("DRAW_TORPEDO_TUBES " + str, ALERT_DISPLAY_TIME);
-    });
+ON_PRESS.set(73, function() // i
+{
+    PLAYER_INVINCIBLE = !PLAYER_INVINCIBLE;
+    let str = PLAYER_INVINCIBLE ? "enabled." : "disabled."
+    throwAlert("PLAYER_INVINCIBLE " + str, ALERT_DISPLAY_TIME);
+});
 
-    ON_PRESS.set(77, function()
-    {
-        DRAW_TRACE = !DRAW_TRACE;
-        let str = DRAW_TRACE ? "enabled." : "disabled."
-        throwAlert("DRAW_TRACE " + str, ALERT_DISPLAY_TIME);
-    });
+ON_PRESS.set(74, function() // j
+{
+    if (GAME_PAUSED) physics(-SLOW_DT);
+});
 
-    ON_PRESS.set(78, function()
-    {
-        DRAW_HITBOX = !DRAW_HITBOX;
-        let str = DRAW_HITBOX ? "enabled." : "disabled."
-        throwAlert("DRAW_HITBOX " + str, ALERT_DISPLAY_TIME);
-    });
+ON_PRESS.set(76, function() // l
+{
+    DRAW_TORPEDO_TUBES = !DRAW_TORPEDO_TUBES;
+    let str = DRAW_TORPEDO_TUBES ? "enabled." : "disabled."
+    throwAlert("DRAW_TORPEDO_TUBES " + str, ALERT_DISPLAY_TIME);
+});
 
-    ON_PRESS.set(79, function() { --CURRENT_WAVE; }); // o
-    ON_PRESS.set(80, function() { ++CURRENT_WAVE; }); // p
+ON_PRESS.set(77, function()
+{
+    DRAW_TRACE = !DRAW_TRACE;
+    let str = DRAW_TRACE ? "enabled." : "disabled."
+    throwAlert("DRAW_TRACE " + str, ALERT_DISPLAY_TIME);
+});
 
-    ON_PRESS.set(85, function() // u
-    {
-        SHOW_ALL_ALERTS = !SHOW_ALL_ALERTS;
-        let str = SHOW_ALL_ALERTS ? "enabled." : "disabled."
-        throwAlert("SHOW_ALL_ALERTS " + str, ALERT_DISPLAY_TIME);
-    });
+ON_PRESS.set(78, function()
+{
+    DRAW_HITBOX = !DRAW_HITBOX;
+    let str = DRAW_HITBOX ? "enabled." : "disabled."
+    throwAlert("DRAW_HITBOX " + str, ALERT_DISPLAY_TIME);
+});
 
-    ON_PRESS.set(86, function() // v
-    {
-        LOCK_CAMERA = !LOCK_CAMERA;
-        let str = LOCK_CAMERA ? "enabled." : "disabled."
-        throwAlert("LOCK_CAMERA " + str, ALERT_DISPLAY_TIME);
-    });
+ON_PRESS.set(79, function() { --CURRENT_WAVE; }); // o
+ON_PRESS.set(80, function() { ++CURRENT_WAVE; }); // p
 
-    ON_PRESS.set(89, function() // y
-    {
-        SHOW_BEHAVIORS = !SHOW_BEHAVIORS;
-        let str = SHOW_BEHAVIORS ? "enabled." : "disabled."
-        throwAlert("SHOW_BEHAVIORS " + str, ALERT_DISPLAY_TIME);
-    });
-}
+ON_PRESS.set(85, function() // u
+{
+    SHOW_ALL_ALERTS = !SHOW_ALL_ALERTS;
+    let str = SHOW_ALL_ALERTS ? "enabled." : "disabled."
+    throwAlert("SHOW_ALL_ALERTS " + str, ALERT_DISPLAY_TIME);
+});
+
+ON_PRESS.set(86, function() // v
+{
+    LOCK_CAMERA = !LOCK_CAMERA;
+    let str = LOCK_CAMERA ? "enabled." : "disabled."
+    throwAlert("LOCK_CAMERA " + str, ALERT_DISPLAY_TIME);
+});
+
+ON_PRESS.set(89, function() // y
+{
+    SHOW_BEHAVIORS = !SHOW_BEHAVIORS;
+    let str = SHOW_BEHAVIORS ? "enabled." : "disabled."
+    throwAlert("SHOW_BEHAVIORS " + str, ALERT_DISPLAY_TIME);
+});

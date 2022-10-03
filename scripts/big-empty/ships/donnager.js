@@ -137,30 +137,6 @@ Donnager.prototype.launchTorpedo = function(target)
     oldest.fire(target);
 }
 
-Donnager.prototype.fireRailgun = function()
-{
-    if (this === PLAYER_SHIP)
-    {
-        let mouseAngle = angle2d([1, 0],
-            sub2d([MOUSEX, MOUSEY], this.pos));
-        let min = Infinity, best = null;
-        for (let gun of this.railguns)
-        {
-            let gunAngle = this.theta + gun.theta + gun.gamma;
-            let error = gunAngle - mouseAngle;
-            while (error > Math.PI) error -= Math.PI*2;
-            while (error < -Math.PI) error += Math.PI*2;
-            if (Math.abs(error) < min && gun.canFire())
-            {
-                min = Math.abs(error);
-                best = gun;
-            }
-        }
-        if (best != null) best.fire();
-    }
-    else for (let gun of this.railguns) gun.fire();
-}
-
 Donnager.prototype.skin = function(opacity)
 {
     CTX.save();
@@ -336,28 +312,4 @@ Donnager.prototype.explode = function()
         ") was destroyed.", ALERT_DISPLAY_TIME);
 }
 
-Donnager.prototype.damage = function(d)
-{
-    this.health -= d;
-    if (this.health <= 0) this.explode();
-    else if (Math.random() < 0.05*d)
-    {
-        let num_debris = 3 + Math.random()*3;
-        let pos = this.box.getRandom();
-        for (let i = 0; i < num_debris; ++i)
-        {
-            let vel = this.vel.slice();
-            vel[0] += Math.random()*200 - 100;
-            vel[1] += Math.random()*200 - 100;
-            let size = Math.random()*4;
-            let deb = new Debris(pos.slice(), vel,
-                this.theta,
-                this.omega + Math.random()*5 - 2.5, size);
-            deb.name = this.fullName();
-            deb.color = "#909090";
-            if (Math.random() < 0.2)
-                deb.color = "#CCCCCC";
-            WORLD.push(deb);
-        }
-    }
-}
+Donnager.prototype.damage = generic_ship_damage;

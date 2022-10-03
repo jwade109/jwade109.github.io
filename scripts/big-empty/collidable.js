@@ -201,6 +201,11 @@ Collidable.prototype.repair = function(health)
 
 Collidable.prototype.damage = function(health)
 {
+    console.log("damage!", this);
+    if (this == PLAYER_SHIP)
+    {
+        console.log("self!");
+    }
     this.health -= health;
     this.decay(health);
     if (this.health <= 0)
@@ -208,6 +213,40 @@ Collidable.prototype.damage = function(health)
         this.explode();
         this.remove = true;
         return;
+    }
+}
+
+// general override effect for ships taking damage
+function generic_ship_damage(d)
+{
+    if (PLAYER_INVINCIBLE && this == PLAYER_SHIP)
+    {
+        // invincible!
+    }
+    else
+    {
+        this.health -= d;
+    }
+    if (this.health < 1) this.explode();
+    else if (Math.random() < 0.05*d)
+    {
+        let num_debris = 3 + Math.random()*3;
+        let pos = this.box.getRandom();
+        for (let i = 0; i < num_debris; ++i)
+        {
+            let vel = this.vel.slice();
+            vel[0] += Math.random()*200 - 100;
+            vel[1] += Math.random()*200 - 100;
+            let size = Math.random()*4;
+            let deb = new Debris(pos.slice(), vel,
+                this.theta,
+                this.omega + Math.random()*5 - 2.5, size);
+            deb.name = this.fullName();
+            deb.color = this.faction.c3;
+            if (Math.random() < 0.3)
+                deb.color = this.faction.c2;
+            WORLD.push(deb);
+        }
     }
 }
 

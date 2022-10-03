@@ -1,2 +1,2 @@
 document.getElementById("version").innerHTML =
-    "2022.09.27a" + " - <a href='/'>Home</a>";
+    "2022.10.03a" + " - <a href='/'>Home</a>";

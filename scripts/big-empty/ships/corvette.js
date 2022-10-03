@@ -1,6 +1,5 @@
 // corvette.js
 
-const PLAYER_INVINCIBLE = false;
 const CORVETTE_MAX_HEALTH = 600;
 const INFINITE_FUEL = true;
 const INFINITE_AMMO = false;
@@ -228,28 +227,4 @@ Corvette.prototype.explode = function()
     this.remove = true;
 }
 
-Corvette.prototype.damage = function(d)
-{
-    this.health -= d;
-    if (this.health < 1) this.explode();
-    else if (Math.random() < 0.05*d)
-    {
-        let num_debris = 3 + Math.random()*3;
-        let pos = this.box.getRandom();
-        for (let i = 0; i < num_debris; ++i)
-        {
-            let vel = this.vel.slice();
-            vel[0] += Math.random()*200 - 100;
-            vel[1] += Math.random()*200 - 100;
-            let size = Math.random()*4;
-            let deb = new Debris(pos.slice(), vel,
-                this.theta,
-                this.omega + Math.random()*5 - 2.5, size);
-            deb.name = this.fullName();
-            deb.color = this.c3;
-            if (Math.random() < 0.4)
-                deb.color = this.c2;
-            WORLD.push(deb);
-        }
-    }
-}
+Corvette.prototype.damage = generic_ship_damage;

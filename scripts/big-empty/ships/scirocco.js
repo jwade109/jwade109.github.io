@@ -108,11 +108,6 @@ Scirocco.prototype.launchTorpedo = function(target)
     oldest.fire(target);
 }
 
-Scirocco.prototype.fireRailgun = function()
-{
-    for (let rg of this.railguns) rg.fire();
-}
-
 Scirocco.prototype.skin = function(opacity)
 {
     CTX.save();
@@ -289,28 +284,4 @@ Scirocco.prototype.explode = function()
         ") was destroyed.", ALERT_DISPLAY_TIME);
 }
 
-Scirocco.prototype.damage = function(d)
-{
-    this.health -= d;
-    if (this.health < 1) this.explode();
-    else if (Math.random() < 0.01*d)
-    {
-        let num_debris = 3 + Math.random()*3;
-        let pos = this.box.getRandom();
-        for (let i = 0; i < num_debris; ++i)
-        {
-            let vel = this.vel.slice();
-            vel[0] += Math.random()*200 - 100;
-            vel[1] += Math.random()*200 - 100;
-            let size = Math.random()*4;
-            let deb = new Debris(pos.slice(), vel,
-                this.theta,
-                this.omega + Math.random()*5 - 2.5, size);
-            deb.name = this.fullName();
-            deb.color = this.gray;
-            if (Math.random() < 0.4)
-                deb.color = this.orange;
-            WORLD.push(deb);
-        }
-    }
-}
+Scirocco.prototype.damage = generic_ship_damage;

@@ -43,14 +43,46 @@ static playerControlled(self, dt)
 
     if (KEYPRESSES.has(1)) // middle click
     {
+        KEYPRESSES.delete(1);
         if (self.hasOwnProperty("railguns"))
         {
+            // only fire one railgun, in preference order:
+            // - prefer the one with smaller seek angle
+            // - prefer one which fired longest time ago
+
+            let best_rg = null;
+            let smallest_error = Infinity;
             for (let rg of self.railguns)
             {
                 let angle = angle2d([1, 0],
                     sub2d([MOUSEX, MOUSEY], rg.globalPos()));
                 rg.seek(dt, angle);
-                rg.fire()
+                let error = Math.abs(angle - rg.alpha);
+                while (error < 0)
+                {
+                    error += Math.PI;
+                }
+                while (error > Math.PI)
+                {
+                    error -= Math.PI;
+                }
+                if (error < smallest_error && rg.canFire())
+                {
+                    smallest_error = Math.min(smallest_error, angle);
+                    best_rg = rg;
+                }
+            }
+            if (best_rg)
+            {
+                console.log(best_rg);
+                best_rg.fire()
+            }
+            else
+            {
+                let plural = self.railguns.length > 1 ? "s" : "";
+                throwAlert("No suitable railgun to fire. Please " +
+                    "wait for your railgun" + plural + " to reload.",
+                    ALERT_DISPLAY_TIME);
             }
         }
     }

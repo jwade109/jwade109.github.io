@@ -53,6 +53,7 @@ Debris.prototype.skin = function(opacity)
     CTX.restore();
 }
 
+// TODO similar to generic_ship_damage;
 Debris.prototype.damage = function(d)
 {
     this.health -= d;

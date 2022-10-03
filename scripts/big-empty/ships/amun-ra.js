@@ -41,7 +41,7 @@ function Amun_Ra(pos, theta)
             [-this.length/6, -this.width/3],
             Math.PI/2, this, [-Math.PI/2, Math.PI/2], AMUN_RA_PDC_RANGE)
     ];
-    for (let pdc of this.pdcs) pdc.nodraw = true;
+    // for (let pdc of this.pdcs) pdc.nodraw = true;
 
     this.tubes = [
         new TorpedoTube([this.length/3, 0], 0, this),
@@ -83,11 +83,6 @@ Amun_Ra.prototype.launchTorpedo = function(target)
 Amun_Ra.prototype.firePDC = function(target)
 {
     for (let pdc of this.pdcs) pdc.intercept(target);
-}
-
-Amun_Ra.prototype.fireRailgun = function()
-{
-    for (let rg of this.railguns) rg.fire();
 }
 
 Amun_Ra.prototype.skin = function(opacity)
@@ -132,6 +127,21 @@ Amun_Ra.prototype.skin = function(opacity)
 
 // Amun_Ra.prototype.control = Controller.amunRaEnemy;
 
+Amun_Ra.prototype.radarIcon = function(opacity)
+{
+    CTX.save();
+    CTX.translate(this.pos[0]*PIXELS, this.pos[1]*PIXELS);
+    CTX.fillStyle = CTX.strokeStyle = this.faction.radar;
+    CTX.globalAlpha = opacity*0.7;
+    CTX.lineWidth = 2;
+    CTX.rotate(Math.PI/4);
+    CTX.strokeRect(-6, -6, 12, 12);
+    CTX.beginPath();
+    CTX.arc(0, 0, this.length/2*PIXELS, 0, Math.PI*2);
+    CTX.stroke();
+    CTX.restore();
+}
+
 Amun_Ra.prototype.explode = function()
 {
     if (this.remove) return;
@@ -156,8 +166,9 @@ Amun_Ra.prototype.explode = function()
         ") was destroyed.", ALERT_DISPLAY_TIME);
 }
 
-Amun_Ra.prototype.damage = function(d)
+function generic_ship_damage(d)
 {
+    console.log(this, d);
     this.health -= d;
     if (this.health < 1) this.explode();
     else if (Math.random() < 0.05*d)
@@ -174,10 +185,12 @@ Amun_Ra.prototype.damage = function(d)
                 this.theta,
                 this.omega + Math.random()*5 - 2.5, size);
             deb.name = this.fullName();
-            deb.color = this.gray;
-            if (Math.random() < 0.4)
-                deb.color = this.orange;
+            deb.color = this.faction.c3;
+            if (Math.random() < 0.3)
+                deb.color = this.faction.c2;
             WORLD.push(deb);
         }
     }
 }
+
+Amun_Ra.prototype.damage = generic_ship_damage;

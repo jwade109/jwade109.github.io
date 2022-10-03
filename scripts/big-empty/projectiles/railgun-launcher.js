@@ -89,24 +89,17 @@ RailgunLauncher.prototype.draw = function(opacity)
     {
         CTX.save();
         CTX.fillStyle = "blue";
-        CTX.strokeStyle = "black";
-        CTX.globalAlpha = 0.2*opacity;
+        CTX.globalAlpha = opacity;
         CTX.moveTo(0, 0);
         CTX.arc(0, 0, 3000*PIXELS, this.range[0], this.range[1], false);
         CTX.lineTo(0, 0);
-        CTX.fill();
+        CTX.stroke();
         CTX.rotate(-this.gamma);
         CTX.beginPath();
         CTX.moveTo(0, 0);
         CTX.lineTo(3000*PIXELS, 0);
         CTX.stroke();
         CTX.restore();
-    }
-
-    if (this.nodraw)
-    {
-        CTX.restore();
-        return;
     }
 
     if (this.object == PLAYER_SHIP)
@@ -162,6 +155,12 @@ RailgunLauncher.prototype.draw = function(opacity)
         }
         CTX.fill();
         CTX.restore();
+    }
+
+    if (this.nodraw)
+    {
+        CTX.restore();
+        return;
     }
 
     CTX.rotate(-this.gamma);
