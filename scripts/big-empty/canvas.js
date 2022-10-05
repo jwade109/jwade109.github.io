@@ -43,6 +43,7 @@ const CTX = CANVAS.getContext("2d");
 
 const UNDERTRACK = new Audio("scripts/big-empty/sounds/strobotone-undertrack.mp3");
 const OVERTRACK = new Audio("scripts/big-empty/sounds/strobotone-overtrack.mp3");
+var MUSIC_MUTED = false;
 
 var ALERTS;
 const ALERT_DISPLAY_TIME = 6;
@@ -1203,8 +1204,16 @@ function start()
     }
     else if (GAME_PAUSED)
     {
-        UNDERTRACK.volume = BETWEEN_WAVES ? 0.05 : 0;
-        OVERTRACK.volume = BETWEEN_WAVES ? 0 : 0.05;
+        if (MUSIC_MUTED)
+        {
+            UNDERTRACK.volume = 0;
+            OVERTRACK.volume = 0;
+        }
+        else
+        {
+            UNDERTRACK.volume = BETWEEN_WAVES ? 0.05 : 0;
+            OVERTRACK.volume = BETWEEN_WAVES ? 0 : 0.05;
+        }
     }
     else
     {
@@ -1229,7 +1238,12 @@ function start()
             return setpoint;
         }
 
-        if (NUMBER_OF_ENEMIES == 0 || GAME_OVER)
+        if (MUSIC_MUTED)
+        {
+            UNDERTRACK.volume = 0;
+            OVERTRACK.volume = 0;
+        }
+        else if (NUMBER_OF_ENEMIES == 0 || GAME_OVER)
         {
             UNDERTRACK.volume = fade(UNDERTRACK.volume, 0.15);
             OVERTRACK.volume = fade(OVERTRACK.volume, 0);

@@ -57,8 +57,8 @@ function draw_keyboard_hints()
 
     let beginx = 95, beginy = HEIGHT - 230, w = 30, h = 30;
     drawKey(beginx, beginy, w, h, '', '');
-    drawKey(beginx + 35, beginy, w, h, '1', 'Zoom Out');
-    drawKey(beginx + 70, beginy, w, h, '2', 'Zoom In');
+    drawKey(beginx + 35, beginy, w, h, '', '');
+    drawKey(beginx + 70, beginy, w, h, '', '');
 
     if (GAME_PAUSED)
     {
@@ -88,7 +88,7 @@ function draw_keyboard_hints()
     if (GAME_PAUSED)
     {
         drawKey(beginx + w*4.5 + 20, beginy + 35, w, h,
-            '', '');
+            'R', 'Toggle draw velocity (debug)');
         drawKey(beginx + w*5.5 + 25, beginy + 35, w, h,
             'T', 'Center camera on object (debug)');
         drawKey(beginx + w*6.5 + 30, beginy + 35, w, h,
@@ -139,7 +139,7 @@ function draw_keyboard_hints()
         drawKey(beginx + w*7.5 + 30, beginy + 105, w, h,
             'N', 'Toggle draw hitboxes (debug)');
         drawKey(beginx + w*8.5 + 35, beginy + 105, w, h,
-            'M', 'Toggle draw velocity (debug)');
+            'M', 'Toggle mute music');
     }
 
     drawKey(beginx + w*2.7 + 10, beginy + 140, w, h, '', '');

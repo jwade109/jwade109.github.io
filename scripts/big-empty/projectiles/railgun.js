@@ -31,7 +31,6 @@ Railgun.prototype.handleCollision = function(other)
     if (other === this.origin) return;
     if (other instanceof Railgun) return;
     if (other instanceof Debris && other.radius < SMALL_DEBRIS) return;
-    conserveMomentum(this, other);
     other.damage(RAILGUN_DAMAGE);
     let num_debris = Math.random()*4 + 8;
     let spread = Math.PI/12;

@@ -190,14 +190,21 @@ ON_PRESS.set(76, function() // l
     throwAlert("DRAW_TORPEDO_TUBES " + str, ALERT_DISPLAY_TIME);
 });
 
-ON_PRESS.set(77, function()
+ON_PRESS.set("M".charCodeAt(0), function() // m
+{
+    MUSIC_MUTED = !MUSIC_MUTED;
+    let str = MUSIC_MUTED ? "muted." : "unmuted."
+    throwAlert("Music " + str, ALERT_DISPLAY_TIME);
+});
+
+ON_PRESS.set("R".charCodeAt(0), function() // r
 {
     DRAW_TRACE = !DRAW_TRACE;
     let str = DRAW_TRACE ? "enabled." : "disabled."
     throwAlert("DRAW_TRACE " + str, ALERT_DISPLAY_TIME);
 });
 
-ON_PRESS.set(78, function()
+ON_PRESS.set("N".charCodeAt(0), function() // n
 {
     DRAW_HITBOX = !DRAW_HITBOX;
     let str = DRAW_HITBOX ? "enabled." : "disabled."
