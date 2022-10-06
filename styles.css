@@ -7,7 +7,7 @@ input:focus
 
 input[type=submit]
 {
-    font-family: Garamond, Cambria, SERIF;
+    font-family: Cambria, SERIF;
     font-size: 20px;
     background: #EEEEEE;
 }
@@ -20,7 +20,7 @@ input[type=submit]:active
 html, body
 {
     box-sizing: border-box;
-    font-family: Garamond, Cambria, SERIF;
+    font-family: Cambria, SERIF;
     width: 100%;
     margin: 0;
     padding: 0;
@@ -71,7 +71,7 @@ input.space
     font-size: 20px;
     padding: 6px;
     border: 0;
-    font-family: Garamond, Cambria, serif;
+    font-family: Cambria, serif;
     width: 60%;
     text-align: center;
     border-bottom: 1px solid lightgray;
@@ -83,7 +83,7 @@ input.loruun
     font-size: 28px;
     padding: 10px;
     border: 0;
-    font-family: Garamond, Cambria, serif;
+    font-family: Cambria, serif;
     width: 80%;
     text-align: center;
     border-bottom: 1px solid lightgray;
@@ -132,7 +132,7 @@ ol, ul
 
 li
 {
-    margin: 7px 0 7px 0;
+    margin: 5px 0 5px 0;
     line-height: 1.4;
 }
 
@@ -210,4 +210,5 @@ img.inline
     font-size: 18px;
     color: lightgray;
     margin: 40px 0 20px 0;
+    padding-bottom: 30px;
 }
