@@ -4,82 +4,12 @@
   <head>
     <link rel="stylesheet" href="styles.css">
     <link rel="shortcut icon" type="image/x-icon" href="resources/favicon.ico">
-    <title>Autos</title>
+    <title>Traffic Simulator</title>
   </head>
 
   <body style="border: 0; margin: 0; padding: 0">
-
-    <div style="position: absolute; z-index: 10; left: 20px;
-                font-family: Consolas, monospace; margin-top: 30px">
-      <input type="checkbox" id="showVelocity"
-        onchange="toggleVelocity()">Velocity<br>
-      <input type="checkbox" id="showAccel"
-      onchange="toggleAccel()">Acceleration<br>
-      <input type="checkbox" id="showDesired"
-        onchange="toggleDesired()">Desired Velocity<br>
-      <input type="checkbox" id="showPath"
-        onchange="togglePath()">Future Path<br>
-      <input type="checkbox" id="showBounding"
-        onchange="toggleBounding()">Collision Box<br>
-      <input type="checkbox" id="showRadius"
-        onchange="toggleRadius()">Radius of Curvature<br>
-      <input type="radio" id="behavior" name="behavior"
-        onchange="toggleBehavior()" checked>Orbit Cursor<br>
-      <input type="radio" id="behavior" name="behavior"
-        onchange="toggleBehavior()">Seek Cursor<br>
-      <input type="radio" id="behavior" name="behavior"
-        onchange="toggleBehavior()">Follow the Leader<br>
-      <input type="checkbox" id="avoidCollisions"
-        onchange="toggleAvoid()" checked>Avoid Collisions<br>
-      <input type="checkbox" id="allStop"
-        onchange="toggleStop()">All Stop<br>
-    </div>
-
     <canvas id="canvas"></canvas>
-
-    <script src="scripts/auto/auto.js"></script>
     <script src="scripts/big-empty/vector.js"></script>
-    <script>
-    function toggleVelocity()
-    {
-        showVelocity = !showVelocity;
-    }
-    function toggleAccel()
-    {
-        showAccel = !showAccel;
-    }
-    function toggleDesired()
-    {
-        showDesired = !showDesired;
-    }
-    function togglePath()
-    {
-        showPath = !showPath;
-    }
-    function toggleBounding()
-    {
-        showBounding = !showBounding;
-    }
-    function toggleRadius()
-    {
-        showRadius = !showRadius;
-    }
-    function toggleBehavior()
-    {
-        var radios = document.getElementsByName("behavior");
-        orbitCursor = radios[0].checked;
-        seekCursor = radios[1].checked;
-        followLeader = radios[2].checked
-    }
-    function toggleAvoid()
-    {
-        avoidCars = !avoidCars;
-    }
-    function toggleStop()
-    {
-        allStop = !allStop;
-    }
-    </script>
-
+    <script src="scripts/auto/auto.js"></script>
   </body>
 </html>

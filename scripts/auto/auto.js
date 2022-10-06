@@ -4,11 +4,9 @@ showDesired = false;
 showPath = false;
 showBounding = false;
 showRadius = false;
-orbitCursor = true;
-seekCursor = false;
-followLeader = false;
+seekCursor = true;
 avoidCars = true;
-allStop = false;
+LAST_MOUSE_POSITION = null;
 
 meters = 9; // pixels per meter
 feet = meters/3.28084; // pixels per foot
@@ -28,94 +26,6 @@ var initx = 0, inity = 0;
 var deltax = 0, deltay = 0;
 var moving = false;
 
-class Curve
-{
-    constructor(...points)
-    {
-        this.points = points;
-        this.isLoop = false;
-    }
-
-    draw(canvas)
-    {
-        var ctx = canvas.getContext("2d");
-        ctx.save();
-        ctx.translate(shiftx, shifty);
-        ctx.strokeStyle = "black";
-        ctx.globalAlpha = 0.3;
-        var p0 = this.point(0);
-        var ds = 1/100;
-        ctx.beginPath();
-        ctx.moveTo(p0.x, p0.y);
-        for (var s = 0; s <= 1 + ds; s += ds)
-        {
-            var p = this.point(s);
-            ctx.lineTo(p.x, p.y);
-        }
-        ctx.stroke();
-        for (var p in this.points)
-        {
-            ctx.beginPath();
-            ctx.arc(this.points[p][0], this.points[p][1],
-                    2, 0, Math.PI*2);
-            ctx.stroke();
-        }
-        ctx.restore();
-    }
-
-    point(s)
-    {
-        function interpolate(s, pts)
-        {
-            if (s > 1) s = 1;
-            if (s < 0) s = 0;
-            var newpoints = [];
-            for (var i = 0; i < pts.length - 1; ++i)
-            {
-                var nx = pts[i][0] + s*(pts[i+1][0] - pts[i][0]);
-                var ny = pts[i][1] + s*(pts[i+1][1] - pts[i][1]);
-                newpoints.push([nx, ny]);
-            }
-            return newpoints;
-        }
-
-        var interp = this.points.slice(0, this.points.length);
-        if (this.isLoop) interp.push(this.points[0]);
-        while (interp.length > 1)
-        {
-            interp = interpolate(s, interp);
-        }
-        return { x: interp[0][0], y: interp[0][1] };
-    }
-
-    nearestPoint(px, py)
-    {
-        var best, min = Infinity;
-        var ds = 1/300;
-        for (var s = 0; s <= 1 + ds; s += ds)
-        {
-            var p = this.point(s);
-            var dx = p.x - px;
-            var dy = p.y - py;
-            var dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist < min)
-            {
-                best = p;
-                min = dist;
-            }
-        }
-        return best;
-    }
-
-    distanceFrom(px, py)
-    {
-        var np = this.nearestPoint(px, py);
-        var dx = np.x - px;
-        var dy = np.y - py;
-        return Math.sqrt(dx*dx + dy*dy);
-    }
-}
-
 class Car
 {
     constructor(x, y, theta)
@@ -124,17 +34,20 @@ class Car
         this.y = y;
         this.theta = theta;
 
-        this.w = (Math.random()*0.2 + 1.9) * meters;
-        this.l = (Math.random()*2 + 3) * meters;
+        this.w = 2 * meters;
+        this.l = 4 * meters;
         this.v = 0;
         this.omega = 0;
         this.turn = 0;
-        this.turn_rate = 0.3;
+        this.turn_rate = 0.5;
         this.target_turn = 0;
         this.a = 0;
-        this.maxdecel = 50*mph;
-        this.maxaccel = 5*meters;
+        this.maxdecel = 80*mph;
+        this.maxaccel = 12*meters;
         this.maxvel = Infinity; // 80*mph;
+
+        this.trailer_length = 8 * meters;
+        this.trailer_angle = 0;
 
         this.velocity = [0, 0];
 
@@ -152,28 +65,6 @@ class Car
 
         ctx.translate(shiftx, shifty);
 
-        if (showDesired)
-        {
-            ctx.globalAlpha = 0.2;
-            ctx.strokeStyle = "red";
-            var sx = 0, sy = 0;
-            for (var i in this.forces)
-            {
-                sx += this.forces[i][0];
-                sy += this.forces[i][1];
-                ctx.beginPath();
-                ctx.moveTo(this.x, this.y);
-                ctx.lineTo(this.x + this.forces[i][0], this.y + this.forces[i][1]);
-                ctx.stroke();
-            }
-            ctx.globalAlpha = 0.5;
-            ctx.strokeStyle = "purple";
-            ctx.beginPath();
-            ctx.moveTo(this.x, this.y);
-            ctx.lineTo(this.x + sx, this.y + sy);
-            ctx.stroke();
-        }
-
         ctx.translate(this.x, this.y);
         ctx.rotate(-this.theta)
         ctx.lineWidth = 2;
@@ -182,115 +73,23 @@ class Car
         ctx.strokeStyle = "black";
         ctx.fillStyle = "lightgray";
         ctx.globalAlpha = 1;
-        if (this === cars[0])
-            ctx.fillRect(-this.w/2, -this.l/2, this.w, this.l)
+        ctx.fillRect(-this.w/2, -this.l/2, this.w, this.l)
         ctx.strokeRect(-this.w/2, -this.l/2, this.w, this.l)
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.lineTo(0, this.l/2);
         ctx.stroke();
 
-        if (showPath)
-        {
-            ctx.strokeStyle = "black";
-            ctx.globalAlpha = 0.3;
-            ctx.beginPath();
-            var ds = this.stop_distance;
-            var rads = ds / Math.abs(this.rc);
-
-            if (Math.abs(this.turn) < 0.001)
-            {
-                ctx.moveTo(0, 0);
-                ctx.lineTo(0, ds);
-            }
-            else if (this.turn > 0)
-                ctx.arc(this.rc, 0, this.rc, Math.PI - rads, Math.PI);
-            else if (this.turn < 0)
-                ctx.arc(this.rc, 0, -this.rc, 0, rads);
-            ctx.stroke();
-        }
-        if (showBounding)
-        {
-            var cush = 5;
-            ctx.strokeStyle = "black";
-            ctx.globalAlpha = 0.2;
-            var ds = this.stop_distance;
-            var cs = 0.5 * this.l + cush;
-            var ds_r = ds / Math.abs(this.rc);
-            var cs_r = cs / Math.abs(this.rc);
-
-            if (Math.abs(this.turn) < 0.001)
-            {
-                ctx.beginPath();
-                ctx.moveTo(this.w/2 + cush, -this.l/2 - cush);
-                ctx.lineTo(this.w/2 + cush, this.l/2 + cush + ds);
-                ctx.lineTo(-this.w/2 - cush, this.l/2 + cush + ds);
-                ctx.lineTo(-this.w/2 - cush, -this.l/2 - cush);
-                ctx.lineTo(this.w/2 + cush, -this.l/2 - cush);
-                ctx.stroke();
-            }
-            else if (this.turn > 0)
-            {
-                ctx.beginPath();
-                ctx.arc(this.rc, 0, Math.max(0, this.rc - this.w/2 - cush),
-                  Math.PI, Math.PI - ds_r - cs_r, true);
-                ctx.arc(this.rc, 0, this.rc + this.w/2 + cush,
-                  Math.PI - ds_r - cs_r, Math.PI + cs_r, false);
-                ctx.arc(this.rc, 0, Math.max(0, this.rc - this.w/2 - cush),
-                  Math.PI + cs_r, Math.PI, true);
-                ctx.stroke();
-            }
-            else if (this.turn < 0)
-            {
-                ctx.beginPath();
-                ctx.arc(this.rc, 0, Math.max(0, -this.rc - this.w/2 - cush),
-                  0, ds_r + cs_r, false);
-                ctx.arc(this.rc, 0, -this.rc + this.w/2 + cush,
-                  ds_r + cs_r, -cs_r, true);
-                ctx.arc(this.rc, 0, Math.max(0, -this.rc - this.w/2 - cush),
-                  -cs_r, 0, false);
-                ctx.stroke();
-            }
-        }
-        if (showRadius)
-        {
-            ctx.globalAlpha = 0.1;
-            ctx.strokeStyle = "black";
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(this.rc, 0);
-            ctx.stroke();
-        }
-        if (showVelocity)
-        {
-            ctx.globalAlpha = 0.3;
-            ctx.strokeStyle = "blue";
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(0, this.v);
-            ctx.stroke();
-        }
-        if (showAccel)
-        {
-            ctx.globalAlpha = 0.3;
-            ctx.strokeStyle = "orange";
-            ctx.beginPath();
-            ctx.moveTo(0, this.a);
-            ctx.lineTo(0, 0);
-            ctx.lineTo(Math.pow(this.v, 2)/this.rc, 0);
-            ctx.stroke();
-        }
-        // if (true)
-        // {
-        //     ctx.globalAlpha = 0.3;
-        //     ctx.strokeStyle = "gray";
-        //     ctx.beginPath();
-        //     ctx.arc(0, 0, this.collision_radius, 0, Math.PI*2);
-        //     ctx.stroke();
-        //     ctx.beginPath();
-        //     ctx.arc(0, 0, this.stop_distance, 0, Math.PI*2);
-        //     ctx.stroke();
-        // }
+        ctx.save();
+        ctx.translate(0, -this.l/2 - 5);
+        ctx.rotate(this.trailer_angle)
+        ctx.strokeStyle = "black";
+        ctx.fillStyle = "lightgray";
+        ctx.globalAlpha = 1;
+        ctx.fillRect(-this.w/2, -this.trailer_length, this.w, this.trailer_length)
+        ctx.strokeRect(-this.w/2, -this.trailer_length, this.w, this.trailer_length)
+        ctx.restore();
+        // ctx.strokeRect(-this.w/2, this.trailer_angle, this.w, 0)
 
         ctx.rotate(-this.turn);
         // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE
@@ -422,6 +221,7 @@ class Car
         this.heading = [Math.sin(this.theta), Math.cos(this.theta)];
 
         this.forces = [];
+        this.trailer_angle += (this.turn - this.trailer_angle) * dt * 4;
     }
 }
 
@@ -435,6 +235,30 @@ function draw()
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         requestAnimationFrame(draw);
 
+        ctx.fillStyle = "black";
+        ctx.globalAlpha = 1;
+        ctx.font = "36px Cambria Bold";
+        ctx.fillText("Traffic Simulator 2022", 30, 50);
+        ctx.font = "18px Cambria";
+        let th = 60;
+        let dh = 25;
+        ctx.fillText("Apologies; this is dumb right now.", 30, th += dh);
+        ctx.fillText("Efforts are underway to make this less dumb.", 30, th += dh);
+        ctx.fillText("In the meantime, enjoy this fun car driving around.", 30, th += dh);
+        ctx.fillText("Look at him go, dude!", 30, th += dh);
+
+
+        if (LAST_MOUSE_POSITION)
+        {
+            ctx.save();
+            ctx.globalAlpha = 0.6;
+            ctx.strokeStyle = "black";
+            ctx.beginPath();
+            ctx.arc(LAST_MOUSE_POSITION[0], LAST_MOUSE_POSITION[1], 5, 0, Math.PI*2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
         for (var c in cars)
         {
             cars[c].draw(canvas);
@@ -444,50 +268,20 @@ function draw()
             var dy = cars[c].y - canvas.height/2;
             var des_x = cars[c].r*Math.cos(Math.atan2(dy, dx))*30 + canvas.width/2;
             var des_y = cars[c].r*Math.sin(Math.atan2(dy, dx))*30 + canvas.height/2;
-            if (orbitCursor)
-            {
-                cars[c].seekVel(-dy, dx);
-                cars[c].arrive(des_x, des_y);
-            }
 
-            if (seekCursor) cars[c].arrive(canvas.width/2, canvas.height/2);
-            if (avoidCars) cars[c].avoid(cars);
-            if (followLeader)
+            if (seekCursor && LAST_MOUSE_POSITION)
             {
-                if (c == 0 && follow)
-                {
-                    cars[c].arrive(canvas.width/2, canvas.height/2);
-                }
-                else if (c == 0)
-                {
-                    cars[c].arrive(cars[cars.length - 1].x,
-                                   cars[cars.length - 1].y);
-                }
-                else
-                    cars[c].arrive(cars[c-1].x, cars[c-1].y);
+                cars[c].arrive(LAST_MOUSE_POSITION[0], LAST_MOUSE_POSITION[1]);
             }
-            if (allStop) cars[c].stop();
         }
-
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = "red";
-        ctx.beginPath();
-        ctx.arc(canvas.width/2 + shiftx, canvas.height/2 + shifty, 2, 0, Math.PI*2);
-        ctx.fill();
 
     }, 1000/fps);
 }
 
 canvas.onmousemove = function(e)
 {
-    var rect = canvas.getBoundingClientRect();
-    if (moving)
-    {
-        deltax = e.clientX - rect.left - initx;
-        deltay = e.clientY - rect.top - inity;
-        shiftx = old_sx + deltax;
-        shifty = old_sy + deltay;
-    }
+    let box = canvas.getBoundingClientRect();
+    LAST_MOUSE_POSITION = [event.clientX - box.left, event.clientY - box.top];
 }
 
 canvas.onmousedown = function(e)
@@ -516,19 +310,7 @@ canvas.onmouseup = function(e)
     }
 }
 
-canvas.addEventListener("click", function(e)
-{
-    follow = !follow;
-    var rect = canvas.getBoundingClientRect();
-}, false);
-
-canvas.addEventListener("mousescroll", function(e)
-{
-    follow = !follow;
-    var rect = canvas.getBoundingClientRect();
-}, false);
-
-for (var i = 0; i < 50; ++i)
+for (var i = 0; i < 1; ++i)
 {
     cars.push(new Car(Math.random()*canvas.width,
                       Math.random()*canvas.height,
