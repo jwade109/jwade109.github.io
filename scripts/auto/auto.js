@@ -1,16 +1,8 @@
-showVelocity = false;
-showAccel = false;
-showDesired = false;
-showPath = false;
-showBounding = false;
-showRadius = false;
-seekCursor = true;
-avoidCars = true;
+
 LAST_MOUSE_POSITION = null;
 
-meters = 9; // pixels per meter
-feet = meters/3.28084; // pixels per foot
-mph = meters/2.23694; // pixels/s per mph
+PIXELS_PER_METER = 9; // pixels per meter
+PPS_PER_MPH = PIXELS_PER_METER/2.23694; // pixels/s per mph
 
 var cars = [];
 
@@ -33,26 +25,27 @@ class Car
         this.x = x;
         this.y = y;
         this.theta = theta;
+        this.history = [[], [], [], []]
 
-        this.w = 2 * meters;
-        this.l = 4 * meters;
+        this.w = 4 * PIXELS_PER_METER;
+        this.l = 10 * PIXELS_PER_METER;
         this.v = 0;
         this.omega = 0;
         this.turn = 0;
         this.turn_rate = 0.5;
         this.target_turn = 0;
+        this.wheel_angle = 0;
         this.a = 0;
-        this.maxdecel = 80*mph;
-        this.maxaccel = 12*meters;
+        this.maxdecel = 80 * PPS_PER_MPH;
+        this.maxaccel = 12 * PIXELS_PER_METER;
         this.maxvel = Infinity; // 80*mph;
 
-        this.trailer_length = 8 * meters;
+        this.trailer_length = 20 * PIXELS_PER_METER;
         this.trailer_angle = 0;
 
         this.velocity = [0, 0];
 
-        this.rc = 0;
-        this.collision_radius = 5*meters;
+        this.collision_radius = 5*PIXELS_PER_METER;
 
         this.forces = [];
         this.heading = [Math.sin(this.theta), Math.cos(this.theta)];
@@ -61,125 +54,77 @@ class Car
     draw(canvas)
     {
         var ctx = canvas.getContext("2d");
+
         ctx.save(); // save global reference frame
+
+        ctx.strokeStyle = "black";
+        ctx.fillStyle = "black";
+        ctx.lineWidth = 7;
+
+        for (let i = 0; i < 4; ++i)
+        {
+            let alphas = [];
+            for (let j = 0; j < this.history[i].length; ++j)
+            {
+                let a = 0.5 * j / this.history[i].length;
+                alphas.push(a);
+            }
+            draw_line_list(ctx, this.history[i], alphas);
+        }
+
+        ctx.globalAlpha = 1;
+        ctx.lineWidth = 2;
 
         ctx.translate(shiftx, shifty);
 
         ctx.translate(this.x, this.y);
         ctx.rotate(-this.theta)
-        ctx.lineWidth = 2;
         // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE FRAME
 
-        ctx.strokeStyle = "black";
-        ctx.fillStyle = "lightgray";
-        ctx.globalAlpha = 1;
-        ctx.fillRect(-this.w/2, -this.l/2, this.w, this.l)
-        ctx.strokeRect(-this.w/2, -this.l/2, this.w, this.l)
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(0, this.l/2);
-        ctx.stroke();
-
-        ctx.save();
-        ctx.translate(0, -this.l/2 - 5);
-        ctx.rotate(this.trailer_angle)
-        ctx.strokeStyle = "black";
-        ctx.fillStyle = "lightgray";
-        ctx.globalAlpha = 1;
-        ctx.fillRect(-this.w/2, -this.trailer_length, this.w, this.trailer_length)
-        ctx.strokeRect(-this.w/2, -this.trailer_length, this.w, this.trailer_length)
-        ctx.restore();
+        // ctx.save();
+        // ctx.translate(0, -this.l/2 - 5);
+        // ctx.rotate(this.trailer_angle)
+        // ctx.strokeRect(-this.w/2, -this.trailer_length, this.w, this.trailer_length)
+        // ctx.restore();
         // ctx.strokeRect(-this.w/2, this.trailer_angle, this.w, 0)
 
-        ctx.rotate(-this.turn);
-        // EVERYTHING BELOW DRAWN IN VEHICLE REFERENCE
-        // FRAME, ROTATED BY THE TURNING ANGLE
+        function draw_wheel(car, x, y, is_front)
+        {
+            ctx.save();
+            ctx.translate(x, y);
+            if (is_front)
+            {
+                ctx.rotate(-car.wheel_angle/2.3);
+            }
+            const w = car.w/4;
+            const l = car.l/4;
 
-        ctx.globalAlpha = 1;
-        ctx.strokeStyle = "black";
-        ctx.beginPath();
-        ctx.moveTo(0, -this.w/2);
-        ctx.lineTo(0, this.w/2);
-        ctx.stroke();
+            ctx.fillRect(-w/2, -l/2, w, l)
+            ctx.restore();
+        }
+
+        ctx.fillStyle = "black";
+        draw_wheel(this,  this.w/2,  this.l/2.7, true);
+        draw_wheel(this, -this.w/2,  this.l/2.7, true);
+        draw_wheel(this,  this.w/2, -this.l/2.7, false);
+        draw_wheel(this, -this.w/2, -this.l/2.7, false);
+
+        ctx.fillStyle = "white";
+        ctx.fillRect(-this.w/2, -this.l/2, this.w, this.l)
+        ctx.strokeRect(-this.w/2, -this.l/2, this.w, this.l)
+        ctx.strokeRect(-this.w/2.6, -this.l*0.3, this.w/1.3, this.l*0.4)
+        ctx.strokeRect(-this.w/2.6, -this.l*0.4, this.w/1.3, this.l*0.7)
+        // ctx.strokeRect(-this.w/2.6, this.l*0.1, this.w/1.3, this.l*0.2)
+        // ctx.strokeRect(-this.w/2.6, -this.l*0.4, this.w/1.3, this.l*0.1)
 
         ctx.restore();
-    }
-
-    seekVel(vx, vy)
-    {
-        this.forces.push([vx, vy]);
-    }
-
-    seekBodyVel(vn, vt)
-    {
-        var vx = vt*Math.sin(this.theta) - vn*Math.cos(this.theta);
-        var vy = vt*Math.cos(this.theta) + vn*Math.sin(this.theta);
-        this.forces.push([vx, vy]);
     }
 
     arrive(px, py)
     {
         if (Math.abs(px - this.x) > this.w ||
             Math.abs(py - this.y) > this.w)
-            this.seekVel(px - this.x, py - this.y);
-    }
-
-    stop()
-    {
-        this.forces = [];
-    }
-
-    avoid(cars)
-    {
-        // var sx = 0;
-        // var sy = 0;
-        // var x = this.x;
-        // var y = this.y;
-        // var count = 0;
-        // for (var c in cars)
-        // {
-        //     var dx = x - cars[c].x;
-        //     var dy = y - cars[c].y;
-        //     var ds = Math.sqrt(dx*dx + dy*dy);
-        //     if (ds < 100 && ds > 0)
-        //     {
-        //         sx += 40*dx/(ds*ds);
-        //         sy += 40*dy/(ds*ds);
-        //         ++count;
-        //     }
-        // }
-        // this.seekVel(30*sx, 30*sy);
-
-        var desired = [0, 0];
-        for (var f in this.forces)
-        {
-            desired[0] += this.forces[f][0];
-            desired[1] += this.forces[f][1];
-        }
-
-        var sigmoid = function(x, r)
-        {
-            return -(1/Math.PI) * Math.atan(1*(x - r)) + 0.5;
-        }
-
-        for (var c in cars)
-        {
-            var separation = [cars[c].x - this.x, cars[c].y - this.y];
-            if (norm2d(separation) <= 0) continue;
-            var other = cars[c].velocity;
-            var scaleDist = sigmoid(norm2d(separation), cars[c].collision_radius);
-            var scaleCollide = Math.max(0, scaleDist*(cars[c].collision_radius - norm2d(separation)));
-            var scaleDesire = Math.max(0, scaleDist*dot2d(desired, unit2d(separation)));
-            var scaleVel = Math.max(0, sigmoid(norm2d(separation),
-                Math.max(1.5*this.stop_distance, cars[c].collision_radius))*dot2d(this.velocity, unit2d(separation)));
-
-            var collisionAvoid = mult2d(unit2d(separation), -scaleCollide);
-            this.forces.push(collisionAvoid);
-            var desireAvoid = mult2d(unit2d(separation), -scaleDesire);
-            this.forces.push(desireAvoid);
-            var velocityAvoid = mult2d(unit2d(separation), -scaleVel);
-            this.forces.push(velocityAvoid);
-        }
+            this.forces.push([px - this.x, py - this.y]);
     }
 
     steer(command)
@@ -197,6 +142,25 @@ class Car
 
     step(dt)
     {
+        let wheels = [
+            [ this.w/2,  this.l/2.7],
+            [-this.w/2,  this.l/2.7],
+            [ this.w/2, -this.l/2.7],
+            [-this.w/2, -this.l/2.7]
+        ];
+
+        for (let i = 0; i < 4; ++i)
+        {
+            let u = wheels[i].slice();
+            u = add2d(rot2d(u, this.theta), [this.x, this.y]);
+            this.history[i].push(u);
+            const n = 600;
+            if (this.history[i].length > n)
+            {
+                this.history[i] = this.history[i].slice(-n);
+            }
+        }
+
         var tvx = 0, tvy = 0;
         for (var f in this.forces)
         {
@@ -216,13 +180,50 @@ class Car
 
         this.velocity = [this.v*Math.sin(this.theta), this.v*Math.cos(this.theta)];
 
-        this.rc = this.l/Math.tan(this.turn);
-        this.stop_distance = Math.pow(this.v, 2)/(2*this.maxdecel);
         this.heading = [Math.sin(this.theta), Math.cos(this.theta)];
 
         this.forces = [];
         this.trailer_angle += (this.turn - this.trailer_angle) * dt * 4;
+
+        const dot = dot2d(this.velocity, this.heading);
+        const signed_turn = dot < 0 ? -this.turn : this.turn;
+        this.wheel_angle += (signed_turn - this.wheel_angle) * dt * 4;
     }
+}
+
+function draw_line_list(ctx, points, alphas=[])
+{
+    if (points.length < 2)
+    {
+        return;
+    }
+
+    ctx.save();
+    if (alphas)
+    {
+        for (let i = 0; i < points.length - 1; ++i)
+        {
+            let p = points[i];
+            let q = points[i+1];
+            let a = alphas[i];
+            ctx.globalAlpha = a;
+            ctx.beginPath();
+            ctx.moveTo(p[0], p[1]);
+            ctx.lineTo(q[0], q[1]);
+            ctx.stroke();
+        }
+    }
+    else
+    {
+        ctx.beginPath();
+        ctx.moveTo(points[0][0], points[0][1]);
+        for (let i = 1; i < points.length; ++i)
+        {
+            ctx.lineTo(points[i][0], points[i][1]);
+        }
+        ctx.stroke();
+    }
+    ctx.restore();
 }
 
 function draw()
@@ -269,7 +270,7 @@ function draw()
             var des_x = cars[c].r*Math.cos(Math.atan2(dy, dx))*30 + canvas.width/2;
             var des_y = cars[c].r*Math.sin(Math.atan2(dy, dx))*30 + canvas.height/2;
 
-            if (seekCursor && LAST_MOUSE_POSITION)
+            if (LAST_MOUSE_POSITION)
             {
                 cars[c].arrive(LAST_MOUSE_POSITION[0], LAST_MOUSE_POSITION[1]);
             }
