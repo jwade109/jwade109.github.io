@@ -191,6 +191,13 @@ class Car
     }
 }
 
+function get_path_plan(start, end, start_dir=[0, 0], end_dir=[])
+{
+    const d = distance(start, end);
+    const middle = add2d(start, mult2d(start_dir, d));
+    return new BezierCurve([start.slice(), middle, end.slice()]);
+}
+
 function draw_line_list(ctx, points, alphas=[])
 {
     if (points.length < 2)
@@ -272,7 +279,11 @@ function draw()
 
             if (LAST_MOUSE_POSITION)
             {
-                cars[c].arrive(LAST_MOUSE_POSITION[0], LAST_MOUSE_POSITION[1]);
+                let spline = get_path_plan([cars[c].x, cars[c].y], LAST_MOUSE_POSITION, cars[c].heading);
+                spline.render(ctx);
+                let seek = spline.evaluate(0.5);
+                render2d(seek, ctx);
+                cars[c].arrive(seek[0], seek[1]);
             }
         }
 
