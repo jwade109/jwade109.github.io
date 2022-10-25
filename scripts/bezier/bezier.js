@@ -41,17 +41,36 @@ function n_choose_k(n, k)
     return factorial(n) / (factorial(k) * factorial(n - k));
 }
 
+function b_i_n(i, n, t)
+{
+    return n_choose_k(n, i) * Math.pow((1 - t), n - i) * Math.pow(t, i)
+}
+
 BezierCurve.prototype.evaluate = function(t)
 {
-    let sum = [0, 0]
+    let sum = [0, 0];
     let n = this.handles.length - 1;
     for (let i = 0; i <= n; i++)
     {
-        const scalar = n_choose_k(n, i) * Math.pow((1 - t), n - i) * Math.pow(t, i);
+        const scalar = b_i_n(i, n, t);
         const vector = this.handles[i];
         sum = add2d(sum, mult2d(vector, scalar));
     }
     return sum;
+}
+
+BezierCurve.prototype.derivative = function(t)
+{
+    let sum = [0, 0];
+    let n = this.handles.length - 1;
+    for (let i = 0; i < n; i++)
+    {
+        const scalar = b_i_n(i, n - 1, t);
+        const p = this.handles[i];
+        const q = this.handles[i+1];
+        sum = add2d(sum, mult2d(sub2d(q, p), scalar));
+    }
+    return mult2d(sum, n);
 }
 
 BezierCurve.prototype.nearestHandle = function(pos)

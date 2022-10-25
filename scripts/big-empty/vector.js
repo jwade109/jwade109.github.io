@@ -166,6 +166,37 @@ function render2d(v, ctx, radius=5, fill_style="black")
     ctx.restore();
 }
 
+function renderv2d(c, v, ctx, width=2, style="black")
+{
+    const d = mag2d(v);
+    if (d <= 0)
+    {
+        return;
+    }
+
+    const t = add2d(v, c);
+    const u = mult2d(unit2d(v), Math.min(13, d/10));
+    const m = sub2d(t, mult2d(u, 0.5));
+    const b = sub2d(t, u);
+    const l = add2d(sub2d(t, u), rot2d(u,  Math.PI/1.4));
+    const r = add2d(sub2d(t, u), rot2d(u, -Math.PI/1.4));
+
+    ctx.save();
+    ctx.strokeStyle = style;
+    ctx.fillStyle = style;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(c[0], c[1]);
+    ctx.lineTo(m[0], m[1]);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(r[0], r[1]);
+    ctx.lineTo(l[0], l[1]);
+    ctx.lineTo(t[0], t[1]);
+    ctx.fill();
+    ctx.restore();
+}
+
 function render_line(vs, ctx, width=2, stroke_style="black")
 {
     ctx.save();
@@ -317,4 +348,39 @@ function rotate_about(lines, center, angle)
         }
     }
     return ret;
+}
+
+function draw_line_list(ctx, points, alphas=[])
+{
+    if (points.length < 2)
+    {
+        return;
+    }
+
+    ctx.save();
+    if (alphas)
+    {
+        for (let i = 0; i < points.length - 1; ++i)
+        {
+            let p = points[i];
+            let q = points[i+1];
+            let a = alphas[i];
+            ctx.globalAlpha = a;
+            ctx.beginPath();
+            ctx.moveTo(p[0], p[1]);
+            ctx.lineTo(q[0], q[1]);
+            ctx.stroke();
+        }
+    }
+    else
+    {
+        ctx.beginPath();
+        ctx.moveTo(points[0][0], points[0][1]);
+        for (let i = 1; i < points.length; ++i)
+        {
+            ctx.lineTo(points[i][0], points[i][1]);
+        }
+        ctx.stroke();
+    }
+    ctx.restore();
 }
