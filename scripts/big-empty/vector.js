@@ -1,3 +1,20 @@
+
+
+function clamp(x, min, max)
+{
+    if (x > max) return max;
+    if (x < min) return min;
+    return x;
+}
+
+function clamp2d(x, min, max)
+{
+    let ret = x.slice();
+    ret[0] = clamp(x[0], min[0], max[0]);
+    ret[1] = clamp(x[1], min[1], max[1]);
+    return ret;
+}
+
 // dot product of u and v
 function dot2d(u, v)
 {
@@ -83,6 +100,11 @@ function mult2d(u, k)
 // returns u divided by k
 function div2d(u, k)
 {
+    if (k == 0)
+    {
+        console.log("Divide by zero:", u);
+        return [0, 0];
+    }
     return mult2d(u, 1/k);
 }
 
@@ -156,8 +178,20 @@ function lerp2d(a, b, t)
     return add2d(a, mult2d(sub2d(b, a), t));
 }
 
-function render2d(v, ctx, radius=5, fill_style="black")
+function render2d(v, ctx, radius=5, fill_style="black", alpha=1)
 {
+    if (radius < 0)
+    {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = fill_style;
+        ctx.beginPath();
+        ctx.arc(v[0], v[1], -radius, 0, Math.PI*2);
+        ctx.stroke();
+        ctx.restore();
+        return;
+    }
+
     ctx.save();
     ctx.beginPath();
     ctx.fillStyle = fill_style;

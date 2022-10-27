@@ -12,13 +12,6 @@ canvas.height = document.body.clientHeight;
 
 const CAR_TURN_RATE = 0.5;
 
-function clamp(x, min, max)
-{
-    if (x > max) return max;
-    if (x < min) return min;
-    return x;
-}
-
 class Car
 {
     constructor(x, y, theta)
@@ -60,7 +53,7 @@ class Car
             let alphas = [];
             for (let j = 0; j < this.history[i].length; ++j)
             {
-                let a = 0.5 * j / this.history[i].length;
+                let a = 0.3 * j / this.history[i].length;
                 alphas.push(a);
             }
             draw_line_list(ctx, this.history[i], alphas);
@@ -171,10 +164,27 @@ class Car
     }
 }
 
-function get_path_plan(start, end, start_dir=[0, 0], end_dir=[0, 0])
+function get_path_plan(start, end, start_dir=[0, 0])
 {
     const d = distance(start, end);
     const middle = add2d(start, mult2d(start_dir, d));
+
+    const u = unit2d(sub2d(end, start));
+    const dot = dot2d(u, start_dir);
+    if (dot < -0.3)
+    {
+        const o1 = mult2d(rot2d(u, Math.PI / 2), Math.max(d, 200));
+        const o2 = mult2d(rot2d(u, Math.PI / 2), -Math.max(d, 200));
+        const m2 = add2d(middle, o1);
+        const m3 = add2d(middle, o2);
+        const b1 = new BezierCurve([start.slice(), middle, m2, end.slice()]);
+        const b2 = new BezierCurve([start.slice(), middle, m3, end.slice()]);
+        if (b1.simple_length() < b2.simple_length())
+        {
+            return b2;
+        }
+        return b1;
+    }
     return new BezierCurve([start.slice(), middle, end.slice()]);
 }
 
@@ -214,13 +224,7 @@ function draw()
 
         if (LAST_MOUSE_POSITION)
         {
-            ctx.save();
-            ctx.globalAlpha = 0.6;
-            ctx.strokeStyle = "black";
-            ctx.beginPath();
-            ctx.arc(LAST_MOUSE_POSITION[0], LAST_MOUSE_POSITION[1], 5, 0, Math.PI*2);
-            ctx.stroke();
-            ctx.restore();
+            render2d(LAST_MOUSE_POSITION, ctx, -5, "grey", 0.6);
         }
 
         let input = [0, 0];
@@ -235,7 +239,24 @@ function draw()
                 const center = [canvas.width/2, canvas.height/2];
                 input = sub2d(LAST_MOUSE_POSITION, center);
 
-                renderv2d(center, input, ctx, 2, "red");
+                const spline = get_path_plan(cars[c].pos, LAST_MOUSE_POSITION, cars[c].pointing_x());
+                spline.render(ctx);
+
+                let spline_normal = unit2d(spline.curvature(0));
+                let spline_length = spline.simple_length();
+
+                input[0] = 2.5 * 0.5 * canvas.width * dot2d(spline_normal, cars[c].pointing_y());
+                input[1] = -Math.min(spline_length, canvas.height / 2) * 0.9;
+
+                if (mag2d(sub2d(LAST_MOUSE_POSITION, cars[c].pos)) < 60)
+                {
+                    input = [0, 0];
+                }
+
+                input = clamp2d(input, [-canvas.width/2, -canvas.height/2],
+                                       [ canvas.width/2,  canvas.height/2])
+
+                render2d(add2d(center, input), ctx, -5, "red");
                 renderv2d(center, [0, input[1]], ctx, 2, "black");
                 renderv2d(center, [input[0], 0], ctx, 2, "black");
 
@@ -246,7 +267,6 @@ function draw()
                 cars[c].target_v          = -input[1] * k2;
 
                 const ss_repr = add2d([-cars[c].turn_angle / k1, -cars[c].v / k2], center);
-                console.log(ss_repr);
                 render2d(ss_repr, ctx, 3, "grey");
             }
 
@@ -267,7 +287,6 @@ function draw()
             ctx.textBaseline = "middle";
             ctx.globalAlpha = map_01(axis, sign) * 0.7 + 0.3;
             const size = map_01(axis, sign) * 40 + 15;
-            console.log(size);
             ctx.font = "bold " + size + "px Helvetica";
             ctx.fillText(text, x, y);
         }

@@ -73,6 +73,33 @@ BezierCurve.prototype.derivative = function(t)
     return mult2d(sum, n);
 }
 
+BezierCurve.prototype.curvature = function(t)
+{
+    // 2nd derivative
+    let sum = [0, 0];
+    let n = this.handles.length - 1;
+    for (let i = 0; i < n - 1; i++)
+    {
+        const scalar = b_i_n(i, n - 2, t);
+        const p = this.handles[i];
+        const q = this.handles[i+1];
+        const r = this.handles[i+2];
+        const vec = add2d(add2d(r, mult2d(q, -2)), p);
+        sum = add2d(sum, mult2d(vec, scalar));
+    }
+    return mult2d(sum, n*(n - 1));
+}
+
+BezierCurve.prototype.simple_length = function()
+{
+    let sum = 0;
+    for (let i = 0; i + 1 < this.handles.length; ++i)
+    {
+        sum += mag2d(sub2d(this.handles[i+1], this.handles[i]));
+    }
+    return sum;
+}
+
 BezierCurve.prototype.nearestHandle = function(pos)
 {
     return nearest_point(this.handles, pos);
