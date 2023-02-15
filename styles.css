@@ -212,3 +212,12 @@ img.inline
     margin: 40px 0 20px 0;
     padding-bottom: 30px;
 }
+
+/* resume */
+
+faded
+{
+  font-weight: normal;
+  color: #c8c8c8;
+  font-style: italic;
+}
