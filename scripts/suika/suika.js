@@ -9,7 +9,11 @@ let LAST_MOUSE_POSITION = null;
 let PAUSED = false;
 let STEPS = 0;
 
+let MOUSEDOWN_AT = []
 let VELOCITY_RENDER_SCALE = 0.5;
+
+let ACCELERATION_DUE_TO_GRAVITY = 300;
+let COEFFICIENT_OF_RESTITUTION = 0.98;
 
 function AABB(u, v)
 {
@@ -37,13 +41,13 @@ AABB.prototype.draw = function(ctx)
     ctx.stroke();
 }
 
-function Ball(id, pos, radius)
+function Ball(id, pos, vel, radius)
 {
     this.id = id;
     this.pos = pos;
-    this.vel = [Math.random() * 700 - 350, Math.random() * 700 - 350];
+    this.vel = vel;
     this.radius = radius;
-    this.mass = radius * radius;
+    this.mass = radius;
     this.accels = [];
 }
 
@@ -51,24 +55,35 @@ Ball.prototype.draw = function(ctx)
 {
     ctx.globalAlpha = 1;
     ctx.strokeStyle = "black";
+    ctx.fillStyle = "black";
     ctx.lineWidth = 3;
 
     ctx.beginPath();
     ctx.arc(this.pos[0], this.pos[1], this.radius, 0, 2 * Math.PI);
-    ctx.stroke();
 
-    let v = add2d(this.pos, mult2d(this.vel, VELOCITY_RENDER_SCALE));
+    if (!PAUSED)
+    {
+        ctx.fill();
+    }
+    else
+    {
+        ctx.stroke();
+    }
 
-    ctx.globalAlpha = 0.5;
-    ctx.strokeStyle = "green";
-    ctx.lineWidth = 1;
+    if (PAUSED)
+    {
+        ctx.globalAlpha = 0.5;
+        ctx.strokeStyle = "green";
+        ctx.lineWidth = 1;
 
-    ctx.beginPath();
-    ctx.moveTo(this.pos[0], this.pos[1]);
-    ctx.lineTo(v[0], v[1]);
-    ctx.stroke();
+        let v = add2d(this.pos, mult2d(this.vel, VELOCITY_RENDER_SCALE));
+        ctx.beginPath();
+        ctx.moveTo(this.pos[0], this.pos[1]);
+        ctx.lineTo(v[0], v[1]);
+        ctx.stroke();
 
-    this.aabb().draw(ctx);
+        this.aabb().draw(ctx);
+    }
 }
 
 Ball.prototype.collidesBall = function(ball)
@@ -122,13 +137,18 @@ Ball.prototype.aabb = function(ball)
 
 Ball.prototype.step = function(dt)
 {
+    let delta_vel = [0, 0];
+
     for (let acc of this.accels)
     {
-        this.vel = add2d(this.vel, mult2d(acc, dt));
+        delta_vel = add2d(delta_vel, mult2d(acc, dt));
     }
-    this.accels = [];
 
+    this.vel = add2d(this.vel, mult2d(delta_vel, 0.5));
     this.pos = add2d(this.pos, mult2d(this.vel, dt));
+    this.vel = add2d(this.vel, mult2d(delta_vel, 0.5));
+
+    this.accels = [];
 }
 
 function Reflector(p1, p2)
@@ -148,7 +168,10 @@ Reflector.prototype.draw = function(ctx)
     ctx.lineTo(this.p2[0], this.p2[1]);
     ctx.stroke();
 
-    this.aabb().draw(ctx);
+    if (PAUSED)
+    {
+        this.aabb().draw(ctx);
+    }
 }
 
 Reflector.prototype.aabb = function()
@@ -165,13 +188,27 @@ function BallBallCollision(ball_a, ball_b)
     this.dot = dot2d(this.pointing, unit2d(this.relative_vel));
     this.active = this.dot > 0;
 
-    let fvela = vproj2d(this.pointing, this.ball_a.vel);
-    let fvelb = vproj2d(this.pointing, this.ball_b.vel);
-    let rvela = vrej2d(this.pointing, this.ball_a.vel);
-    let rvelb = vrej2d(this.pointing, this.ball_b.vel);
+    // https://stackoverflow.com/questions/35211114/2d-elastic-ball-collision-physics
 
-    this.new_vel_a = add2d(rvela, mult2d(fvela, -1));
-    this.new_vel_b = add2d(rvelb, mult2d(fvelb, -1));
+    let x2x1 = sub2d(this.ball_b.pos, this.ball_a.pos);
+    let x1x2 = sub2d(this.ball_a.pos, this.ball_b.pos);
+    let v2v1 = sub2d(this.ball_b.vel, this.ball_a.vel);
+    let v1v2 = sub2d(this.ball_a.vel, this.ball_b.vel);
+    let mass_sum = this.ball_a.mass + this.ball_b.mass;
+
+    let dv1 = mult2d(x1x2, dot2d(v1v2, x1x2) / normsq2d(x1x2) * 2 * this.ball_b.mass / mass_sum);
+    let dv2 = mult2d(x2x1, dot2d(v2v1, x2x1) / normsq2d(x2x1) * 2 * this.ball_a.mass / mass_sum);
+
+    this.new_vel_a = sub2d(this.ball_a.vel, mult2d(dv1, COEFFICIENT_OF_RESTITUTION));
+    this.new_vel_b = sub2d(this.ball_b.vel, mult2d(dv2, COEFFICIENT_OF_RESTITUTION));
+
+    // let fvela = vproj2d(this.pointing, this.ball_a.vel);
+    // let fvelb = vproj2d(this.pointing, this.ball_b.vel);
+    // let rvela = vrej2d(this.pointing, this.ball_a.vel);
+    // let rvelb = vrej2d(this.pointing, this.ball_b.vel);
+
+    // this.new_vel_a = add2d(rvela, mult2d(fvela, -1));
+    // this.new_vel_b = add2d(rvelb, mult2d(fvelb, -1));
 }
 
 BallBallCollision.prototype.draw = function(ctx)
@@ -210,13 +247,20 @@ function BallReflectorCollision(ball, wall, p1, p2)
     this.pointing = unit2d(sub2d(this.ball.pos, u));
     this.active = dot2d(this.pointing, this.ball.vel) < 0;
 
+    let d1 = norm2d(sub2d(this.wall.p1, this.ball.pos));
+    let d2 = norm2d(sub2d(this.wall.p2, this.ball.pos));
+
+    if (d1 < this.ball.radius)
+    {
+        this.pointing = unit2d(sub2d(this.ball.pos, this.wall.p1));
+    }
+    else if (d2 < this.ball.radius)
+    {
+        this.pointing = unit2d(sub2d(this.ball.pos, this.wall.p2));
+    }
+
     let fvel = vproj2d(this.pointing, this.ball.vel);
     let rvel = vrej2d(this.pointing, this.ball.vel);
-
-    if (norm2d(fvel) < 30)
-    {
-        fvel = mult2d(unit2d(fvel), 50);
-    }
 
     this.new_vel = add2d(rvel, mult2d(fvel, -1));
 }
@@ -259,15 +303,16 @@ function Physics(width, height)
     this.ball_ball_collisions = [];
     this.ball_wall_collisions = [];
 
-    for (let i = 0; i < 30; i++)
+    for (let i = 0; i < 200; i++)
     {
         let x = width  * Math.random();
         let y = height * Math.random();
-        let r = 30 * Math.random() + 20;
-        this.balls.push(new Ball(i, [x, y], r));
+        let vel = [Math.random() * 400 - 200, Math.random() * 400 - 200];
+        let r = 16 * Math.random() + 8;
+        this.balls.push(new Ball(i, [x, y], vel, r));
     }
 
-    for (let i = 0; i < 2; i++)
+    for (let i = 0; i < 1; i++)
     {
         let x1 = width  * Math.random();
         let y1 = height * Math.random();
@@ -277,16 +322,16 @@ function Physics(width, height)
     }
 
     this.reflectors.push(new Reflector(
-        [10, 0], [10, height]
+        [2, 0], [2, height]
     ));
     this.reflectors.push(new Reflector(
-        [width - 10, 0], [width - 10, height]
+        [width - 2, 0], [width - 2, height]
     ));
     this.reflectors.push(new Reflector(
-        [0, 10], [width, 10]
+        [0, 2], [width, 2]
     ));
     this.reflectors.push(new Reflector(
-        [0, height - 10], [width, height - 10]
+        [0, height - 2], [width, height - 2]
     ));
 }
 
@@ -300,16 +345,21 @@ Physics.prototype.draw = function(ctx)
     {
         r.draw(ctx);
     }
-    for (let c of this.ball_ball_collisions)
+
+    if (PAUSED)
     {
-        c.draw(ctx);
-    }
-    for (let c of this.ball_wall_collisions)
-    {
-        c.draw(ctx);
+        for (let c of this.ball_ball_collisions)
+        {
+            c.draw(ctx);
+        }
+        for (let c of this.ball_wall_collisions)
+        {
+            c.draw(ctx);
+        }
     }
 }
 
+// total kinetic energy of the system
 Physics.prototype.ke = function()
 {
     // assuming each ball has a mass of 1
@@ -322,7 +372,30 @@ Physics.prototype.ke = function()
     return ke;
 }
 
-const ACCELERATION_DUE_TO_GRAVITY = 0;
+// total potential energy of the system
+Physics.prototype.pe = function(gravity, height)
+{
+    // assuming each ball has a mass of 1
+    let pe = 0;
+    for (let b of this.balls)
+    {
+        pe += b.mass * (height - b.pos[1]) * gravity;
+    }
+    return pe;
+}
+
+// total momentum of the system
+Physics.prototype.p = function()
+{
+    // assuming each ball has a mass of 1
+    let p = 0;
+    for (let b of this.balls)
+    {
+        let v = norm2d(b.vel);
+        p += b.mass * v
+    }
+    return p;
+}
 
 Physics.prototype.step = function(dt)
 {
@@ -396,6 +469,45 @@ document.addEventListener('mousemove', function(event)
     LAST_MOUSE_POSITION = [event.clientX - box.left, event.clientY - box.top];
 });
 
+document.addEventListener('mousedown', function(event)
+{
+    console.log(event);
+
+    if (event.button == 0)
+    {
+        MOUSEDOWN_AT = LAST_MOUSE_POSITION.slice();
+    }
+    else if (event.button == 2)
+    {
+
+    }
+});
+
+document.addEventListener('mouseup', function(event)
+{
+    console.log(event);
+
+    if (event.button == 0)
+    {
+        let r = norm2d(sub2d(MOUSEDOWN_AT, LAST_MOUSE_POSITION));
+        r = Math.max(10, Math.min(r, 200));
+        let b = new Ball(physics.balls.length, MOUSEDOWN_AT, [0, 0], r);
+        b.vel = [0, 0];
+        physics.balls.push(b);
+    }
+    else if (event.button == 2)
+    {
+        // TODO delete nearest ball
+    }
+
+    MOUSEDOWN_AT = [];
+});
+
+canvas.oncontextmenu = function(e)
+{
+    e.preventDefault();
+};
+
 let physics = new Physics(document.body.clientWidth, document.body.clientHeight);
 
 function draw(ctx)
@@ -403,9 +515,26 @@ function draw(ctx)
     ctx.font = "36px Cambria Bold";
     ctx.fillText("Suika", 30, 50);
     ctx.font = "24px Cambria Bold";
-    ctx.fillText("KE: " + physics.ke(), 30, 100);
+
+    let ke = physics.ke();
+    let pe = physics.pe(ACCELERATION_DUE_TO_GRAVITY, ctx.canvas.height);
+
+    ctx.fillText("E: " + (ke + pe).toFixed(2), 30, 100);
+    ctx.fillText("KE: " + ke.toFixed(2), 30, 140);
+    ctx.fillText("PE: " + pe.toFixed(2), 30, 180);
+    ctx.fillText("p: " + physics.p().toFixed(2), 30, 220);
+    ctx.fillText("g (ud): " + ACCELERATION_DUE_TO_GRAVITY.toFixed(2), 30, 260);
+    ctx.fillText("e (lr): " + COEFFICIENT_OF_RESTITUTION.toFixed(2), 30, 300);
 
     physics.draw(ctx);
+
+    if (MOUSEDOWN_AT.length)
+    {
+        let r = norm2d(sub2d(MOUSEDOWN_AT, LAST_MOUSE_POSITION));
+        r = Math.max(10, Math.min(r, 200));
+        let b = new Ball(0, MOUSEDOWN_AT, [0, 0], r);
+        b.draw(ctx);
+    }
 }
 
 function update(previous, now, frame_number)
@@ -453,6 +582,29 @@ document.addEventListener('keypress', function(event)
     {
         console.log(STEPS);
         STEPS += 1;
+    }
+});
+
+document.addEventListener('keydown', function(event)
+{
+    console.log(event);
+    if (event.code == "ArrowUp")
+    {
+        ACCELERATION_DUE_TO_GRAVITY -= 50;
+    }
+    if (event.code == "ArrowDown")
+    {
+        ACCELERATION_DUE_TO_GRAVITY += 50;
+    }
+    if (event.code == "ArrowLeft")
+    {
+        COEFFICIENT_OF_RESTITUTION -= 0.01;
+        COEFFICIENT_OF_RESTITUTION = Math.max(0.05, COEFFICIENT_OF_RESTITUTION);
+    }
+    if (event.code == "ArrowRight")
+    {
+        COEFFICIENT_OF_RESTITUTION += 0.01;
+        COEFFICIENT_OF_RESTITUTION = Math.min(1.02, COEFFICIENT_OF_RESTITUTION);
     }
 });
 

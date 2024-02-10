@@ -46,10 +46,16 @@ function angle2d(u, v)
     return Math.atan(dot2d(u, v), det2d(u, v));
 }
 
+// gets the norm squared of a vector
+function normsq2d(u)
+{
+    return dot2d(u, u);
+}
+
 // gets the norm of a vector
 function norm2d(u)
 {
-    return Math.sqrt(dot2d(u, u));
+    return Math.sqrt(normsq2d(u));
 }
 
 // scalar projection of b onto a
