@@ -60,12 +60,14 @@ canvas.oncontextmenu = function(e)
 let physics = new Physics(document.body.clientWidth, document.body.clientHeight);
 let clothoid = new Clothoid([200, 150], [1000, 600], 0.01, 0.03);
 let train = new Train();
+let train2 = new Train();
 
 function draw(ctx)
 {
     physics.draw(ctx);
     // clothoid.draw(ctx);
     train.draw(ctx);
+    train2.draw(ctx);
 
     ctx.beginPath();
     ctx.arc(LAST_MOUSE_POSITION[0], LAST_MOUSE_POSITION[1], 8, 0, 2 * Math.PI);
@@ -89,7 +91,15 @@ function update(previous, now, frame_number)
         train.cars[train.cars.length - 1].moveTowards(LAST_MOUSE_POSITION, undefined);
     }
 
+    train2.cars[train2.cars.length - 1].moveTowards(
+        [
+            ctx.canvas.width/2 + Math.cos(new Date().getTime() / 1000) * 700,
+            ctx.canvas.height/2 + Math.sin(new Date().getTime() / 1000) * 300
+        ]
+    );
+
     train.step(NOMINAL_DT);
+    train2.step(NOMINAL_DT);
 
     ctx.save();
     draw(ctx);

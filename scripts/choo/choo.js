@@ -94,7 +94,7 @@ function Train(cars)
 
     // TODO
     this.cars = [];
-    for (let i = 0; i < 45; ++i)
+    for (let i = 0; i < Math.random() * 70 + 20; ++i)
     {
         let x = Math.random() * 900 + 200;
         let y = Math.random() * 600 + 100;
