@@ -27,6 +27,12 @@ function det2d(u, v)
     return u[0]*v[1] - u[1]*v[0];
 }
 
+function cross2d(u, v)
+{
+    let res = cross3d([u[0], u[1], 0], [v[0], v[1], 0]);
+    return res[2];
+}
+
 function cross3d(u, v)
 {
     return [u[1]*v[2] - u[2]*v[1],
@@ -177,6 +183,11 @@ function mag2d(v)
 function magsq2d(v)
 {
     return v[0]*v[0] + v[1]*v[1];
+}
+
+function lerp(a, b, t)
+{
+    return a + (b - a) * t;
 }
 
 function lerp2d(a, b, t)
