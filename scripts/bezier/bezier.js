@@ -174,3 +174,18 @@ BezierCurve.prototype.render = function(ctx)
     }
     ctx.restore();
 }
+
+function random_bezier(n_handles, xrange, yrange)
+{
+    console.log(xrange, yrange);
+    let b = new BezierCurve([]);
+    for (let i = 0; i < n_handles; ++i)
+    {
+        console.log(xrange[1] - xrange[0]);
+        let x = Math.random() * (xrange[1] - xrange[0]) + xrange[0];
+        let y = Math.random() * (yrange[1] - yrange[0]) + yrange[0];
+        console.log(x, y);
+        b.handles.push([x, y]);
+    }
+    return b;
+}

@@ -114,7 +114,7 @@ function div2d(u, k)
 {
     if (k == 0)
     {
-        console.log("Divide by zero:", u);
+        // console.log("Divide by zero:", u);
         return [0, 0];
     }
     return mult2d(u, 1/k);
@@ -434,4 +434,9 @@ function draw_line_list(ctx, points, alphas=[])
         ctx.stroke();
     }
     ctx.restore();
+}
+
+function rand(min, max)
+{
+    return Math.random() * (max - min) + min;
 }

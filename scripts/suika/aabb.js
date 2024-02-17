@@ -24,3 +24,17 @@ AABB.prototype.draw = function(ctx)
     ctx.lineTo(this.p1[0], this.p1[1]);
     ctx.stroke();
 }
+
+function aabb_from_points(pts)
+{
+    let min = pts[0].slice();
+    let max = pts[0].slice();
+    for (let p of pts)
+    {
+        min[0] = Math.min(min[0], p[0]);
+        min[1] = Math.min(min[1], p[1]);
+        max[0] = Math.max(max[0], p[0]);
+        max[1] = Math.max(max[1], p[1]);
+    }
+    return new AABB(min, max);
+}

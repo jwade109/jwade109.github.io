@@ -3,64 +3,75 @@
 const LINKAGE_RADIUS = 2;
 const LINKAGE_OFFSET = 2;
 
-function Railcar(length, width)
+function Railcar(length, width, is_loco)
 {
     this.length = length;
     this.width = width;
     let rgb = Math.floor(Math.random() * 60 + 150).toString(16);
     this.color = '#' + rgb + rgb + rgb;
+    this.is_loco = is_loco;
 }
 
-function Train(n_cars, center, rx, ry)
+function Train(n_cars, n_locos, width, height)
 {
     this.cars = [];
-    this.acc = Math.random() * 30 + 2;
-    this.maxspeed = Math.random() * 120 + 30;
-    this.vel = Math.random() * this.maxspeed - this.maxspeed / 2;
+    this.acc = 40;
+    this.maxspeed = Math.random() * 120 + 100;
+    this.vel = Math.random() * this.maxspeed;
     this.pos = Math.random() * 5000;
-    this.dir = Math.random() < 0.5 ? 1 : -1;
+    this.dir = 1; // Math.random() < 0.5 ? 1 : -1;
 
     this.acc *= this.dir;
 
-    let pts = [];
-
-    let n = 100;
-
-    for (let i = 0; i < n; ++i)
+    for (let i = 0; i < n_cars + n_locos; ++i)
     {
-        let a = i * Math.PI * 2 / (n - 1);
-        let x = Math.cos(a) * rx + center[0];
-        let y = Math.sin(a) * ry + center[1];
-        pts.push([x, y]);
-    }
-
-    this.path = new Polyline(pts);
-
-    for (let i = 0; i < n_cars; ++i)
-    {
-        let l = Math.random() * 7 + 32;
+        let l = rand(32, 41);
+        if (i < n_locos)
+        {
+            l = rand(45, 55);
+        }
         let w = Math.random() * 5 + 11;
-        let c = new Railcar(l, w);
+        let c = new Railcar(l, w, i < n_locos);
         this.cars.push(c);
     }
 }
 
-Train.prototype.draw = function(ctx)
+Train.prototype.draw = function(ctx, path)
 {
     ctx.save();
 
-    this.path.draw(ctx);
+    ctx.fillStyle = "green";
+
+    for (let s = 0; s < this.pos; s += 20)
+    {
+        let t = path.s_to_t(s);
+        let p = path.evaluate(t);
+        ctx.beginPath();
+        ctx.arc(p[0], p[1], 3, 0, 2 * Math.PI);
+        ctx.fill();
+    }
 
     let s = this.pos;
     for (let i = 0; i < this.cars.length; ++i)
     {
         let c = this.cars[i];
-        let t = this.path.s_to_t(s);
-        let p = this.path.evaluate(t);
-        let tangent = this.path.tangent(t);
+        s -= ((c.length / 2) * this.dir);
+        let t = path.s_to_t(s);
+        let p = path.evaluate(t);
+        let tangent = path.tangent(t);
         let normal = rot2d(tangent, Math.PI / 2);
 
-        s -= ((c.length + 5) * this.dir);
+        if (i == 0)
+        {
+            ctx.fillStyle = "black";
+            ctx.globalAlpha = 1;
+            ctx.font = "18px Cambria Bold";
+            ctx.fillText("t = " + t.toFixed(2), p[0] + 30, p[1]);
+            ctx.fillText("s = " + s.toFixed(2), p[0] + 30, p[1] + 15);
+            ctx.fillText("v = " + this.vel.toFixed(2), p[0] + 30, p[1] + 30);
+        }
+
+        s -= ((c.length / 2 + 5) * this.dir);
 
         let l2 = mult2d(tangent, c.length / 2);
         let w2 = mult2d(normal,  c.width  / 2);
@@ -73,7 +84,7 @@ Train.prototype.draw = function(ctx)
         ctx.strokeStyle = "black";
         ctx.lineWidth = 1.3;
         ctx.fillStyle = c.color;
-        if (i == 0)
+        if (c.is_loco)
         {
             ctx.fillStyle = "lightblue"
         }
@@ -97,4 +108,13 @@ Train.prototype.step = function(dt)
         this.vel += this.acc * dt;
     }
     this.pos += this.vel * dt;
+}
+
+Train.prototype.normalize = function(path)
+{
+    while (this.pos < 0)
+    {
+        this.pos += path.length;
+    }
+    this.pos %= path.length;
 }
