@@ -184,7 +184,7 @@ button:active
 
 img
 {
-    border: 2px solid red;
+    /* border: 2px solid red; */
     box-sizing: border-box;
 }
 
