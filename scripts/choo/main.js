@@ -11,21 +11,6 @@ let STEPS = 0;
 
 let MOUSEDOWN_AT = []
 
-function Physics(width, height)
-{
-
-}
-
-Physics.prototype.draw = function(ctx)
-{
-
-}
-
-Physics.prototype.step = function(dt)
-{
-
-}
-
 document.addEventListener('mousemove', function(event)
 {
     var box = canvas.getBoundingClientRect();
@@ -57,17 +42,26 @@ canvas.oncontextmenu = function(e)
     e.preventDefault();
 };
 
-let physics = new Physics(document.body.clientWidth, document.body.clientHeight);
-let clothoid = new Clothoid([200, 150], [1000, 600], 0.01, 0.03);
-let train = new Train();
-let train2 = new Train();
+let trains = [];
+
+for (let i = 0; i < 50; ++i)
+{
+    if (Math.random() < 0.3)
+    {
+        continue;
+    }
+    let center = mult2d([document.body.clientWidth, document.body.clientHeight], 0.5);
+    let r = 150 + 26 * i;
+    let t = new Train(Math.random() * r / 15 + 3, center, r, r);
+    trains.push(t);
+}
 
 function draw(ctx)
 {
-    physics.draw(ctx);
-    // clothoid.draw(ctx);
-    train.draw(ctx);
-    train2.draw(ctx);
+    for (let t of trains)
+    {
+        t.draw(ctx);
+    }
 
     ctx.beginPath();
     ctx.arc(LAST_MOUSE_POSITION[0], LAST_MOUSE_POSITION[1], 8, 0, 2 * Math.PI);
@@ -84,22 +78,10 @@ function update(previous, now, frame_number)
     ctx.canvas.width = document.body.clientWidth;
     ctx.canvas.height = document.body.clientHeight;
 
-    physics.step(NOMINAL_DT);
-
-    if (LAST_MOUSE_POSITION.length)
+    for (let t of trains)
     {
-        train.cars[train.cars.length - 1].moveTowards(LAST_MOUSE_POSITION, undefined);
+        t.step(NOMINAL_DT);
     }
-
-    train2.cars[train2.cars.length - 1].moveTowards(
-        [
-            ctx.canvas.width/2 + Math.cos(new Date().getTime() / 1000) * 700,
-            ctx.canvas.height/2 + Math.sin(new Date().getTime() / 1000) * 300
-        ]
-    );
-
-    train.step(NOMINAL_DT);
-    train2.step(NOMINAL_DT);
 
     ctx.save();
     draw(ctx);
