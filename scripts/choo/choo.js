@@ -1,7 +1,6 @@
 "use strict"
 
-const LINKAGE_RADIUS = 2;
-const LINKAGE_OFFSET = 2;
+const LINKAGE_OFFSET = 3;
 
 function Railcar(length, width, is_loco)
 {
@@ -16,9 +15,9 @@ function Train(n_cars, n_locos, width, height)
 {
     this.cars = [];
     this.acc = 40;
-    this.maxspeed = Math.random() * 120 + 100;
-    this.vel = Math.random() * this.maxspeed;
-    this.pos = Math.random() * 5000;
+    this.maxspeed = Math.random() * 120 + 200;
+    this.vel = this.maxspeed;
+    this.pos = Math.random() * 50000;
     this.dir = 1; // Math.random() < 0.5 ? 1 : -1;
 
     this.acc *= this.dir;
@@ -36,20 +35,37 @@ function Train(n_cars, n_locos, width, height)
     }
 }
 
+Train.prototype.s_limits = function()
+{
+    // front, back
+    return [this.pos + 200, this.pos - this.length() - 200]
+}
+
+Train.prototype.length = function()
+{
+    // TODO this doesn't take the linkage buffer into account
+    let sum = 0;
+    for (let c of this.cars)
+    {
+        sum += c.length + LINKAGE_OFFSET;
+    }
+    return sum - LINKAGE_OFFSET;
+}
+
 Train.prototype.draw = function(ctx, path)
 {
     ctx.save();
 
-    ctx.fillStyle = "green";
+    // ctx.fillStyle = "green";
 
-    for (let s = 0; s < this.pos; s += 20)
-    {
-        let t = path.s_to_t(s);
-        let p = path.evaluate(t);
-        ctx.beginPath();
-        ctx.arc(p[0], p[1], 3, 0, 2 * Math.PI);
-        ctx.fill();
-    }
+    // for (let s = 0; s < this.pos; s += 50)
+    // {
+    //     let t = path.s_to_t(s);
+    //     let p = path.evaluate(t);
+    //     ctx.beginPath();
+    //     ctx.arc(p[0], p[1], 2, 0, 2 * Math.PI);
+    //     ctx.fill();
+    // }
 
     let s = this.pos;
     for (let i = 0; i < this.cars.length; ++i)
@@ -66,12 +82,13 @@ Train.prototype.draw = function(ctx, path)
             ctx.fillStyle = "black";
             ctx.globalAlpha = 1;
             ctx.font = "18px Cambria Bold";
-            ctx.fillText("t = " + t.toFixed(2), p[0] + 30, p[1]);
-            ctx.fillText("s = " + s.toFixed(2), p[0] + 30, p[1] + 15);
-            ctx.fillText("v = " + this.vel.toFixed(2), p[0] + 30, p[1] + 30);
+            ctx.fillText("train fountain", p[0] + 30, p[1]);
+            // ctx.fillText("t = " + t.toFixed(2), p[0] + 30, p[1]);
+            // ctx.fillText("s = " + s.toFixed(2), p[0] + 30, p[1] + 15);
+            // ctx.fillText("v = " + this.vel.toFixed(2), p[0] + 30, p[1] + 30);
         }
 
-        s -= ((c.length / 2 + 5) * this.dir);
+        s -= ((c.length / 2 + LINKAGE_OFFSET) * this.dir);
 
         let l2 = mult2d(tangent, c.length / 2);
         let w2 = mult2d(normal,  c.width  / 2);
@@ -98,6 +115,16 @@ Train.prototype.draw = function(ctx, path)
         ctx.stroke();
     }
 
+    // for (let s of this.s_limits())
+    // {
+    //     let t = path.s_to_t(s);
+    //     let p = path.evaluate(t);
+    //     ctx.fillStyle = "blue";
+    //     ctx.beginPath();
+    //     ctx.arc(p[0], p[1], 5, 0, 2 * Math.PI);
+    //     ctx.fill();
+    // }
+
     ctx.restore();
 }
 
@@ -114,7 +141,7 @@ Train.prototype.normalize = function(path)
 {
     while (this.pos < 0)
     {
-        this.pos += path.length;
+        this.pos += path.length();
     }
-    this.pos %= path.length;
+    this.pos %= path.length();
 }

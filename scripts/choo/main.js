@@ -9,48 +9,66 @@ let LAST_MOUSE_POSITION = [];
 let PAUSED = false;
 let STEPS = 0;
 
-let MOUSEDOWN_AT = []
+let MAX_CURVATURE = 5E-3;
 
-function random_walk_track_segment(start, dir, arclength)
-{
-    start[0] *= document.body.clientWidth;
-    start[1] *= document.body.clientHeight;
-    return random_walk_track(start, dir, arclength, 200);
-}
+let MOUSEDOWN_AT = []
 
 function construct_coherent_random_track()
 {
-    let random_walks = [
-        random_walk_track_segment([0.3, 0.8], [0, -1], 200),
-        random_walk_track_segment([0.6, 0.3], [-0.3, 1], 400),
-        random_walk_track_segment([0.8, 0.8], [0.1, -1], 400)
-    ];
-
     let segments = [];
-    for (let i = 0; i < random_walks.length; ++i)
+    for (let i = 0; i < 40; ++i)
     {
-        let r1 = random_walks[i];
-        let r2 = random_walks[(i + 1) % random_walks.length];
-
-        let u = r1.points[r1.points.length - 1];
-        let v = r2.points[0];
-
-        let d1 = unit2d(sub2d(u, r1.evaluate(0.98)));
-        let d2 = unit2d(sub2d(v, r2.evaluate(0.02)));
-
-        d1 = add2d(u, mult2d(d1, 300));
-        d2 = add2d(v, mult2d(d2, 300));
-
-        let b = new BezierCurve([u, d1, d2, v]);
-        let t = new bezier_to_track_segment(b, 100);
-        segments.push(r1);
+        let x = document.body.clientWidth / 2;
+        let y = document.body.clientHeight * 0.9;
+        let dir = [0, -1];
+        let arclength = rand(700, 2000);
+        let t = generate_clothoid([x, y], dir, arclength,
+            rand(-MAX_CURVATURE, MAX_CURVATURE),
+            rand(-MAX_CURVATURE, MAX_CURVATURE));
         segments.push(t);
     }
     return new Track(segments);
 }
 
-let trains = [new Train(rand(8, 34), rand(1, 3))];
+function make_trains()
+{
+    let trains = [];
+    for (let i = 0; i < 30; ++i)
+    {
+        trains.push(new Train(rand(8, 34), rand(1, 3)));
+    }
+    return trains;
+}
+
+let trains = make_trains();
 let track = construct_coherent_random_track();
+
+function targeted_bezier(start, start_dir, end, end_dir, distance)
+{
+    let u = add2d(start, mult2d(start_dir, distance));
+    let v = add2d(end,   mult2d(end_dir,   distance));
+    return new BezierCurve([start, u, v, end]);
+}
+
+function targeted_clothoid(start, start_dir, end)
+{
+    let arclength = distance(start, end);
+    let dmin = undefined;
+    let best = undefined;
+    for (let c = -2; c <= 2; c += 0.05)
+    {
+        let curvature = c / 1E3;
+        let candidate = generate_clothoid(start, start_dir, arclength, curvature, curvature);
+        let p = candidate.points[candidate.points.length - 1];
+        let d = distance(p, end);
+        if (dmin === undefined || d < dmin)
+        {
+            dmin = d;
+            best = candidate;
+        }
+    }
+    return best;
+}
 
 function draw(ctx)
 {
@@ -59,11 +77,56 @@ function draw(ctx)
     for (let t of trains)
     {
         t.draw(ctx, track);
+        // let tt = track.s_to_t(t.pos)
+        // let p = track.evaluate(tt);
+        // let u = track.tangent(tt);
+
+        // let arclength = 600;
+
+        // for (let i = 0; i < 4; ++i)
+        // {
+        //     let w = generate_clothoid(p, u, arclength,
+        //         rand(-MAX_CURVATURE, MAX_CURVATURE),
+        //         rand(-MAX_CURVATURE, MAX_CURVATURE));
+        //     w.draw(ctx);
+        //     ctx.beginPath();
+        //     ctx.arc(p[0], p[1], arclength, 0, 2 * Math.PI);
+        //     ctx.stroke();
+        // }
+
+        // let p2 = add2d(p, mult2d(u, 100));
+        // ctx.strokeStyle = "purple";
+        // ctx.lineWidth = 3;
+        // ctx.beginPath();
+        // ctx.moveTo(p[0], p[1]);
+        // ctx.lineTo(p2[0], p2[1]);
+        // ctx.stroke();
     }
 
+    if (LAST_MOUSE_POSITION.length == 0)
+    {
+        return;
+    }
+
+    ctx.strokeStyle = "black";
     ctx.beginPath();
     ctx.arc(LAST_MOUSE_POSITION[0], LAST_MOUSE_POSITION[1], 8, 0, 2 * Math.PI);
     ctx.stroke();
+
+    // random walk targeted generation
+    let start = [200, 400];
+    let start_dir = [1, 0];
+    let end_dir = unit2d(sub2d(start, LAST_MOUSE_POSITION));
+
+    let arclength = 500;
+    let segments = rand(30, 400);
+
+    // let b = targeted_bezier(start.slice(), start_dir.slice(), LAST_MOUSE_POSITION.slice(), end_dir.slice(), 500);
+    // let t = bezier_to_track_segment(b, 100);
+    // let c = targeted_clothoid(start, start_dir, LAST_MOUSE_POSITION);
+    // c.draw(ctx);
+
+    // track.segments[track.segments.length - 1] = t;
 }
 
 function update(previous, now, frame_number)

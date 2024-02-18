@@ -110,7 +110,7 @@ TrackSegment.prototype.nearestPoint = function(pos)
 TrackSegment.prototype.draw = function(ctx)
 {
     ctx.save();
-    this.aabb.draw(ctx);
+    // this.aabb.draw(ctx);
     ctx.strokeStyle = "black";
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.3;
@@ -148,23 +148,35 @@ TrackSegment.prototype.draw = function(ctx)
     ctx.restore();
 }
 
-function random_walk_track(start, direction, arclength, n)
+function curvature_angle(phi_0, k_0, k_p, s_n)
+{
+    return phi_0 + k_0 * s_n + 0.5 * k_p * s_n * s_n;
+}
+
+function generate_clothoid(start, direction, s_max, k_0, k_f)
 {
     let pts = [start];
-    let curvature = 0;
-    let curvature_rate = 0;
 
-    direction = unit2d(direction);
-    let ds = arclength / n;
-    for (let i = 0; i < n; ++i)
+    n = s_max / 10;
+
+    let k_p = (k_f - k_0) / s_max;
+    let phi_0 = -anglebtwn(direction, [1, 0]);
+    let ds = s_max / n;
+
+    for (let i = 1; i < n; ++i)
     {
-        let delta = rot2d(mult2d(direction, ds), curvature);
-        let next = add2d(pts[pts.length - 1], delta);
-        pts.push(next);
-        curvature += curvature_rate * ds;
-        curvature = clamp(curvature, -2, 2);
-        curvature_rate += rand(-ds, ds) * 0.0003;
-        // curvature_rate = clamp(curvature_rate, -0.1, 0.1);
+        let s_n   = ds * i;
+        let s_n_1 = ds * (i - 1);
+
+        x_s_n_1 = pts[i-1][0];
+        y_s_n_1 = pts[i-1][1];
+        phi_s_n_1 = curvature_angle(phi_0, k_0, k_p, s_n_1);
+        phi_s_n   = curvature_angle(phi_0, k_0, k_p, s_n);
+
+        x_s_n = x_s_n_1 + (ds / 2) * (Math.cos(phi_s_n_1) + Math.cos(phi_s_n));
+        y_s_n = y_s_n_1 + (ds / 2) * (Math.sin(phi_s_n_1) + Math.sin(phi_s_n));
+
+        pts.push([x_s_n, y_s_n]);
     }
     return new TrackSegment(pts);
 }
@@ -184,11 +196,16 @@ function bezier_to_track_segment(bezier, n)
 function Track(segments)
 {
     this.segments = segments;
-    this.length = 0;
-    for (let s of segments)
+}
+
+Track.prototype.length = function()
+{
+    let sum = 0;
+    for (let s of this.segments)
     {
-        this.length += s.length;
+        sum += s.length;
     }
+    return sum;
 }
 
 Track.prototype.draw = function(ctx)
@@ -199,23 +216,23 @@ Track.prototype.draw = function(ctx)
         s.draw(ctx);
     }
 
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 2;
-    ctx.globalAlpha = 0.4;
+    // ctx.strokeStyle = "red";
+    // ctx.lineWidth = 1;
+    // ctx.globalAlpha = 0.1;
 
-    for (let i = 0; i < this.segments.length; ++i)
-    {
-        let u = this.segments[i].evaluate(0.999);
-        let v = this.segments[(i+1) % this.segments.length].evaluate(0);
-        ctx.beginPath();
-        ctx.moveTo(u[0], u[1]);
-        ctx.lineTo(v[0], v[1]);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(u[0], u[1], 5, 0, Math.PI * 2);
-        ctx.stroke();
-    }
-    ctx.restore();
+    // for (let i = 0; i < this.segments.length; ++i)
+    // {
+    //     let u = this.segments[i].evaluate(0.999);
+    //     let v = this.segments[(i+1) % this.segments.length].evaluate(0);
+    //     ctx.beginPath();
+    //     ctx.moveTo(u[0], u[1]);
+    //     ctx.lineTo(v[0], v[1]);
+    //     ctx.stroke();
+    //     ctx.beginPath();
+    //     ctx.arc(u[0], u[1], 5, 0, Math.PI * 2);
+    //     ctx.stroke();
+    // }
+    // ctx.restore();
 }
 
 Track.prototype.evaluate = function(t)
@@ -246,11 +263,11 @@ Track.prototype.tangent = function(t)
 
 Track.prototype.s_to_t = function(s)
 {
-    while (s < this.length) // TODO while loop
+    while (s < this.length()) // TODO while loop
     {
-        s += this.length;
+        s += this.length();
     }
-    s = s % this.length;
+    s = s % this.length();
     let s_lower = 0;
     let s_upper = 0;
     for (let i = 0; i < this.segments.length; ++i)
