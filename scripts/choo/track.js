@@ -1,7 +1,9 @@
 
-function TrackSegment(points, spacing)
+function TrackSegment(points, k_0, k_f)
 {
     this.points = points;
+    this.k_0 = k_0;
+    this.k_f = k_f;
     this.lengths = [0];
     this.length = 0;
     for (let i = 0; i + 1 < this.points.length; ++i)
@@ -41,6 +43,11 @@ TrackSegment.prototype.tangent = function(t)
     let i = Math.floor(n * t);
     let j = i + 1;
     return unit2d(sub2d(this.points[j], this.points[i]));
+}
+
+TrackSegment.prototype.normal = function(t)
+{
+    return rot2d(this.tangent(t), Math.PI / 2);
 }
 
 TrackSegment.prototype.s_to_t = function(s)
@@ -113,37 +120,76 @@ TrackSegment.prototype.draw = function(ctx)
     // this.aabb.draw(ctx);
     ctx.strokeStyle = "black";
     ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.3;
-    ctx.beginPath();
-    for (let i = 0; i < this.points.length; i++)
-    {
-        let pos = this.points[i];
-        if (i == 0)
-        {
-            ctx.moveTo(pos[0], pos[1]);
-        }
-        else
-        {
-            ctx.lineTo(pos[0], pos[1]);
-        }
-    }
-    ctx.stroke();
+    ctx.globalAlpha = 0.7;
+    // ctx.beginPath();
+    // for (let i = 0; i < this.points.length; i++)
+    // {
+    //     let pos = this.points[i];
+    //     if (i == 0)
+    //     {
+    //         ctx.moveTo(pos[0], pos[1]);
+    //     }
+    //     else
+    //     {
+    //         ctx.lineTo(pos[0], pos[1]);
+    //     }
+    // }
+    // ctx.stroke();
 
-    ctx.lineWidth = 2;
-    for (let s = 0; s <= this.length; s += 8)
+    let left = [];
+    let right = [];
+
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.3;
+    for (let s = 0; s <= this.length; s += 5)
     {
         let t = this.s_to_t(s);
         let p = this.evaluate(t);
-        let normal = mult2d(rot2d(this.tangent(t), Math.PI / 2), 4);
+        let normal = this.normal(t);
 
-        let u = add2d(p, normal);
-        let v = sub2d(p, normal);
+        let offset_sleepers = mult2d(normal, 4);
+
+        let u = add2d(p, offset_sleepers);
+        let v = sub2d(p, offset_sleepers);
 
         ctx.beginPath();
         ctx.moveTo(u[0], u[1]);
         ctx.lineTo(v[0], v[1]);
         ctx.stroke();
+
+        let offset_rails = mult2d(normal, 2);
+
+        u = add2d(p, offset_rails);
+        v = sub2d(p, offset_rails);
+
+        left.push(u);
+        right.push(v);
     }
+
+    render_line(left,  ctx, 1, "black")
+    render_line(right, ctx, 1, "black")
+
+    // function draw_curvature(track, t, k)
+    // {
+    //     let p0 = track.evaluate(t);
+    //     let t0 = track.normal(t);
+    //     let r0 = 1 / k;
+    //     p0 = add2d(p0, mult2d(t0, -r0));
+    //     ctx.globalAlpha = 0.1;
+    //     ctx.beginPath();
+    //     ctx.arc(p0[0], p0[1], Math.abs(r0), 0, 2 * Math.PI);
+    //     ctx.stroke();
+    // }
+
+    // if (Math.abs(this.k_0) > 1E-5)
+    // {
+    //     draw_curvature(this, 0, this.k_0);
+    // }
+    // if (Math.abs(this.k_f) > 1E-5)
+    // {
+    //     draw_curvature(this, 0.999, this.k_f);
+    // }
 
     ctx.restore();
 }
@@ -153,17 +199,15 @@ function curvature_angle(phi_0, k_0, k_p, s_n)
     return phi_0 + k_0 * s_n + 0.5 * k_p * s_n * s_n;
 }
 
-function generate_clothoid(start, direction, s_max, k_0, k_f)
+function generate_clothoid(start, direction, s_max, n_segments, k_0, k_f)
 {
     let pts = [start];
 
-    n = s_max / 10;
-
     let k_p = (k_f - k_0) / s_max;
     let phi_0 = -anglebtwn(direction, [1, 0]);
-    let ds = s_max / n;
+    let ds = s_max / n_segments;
 
-    for (let i = 1; i < n; ++i)
+    for (let i = 1; i < n_segments; ++i)
     {
         let s_n   = ds * i;
         let s_n_1 = ds * (i - 1);
@@ -178,19 +222,7 @@ function generate_clothoid(start, direction, s_max, k_0, k_f)
 
         pts.push([x_s_n, y_s_n]);
     }
-    return new TrackSegment(pts);
-}
-
-function bezier_to_track_segment(bezier, n)
-{
-    let pts = [];
-    for (let i = 0; i < n; ++i)
-    {
-        let t = i / (n - 1);
-        let p = bezier.evaluate(t);
-        pts.push(p);
-    }
-    return new TrackSegment(pts);
+    return new TrackSegment(pts, k_0, k_f);
 }
 
 function Track(segments)
@@ -259,6 +291,11 @@ Track.prototype.tangent = function(t)
     let s = this.segments[n];
     let tt = t % 1.0;
     return s.tangent(tt);
+}
+
+Track.prototype.normal = function(t)
+{
+    return rot2d(this.tangent(t), Math.PI / 2);
 }
 
 Track.prototype.s_to_t = function(s)
