@@ -1,3 +1,4 @@
+"use strict"
 
 function TrackSegment(points, k_0, k_f)
 {
@@ -18,11 +19,11 @@ function TrackSegment(points, k_0, k_f)
 
 TrackSegment.prototype.evaluate = function(t)
 {
-    while (t < 0) // TODO shouldn't be a while loop
+    if (t < 0 || t > 1)
     {
-        t += 1;
+        return null;
     }
-    t = t % 1.0;
+
     let n = this.points.length - 1;
     let i = Math.floor(n * t);
     let j = i + 1;
@@ -52,11 +53,11 @@ TrackSegment.prototype.normal = function(t)
 
 TrackSegment.prototype.s_to_t = function(s)
 {
-    while (s < this.length) // TODO shouldn't be a while loop
+    if (s < 0 || s > this.length)
     {
-        s += this.length;
+        return null;
     }
-    s = s % this.length;
+
     let n = this.points.length - 1;
 
     let left = 0;
@@ -83,68 +84,34 @@ TrackSegment.prototype.s_to_t = function(s)
     let rs = this.lengths[right];
     let tt = (s - ls) / (rs - ls);
     let ti = left / n;
-    return tt / n + ti;
-}
-
-TrackSegment.prototype.nearestHandle = function(pos)
-{
-    return nearest_point(this.points, pos);
-}
-
-TrackSegment.prototype.nearestPoint = function(pos)
-{
-    let nh = this.nearestHandle(pos);
-    let index = nh[0];
-    let handle = this.points[index];
-    let n = 500;
-    let dist = Number.MAX_VALUE;
-    let best = pos;
-    let best_t = 0;
-    for (let t = 0; t <= n; t++)
+    if (isNaN(tt))
     {
-        let p = this.evaluate(t/n);
-        let d = distance(p, pos);
-        if (d < dist)
-        {
-            dist = d;
-            best = p;
-            best_t = t/n;
-        }
+        console.log(this.lengths, left, right);
     }
-    return [best, best_t];
+    return tt / n + ti;
 }
 
 TrackSegment.prototype.draw = function(ctx)
 {
     ctx.save();
-    // this.aabb.draw(ctx);
     ctx.strokeStyle = "black";
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.7;
-    // ctx.beginPath();
-    // for (let i = 0; i < this.points.length; i++)
-    // {
-    //     let pos = this.points[i];
-    //     if (i == 0)
-    //     {
-    //         ctx.moveTo(pos[0], pos[1]);
-    //     }
-    //     else
-    //     {
-    //         ctx.lineTo(pos[0], pos[1]);
-    //     }
-    // }
-    // ctx.stroke();
 
     let left = [];
     let right = [];
 
-    ctx.strokeStyle = "black";
+    ctx.strokeStyle = "#888888";
     ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.3;
+    ctx.globalAlpha = 1;
     for (let s = 0; s <= this.length; s += 5)
     {
         let t = this.s_to_t(s);
+        if (t == null)
+        {
+            continue;
+        }
+
         let p = this.evaluate(t);
         let normal = this.normal(t);
 
@@ -158,7 +125,7 @@ TrackSegment.prototype.draw = function(ctx)
         ctx.lineTo(v[0], v[1]);
         ctx.stroke();
 
-        let offset_rails = mult2d(normal, 2);
+        let offset_rails = mult2d(normal, 2.3);
 
         u = add2d(p, offset_rails);
         v = sub2d(p, offset_rails);
@@ -167,20 +134,20 @@ TrackSegment.prototype.draw = function(ctx)
         right.push(v);
     }
 
-    render_line(left,  ctx, 1, "black")
-    render_line(right, ctx, 1, "black")
+    render_line(left,  ctx, 1, "#333333")
+    render_line(right, ctx, 1, "#333333")
 
-    // function draw_curvature(track, t, k)
-    // {
-    //     let p0 = track.evaluate(t);
-    //     let t0 = track.normal(t);
-    //     let r0 = 1 / k;
-    //     p0 = add2d(p0, mult2d(t0, -r0));
-    //     ctx.globalAlpha = 0.1;
-    //     ctx.beginPath();
-    //     ctx.arc(p0[0], p0[1], Math.abs(r0), 0, 2 * Math.PI);
-    //     ctx.stroke();
-    // }
+    function draw_curvature(track, t, k)
+    {
+        let p0 = track.evaluate(t);
+        let t0 = track.normal(t);
+        let r0 = 1 / k;
+        p0 = add2d(p0, mult2d(t0, -r0));
+        ctx.globalAlpha = 0.3;
+        ctx.beginPath();
+        ctx.arc(p0[0], p0[1], Math.abs(r0), 0, 2 * Math.PI);
+        ctx.stroke();
+    }
 
     // if (Math.abs(this.k_0) > 1E-5)
     // {
@@ -212,13 +179,13 @@ function generate_clothoid(start, direction, s_max, n_segments, k_0, k_f)
         let s_n   = ds * i;
         let s_n_1 = ds * (i - 1);
 
-        x_s_n_1 = pts[i-1][0];
-        y_s_n_1 = pts[i-1][1];
-        phi_s_n_1 = curvature_angle(phi_0, k_0, k_p, s_n_1);
-        phi_s_n   = curvature_angle(phi_0, k_0, k_p, s_n);
+        let x_s_n_1 = pts[i-1][0];
+        let y_s_n_1 = pts[i-1][1];
+        let phi_s_n_1 = curvature_angle(phi_0, k_0, k_p, s_n_1);
+        let phi_s_n   = curvature_angle(phi_0, k_0, k_p, s_n);
 
-        x_s_n = x_s_n_1 + (ds / 2) * (Math.cos(phi_s_n_1) + Math.cos(phi_s_n));
-        y_s_n = y_s_n_1 + (ds / 2) * (Math.sin(phi_s_n_1) + Math.sin(phi_s_n));
+        let x_s_n = x_s_n_1 + (ds / 2) * (Math.cos(phi_s_n_1) + Math.cos(phi_s_n));
+        let y_s_n = y_s_n_1 + (ds / 2) * (Math.sin(phi_s_n_1) + Math.sin(phi_s_n));
 
         pts.push([x_s_n, y_s_n]);
     }
@@ -228,6 +195,7 @@ function generate_clothoid(start, direction, s_max, n_segments, k_0, k_f)
 function Track(segments)
 {
     this.segments = segments;
+    this.offset = 0;
 }
 
 Track.prototype.length = function()
@@ -269,11 +237,11 @@ Track.prototype.draw = function(ctx)
 
 Track.prototype.evaluate = function(t)
 {
-    while (t < 0) // TODO while loop
+    if (t < 0 || t > this.segments.length)
     {
-        t += this.segments.length;
+        return null;
     }
-    t = t % this.segments.length;
+
     let n = Math.floor(t);
     let s = this.segments[n];
     let tt = t % 1.0;
@@ -282,11 +250,11 @@ Track.prototype.evaluate = function(t)
 
 Track.prototype.tangent = function(t)
 {
-    while (t < 0) // TODO while loop
+    if (t < 0 || t > this.segments.length)
     {
-        t += this.segments.length;
+        return null;
     }
-    t = t % this.segments.length;
+
     let n = Math.floor(t);
     let s = this.segments[n];
     let tt = t % 1.0;
@@ -300,11 +268,13 @@ Track.prototype.normal = function(t)
 
 Track.prototype.s_to_t = function(s)
 {
-    while (s < this.length()) // TODO while loop
+    if (s < this.offset || s > this.offset + this.length())
     {
-        s += this.length();
+        return null;
     }
-    s = s % this.length();
+
+    s -= this.offset;
+
     let s_lower = 0;
     let s_upper = 0;
     for (let i = 0; i < this.segments.length; ++i)
@@ -318,5 +288,37 @@ Track.prototype.s_to_t = function(s)
         }
         s_lower = s_upper;
     }
-    return 0; // rand(0, this.segments.length);
+
+    return 0;
+}
+
+Track.prototype.extend = function(s, arclength)
+{
+    while (this.offset + this.length() < s)
+    {
+        let end_segment = this.segments[this.segments.length - 1];
+
+        let p = end_segment.evaluate(0.999);
+        let u = end_segment.tangent(0.999);
+        let k_0 = end_segment.k_f;
+        let k_f = rand(-MAX_CURVATURE, MAX_CURVATURE);
+        // console.log(k_f);
+
+        let new_segment = generate_clothoid(p, u, arclength, arclength / 10, k_0, k_f);
+        this.segments.push(new_segment);
+    }
+}
+
+Track.prototype.prune = function(s_prune)
+{
+    if (s_prune < this.offset)
+    {
+        return;
+    }
+
+    while (this.segments.length > 0 && (this.segments[0].length + this.offset < s_prune))
+    {
+        this.offset += this.segments[0].length;
+        this.segments = this.segments.slice(1);
+    }
 }

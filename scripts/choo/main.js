@@ -9,7 +9,9 @@ let LAST_MOUSE_POSITION = [];
 let PAUSED = false;
 let STEPS = 0;
 
-let MAX_CURVATURE = 8E-3;
+let MAX_CURVATURE = 4E-3;
+
+let NEW_SEGMENT_GENERATION_LENGTH = [300, 1200];
 
 let MOUSEDOWN_AT = [];
 
@@ -24,11 +26,6 @@ function generate_clothoid_sweep(start, dir, arclength, n, n0, nf, c_max)
         {
             let kf = lerp(-c_max, c_max, j / (nf - 1));
 
-            // if (Math.sign(k0) == Math.sign(kf))
-            // {
-            //     continue;
-            // }
-
             let t = generate_clothoid(start, dir, arclength, n, k0, kf);
             segments.push(t);
         }
@@ -39,8 +36,8 @@ function generate_clothoid_sweep(start, dir, arclength, n, n0, nf, c_max)
 
 function construct_coherent_random_track()
 {
-    let n0 = 10;
-    let nf = 10;
+    let n0 = 3;
+    let nf = 3;
     let arclength = document.body.clientHeight;
     let n = arclength / 20;
 
@@ -51,12 +48,10 @@ function construct_coherent_random_track()
     let segments = [];
     for (let s of generate_clothoid_sweep([x, y], dir, arclength, n, n0, nf, MAX_CURVATURE))
     {
-        if (rand(0, 1) < 0.5)
-        {
-            segments.push(s);
-        }
+        segments.push(s);
     }
 
+    segments = [segments[1]];
 
     return new Track(segments);
 }
@@ -64,9 +59,9 @@ function construct_coherent_random_track()
 function make_trains(length)
 {
     let trains = [];
-    for (let i = 0; i < 14; ++i)
+    for (let i = 0; i < 1; ++i)
     {
-        trains.push(new Train(rand(0, length), rand(8, 23)));
+        trains.push(new Train(rand(0, length), rand(30, 60)));
     }
     return trains;
 }
@@ -74,51 +69,85 @@ function make_trains(length)
 let track = construct_coherent_random_track();
 let trains = make_trains(track.length());
 
-function targeted_bezier(start, start_dir, end, end_dir, distance)
+function targeted_clothoid(start, dir, end)
 {
-    let u = add2d(start, mult2d(start_dir, distance));
-    let v = add2d(end,   mult2d(end_dir,   distance));
-    return new BezierCurve([start, u, v, end]);
+    let arclength = distance(start, end) * 1.5;
+    let sweep = generate_clothoid_sweep(start, dir, arclength, arclength, 5, 5, MAX_CURVATURE);
+    return sweep[Math.floor(sweep.length / 2)];
+}
+
+function targeted_hyperclothoid(start, start_dir, end, end_dir)
+{
+    let midpoint = mult2d(add2d(start, end), 0.5);
+
+    let a = targeted_clothoid(start, start_dir, [0, 0]);
+    let b = targeted_clothoid(end, end_dir, [0, 0]);
+
+    return [a, b];
+    // return [null, null];
 }
 
 function draw(ctx)
 {
     track.draw(ctx);
 
+
+    let end_segment = track.segments[track.segments.length - 1];
+    let p = end_segment.evaluate(0.999);
+    let u = end_segment.tangent(0.999);
+    let k_0 = end_segment.k_f;
+    for (let i = 0; i < 10; ++i)
+    {
+        let arclength = NEW_SEGMENT_GENERATION_LENGTH[0];
+        let k_f = rand(-MAX_CURVATURE, MAX_CURVATURE);
+        let new_segment = generate_clothoid(p, u,
+            arclength, arclength / 10, k_0, k_f);
+        new_segment.draw(ctx);
+    }
+
     for (let t of trains)
     {
         t.draw(ctx, track);
-
-        // let tt = track.s_to_t(t.pos)
-        // let p = track.evaluate(tt);
-        // let u = track.tangent(tt);
-
-        // let clothoids = generate_clothoid_sweep(p, u, 500, 5, 4, 4, MAX_CURVATURE);
-        // for (let c of clothoids)
-        // {
-        //     c.draw(ctx);
-        // }
     }
 
-    if (LAST_MOUSE_POSITION.length == 0)
+    // if (LAST_MOUSE_POSITION.length == 0)
+    // {
+    //     return;
+    // }
+
+    // ctx.strokeStyle = "black";
+    // ctx.beginPath();
+    // ctx.arc(LAST_MOUSE_POSITION[0], LAST_MOUSE_POSITION[1], 8, 0, 2 * Math.PI);
+    // ctx.stroke();
+
+    // // random walk targeted generation
+    // let x = document.body.clientWidth / 2;
+    // let y = document.body.clientHeight * 0.9;
+    // let start = [x, y];
+    // let start_dir = [0, -1];
+    // let end = LAST_MOUSE_POSITION;
+    // let end_dir = unit2d(sub2d(start, LAST_MOUSE_POSITION));
+
+    // let [a, b] = targeted_hyperclothoid(start, start_dir, LAST_MOUSE_POSITION, end_dir);
+    // if (a)
+    // {
+    //     a.draw(ctx);
+    // }
+    // if (b)
+    // {
+    //     b.draw(ctx);
+    // }
+}
+
+let CAMERA_TRANSLATION = [0, 0];
+
+function normalize_path_coords(track, trains)
+{
+    for (let t of trains)
     {
-        return;
+        t.pos -= track.offset;
     }
-
-    ctx.strokeStyle = "black";
-    ctx.beginPath();
-    ctx.arc(LAST_MOUSE_POSITION[0], LAST_MOUSE_POSITION[1], 8, 0, 2 * Math.PI);
-    ctx.stroke();
-
-    // random walk targeted generation
-    let x = document.body.clientWidth / 2;
-    let y = document.body.clientHeight * 0.9;
-    let start = [x, y];
-    let start_dir = [0, -1];
-    let end_dir = unit2d(sub2d(start, LAST_MOUSE_POSITION));
-
-    let arclength = 500;
-    let segments = rand(30, 400);
+    track.offset = 0;
 }
 
 function update(previous, now, frame_number)
@@ -134,10 +163,27 @@ function update(previous, now, frame_number)
     for (let t of trains)
     {
         t.step(NOMINAL_DT, track);
-        t.normalize(track);
+
+        let [max_s, min_s] = t.s_limits();
+        if (max_s > track.length())
+        {
+            let arclength = rand(NEW_SEGMENT_GENERATION_LENGTH[0], NEW_SEGMENT_GENERATION_LENGTH[1]);
+            track.extend(max_s, arclength);
+        }
+        track.prune(min_s);
     }
 
+    let t = track.s_to_t(trains[0].pos);
+    if (t != null)
+    {
+        let p = track.evaluate(t);
+        CAMERA_TRANSLATION = [-p[0] + ctx.canvas.width/2, -p[1] + ctx.canvas.height/2];
+    }
+
+    normalize_path_coords(track, trains);
+
     ctx.save();
+    ctx.translate(CAMERA_TRANSLATION[0], CAMERA_TRANSLATION[1]);
     draw(ctx);
     ctx.restore();
 

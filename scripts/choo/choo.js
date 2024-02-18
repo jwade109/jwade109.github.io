@@ -1,6 +1,7 @@
 "use strict"
 
 const LINKAGE_OFFSET = 3;
+const S_LIMITS_BUFFER = 100;
 
 function SmokeParticle(pos, vel, lifetime)
 {
@@ -8,7 +9,7 @@ function SmokeParticle(pos, vel, lifetime)
     this.vel = vel;
     this.lifetime = lifetime;
     this.max_lifetime = lifetime;
-    this.growth_rate = rand(1.3, 2.6);
+    this.growth_rate = rand(2.5, 3.8);
 }
 
 SmokeParticle.prototype.step = function(dt)
@@ -28,36 +29,11 @@ SmokeParticle.prototype.draw = function(ctx)
     ctx.fill();
 }
 
-function Railcar(length, width, is_loco)
+function Railcar(length, width, color, is_loco)
 {
     this.length = length;
     this.width = width;
-    let rgb = Math.floor(Math.random() * 60 + 150).toString(16);
-    this.color = '#' + rgb + rgb + rgb;
-    if (rand(0, 1) < 0.3)
-    {
-        this.color = "peru";
-    }
-    else if (rand(0, 1) < 0.4)
-    {
-        this.color = "sienna";
-    }
-    else if (rand(0, 1) < 0.05)
-    {
-        this.color = "saddlebrown";
-    }
-    else if (rand(0, 1) < 0.05)
-    {
-        this.color = "tan";
-    }
-    else if (rand(0, 1) < 0.05)
-    {
-        this.color = "#eeeeee";
-    }
-    else if (rand(0, 1) < 0.05)
-    {
-        this.color = "#444444";
-    }
+    this.color = color;
     this.is_loco = is_loco;
 }
 
@@ -65,7 +41,7 @@ function Train(position, n_cars, width, height)
 {
     this.cars = [];
     this.acc = 40;
-    this.maxspeed = rand(50, 200);
+    this.maxspeed = 200;
     this.vel = this.maxspeed;
     this.pos = position;
     this.dir = 1; // Math.random() < 0.5 ? 1 : -1;
@@ -78,18 +54,65 @@ function Train(position, n_cars, width, height)
 
     let n_locos = Math.max(1, Math.ceil(n_cars / 12));
 
-    console.log(n_locos);
+    let color = "peru";
 
     for (let i = 0; i < n_cars + n_locos; ++i)
     {
-        let l = rand(18, 25);
+        let l = rand(25, 34);
         let w = rand(7, 11);
         if (i < n_locos)
         {
-            l = 32;
+            l = 37;
             w = 10;
         }
-        let c = new Railcar(l, w, i < n_locos);
+
+        if (rand(0, 1) < 0.5)
+        {
+
+        }
+        else if (rand(0, 1) < 0.1)
+        {
+            let rgb = Math.floor(Math.random() * 60 + 150).toString(16);
+            color = "#" + rgb + rgb + rgb;
+        }
+        else if (rand(0, 1) < 0.1)
+        {
+            color = "peru";
+        }
+        else if (rand(0, 1) < 0.1)
+        {
+            color = "sienna";
+        }
+        else if (rand(0, 1) < 0.1)
+        {
+            color = "saddlebrown";
+        }
+        else if (rand(0, 1) < 0.1)
+        {
+            color = "tan";
+        }
+        else if (rand(0, 1) < 0.1)
+        {
+            color = "#eeeeee";
+        }
+        else if (rand(0, 1) < 0.1)
+        {
+            color = "#444444";
+        }
+
+        let use_color = color;
+
+        if (i < n_locos)
+        {
+            use_color = "lightblue";
+            if (this.emits_smoke)
+            {
+                use_color = "lightsalmon";
+            }
+        }
+
+        let c = new Railcar(l, w, use_color, i < n_locos);
+
         this.cars.push(c);
     }
 }
@@ -97,7 +120,7 @@ function Train(position, n_cars, width, height)
 Train.prototype.s_limits = function()
 {
     // front, back
-    return [this.pos + 200, this.pos - this.length() - 200]
+    return [this.pos + S_LIMITS_BUFFER, this.pos - this.length() - S_LIMITS_BUFFER]
 }
 
 Train.prototype.length = function()
@@ -115,16 +138,21 @@ Train.prototype.draw = function(ctx, path)
 {
     ctx.save();
 
-    // ctx.fillStyle = "green";
+    ctx.fillStyle = "green";
 
-    // for (let s = 0; s < this.pos; s += 50)
-    // {
-    //     let t = path.s_to_t(s);
-    //     let p = path.evaluate(t);
-    //     ctx.beginPath();
-    //     ctx.arc(p[0], p[1], 2, 0, 2 * Math.PI);
-    //     ctx.fill();
-    // }
+    for (let s = 0; s < this.pos; s += 50)
+    {
+        let t = path.s_to_t(s);
+        if (t == null)
+        {
+            continue;
+        }
+
+        let p = path.evaluate(t);
+        ctx.beginPath();
+        ctx.arc(p[0], p[1], 2, 0, 2 * Math.PI);
+        ctx.fill();
+    }
 
     let s = this.pos;
     for (let i = 0; i < this.cars.length; ++i)
@@ -132,6 +160,11 @@ Train.prototype.draw = function(ctx, path)
         let c = this.cars[i];
         s -= ((c.length / 2) * this.dir);
         let t = path.s_to_t(s);
+        if (t == null)
+        {
+            continue;
+        }
+
         let p = path.evaluate(t);
         let tangent = path.tangent(t);
         let normal = rot2d(tangent, Math.PI / 2);
@@ -141,7 +174,7 @@ Train.prototype.draw = function(ctx, path)
         //     ctx.fillStyle = "black";
         //     ctx.globalAlpha = 1;
         //     ctx.font = "18px Cambria Bold";
-        //     ctx.fillText("train fountain", p[0] + 30, p[1]);
+        //     // ctx.fillText("train fountain", p[0] + 30, p[1]);
         //     ctx.fillText("t = " + t.toFixed(2), p[0] + 30, p[1]);
         //     ctx.fillText("s = " + s.toFixed(2), p[0] + 30, p[1] + 15);
         //     ctx.fillText("v = " + this.vel.toFixed(2), p[0] + 30, p[1] + 30);
@@ -152,48 +185,54 @@ Train.prototype.draw = function(ctx, path)
         if (i + 1 < this.cars.length)
         {
             let t_link = path.s_to_t(s);
+            if (t == null)
+            {
+                continue;
+            }
+
             let p_link = path.evaluate(t_link);
             render2d(p_link, ctx, 3, "black", 0.5);
         }
 
-        let l2 = mult2d(tangent, c.length / 2);
-        let w2 = mult2d(normal,  c.width  / 2);
+        function draw_rect(length, width, fill_style)
+        {
+            let l2 = mult2d(tangent, length / 2);
+            let w2 = mult2d(normal,  width  / 2);
 
-        let p1 = add2d(p, add2d(mult2d(l2,  1), mult2d(w2,  1)));
-        let p2 = add2d(p, add2d(mult2d(l2,  1), mult2d(w2, -1)));
-        let p3 = add2d(p, add2d(mult2d(l2, -1), mult2d(w2, -1)));
-        let p4 = add2d(p, add2d(mult2d(l2, -1), mult2d(w2,  1)));
+            let p1 = add2d(p, add2d(mult2d(l2,  1), mult2d(w2,  1)));
+            let p2 = add2d(p, add2d(mult2d(l2,  1), mult2d(w2, -1)));
+            let p3 = add2d(p, add2d(mult2d(l2, -1), mult2d(w2, -1)));
+            let p4 = add2d(p, add2d(mult2d(l2, -1), mult2d(w2,  1)));
 
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 1.3;
-        ctx.fillStyle = c.color;
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 1.3;
+            ctx.fillStyle = fill_style;
+
+            ctx.beginPath();
+            ctx.moveTo(p1[0], p1[1]);
+            ctx.lineTo(p2[0], p2[1]);
+            ctx.lineTo(p3[0], p3[1]);
+            ctx.lineTo(p4[0], p4[1]);
+            ctx.lineTo(p1[0], p1[1]);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        draw_rect(c.length, c.width, c.color);
         if (c.is_loco)
         {
-            ctx.fillStyle = "lightblue"
-            if (this.emits_smoke)
-            {
-                ctx.fillStyle = "lightsalmon";
-            }
+            draw_rect(c.length * 0.7, c.width * 0.3, "black");
         }
-
-        if (this.has_caboose && i + 1 == this.cars.length)
-        {
-            ctx.fillStyle = "red";
-        }
-
-        ctx.beginPath();
-        ctx.moveTo(p1[0], p1[1]);
-        ctx.lineTo(p2[0], p2[1]);
-        ctx.lineTo(p3[0], p3[1]);
-        ctx.lineTo(p4[0], p4[1]);
-        ctx.lineTo(p1[0], p1[1]);
-        ctx.fill();
-        ctx.stroke();
     }
 
     // for (let s of this.s_limits())
     // {
     //     let t = path.s_to_t(s);
+    //     if (t == null)
+    //     {
+    //         continue;
+    //     }
+
     //     let p = path.evaluate(t);
     //     ctx.fillStyle = "blue";
     //     ctx.beginPath();
@@ -218,6 +257,11 @@ Train.prototype.step = function(dt, path)
     this.pos += this.vel * dt;
 
     let t = path.s_to_t(this.pos - 20);
+    if (t == null)
+    {
+        return;
+    }
+
     let p = path.evaluate(t);
     let u = path.tangent(t);
 
@@ -227,7 +271,7 @@ Train.prototype.step = function(dt, path)
 
     if (this.emits_smoke)
     {
-        let s = new SmokeParticle(p, train_v, rand(3, 5));
+        let s = new SmokeParticle(p, train_v, rand(4, 6));
         this.particles.push(s);
     }
 
@@ -237,13 +281,4 @@ Train.prototype.step = function(dt, path)
     }
 
     this.particles = this.particles.filter(p => p.lifetime > 0);
-}
-
-Train.prototype.normalize = function(path)
-{
-    while (this.pos < 0)
-    {
-        this.pos += path.length();
-    }
-    this.pos %= path.length();
 }
