@@ -1,7 +1,7 @@
 "use strict"
 
 const LINKAGE_OFFSET = 3;
-const S_LIMITS_BUFFER = 0;
+const S_LIMITS_BUFFER = 1000;
 
 function SmokeParticle(pos, vel, lifetime)
 {
@@ -45,6 +45,7 @@ function Train(position, n_cars, width, height)
     this.dir = 1; // Math.random() < 0.5 ? 1 : -1;
     this.emits_smoke = true; // Math.random() < 0.2;
     this.has_caboose = Math.random() < 0.15;
+    this.p_n = 0;
 
     this.particles = [];
 
@@ -172,11 +173,14 @@ Train.prototype.draw = function(rctx, path)
             let scr = rctx.world_to_screen(p);
             let k = rctx.scalar();
 
-            rctx.text("t = " + t.toFixed(2),        add2d(scr, [30 * k, 0]));
-            rctx.text("s = " + s.toFixed(2),        add2d(scr, [30 * k, 25]));
-            rctx.text("v = " + this.vel.toFixed(2), add2d(scr, [30 * k, 50]));
+            let dy = 25;
+            let text_y = 0;
+            rctx.text("t = " + t.toFixed(2),        add2d(scr, [30 * k, text_y += dy]));
+            rctx.text("s = " + s.toFixed(2),        add2d(scr, [30 * k, text_y += dy]));
+            rctx.text("v = " + this.vel.toFixed(2), add2d(scr, [30 * k, text_y += dy]));
             rctx.text("p = " + p[0].toFixed(1) + ", " + p[1].toFixed(1),
-                add2d(scr, [30 * k, 75]));
+                                                    add2d(scr, [30 * k, text_y += dy]));
+            rctx.text("p_n = " + this.p_n,          add2d(scr, [30 * k, text_y += dy]));
         }
 
         s -= ((c.length / 2 + LINKAGE_OFFSET / 2) * this.dir);
@@ -250,6 +254,12 @@ Train.prototype.step = function(dt, path)
     }
     this.pos += this.vel * dt;
 
+    for (let part of this.particles)
+    {
+        part.step(dt);
+    }
+    this.particles = this.particles.filter(p => p.lifetime > 0);
+
     let t = path.s_to_t(this.pos - 20);
     if (t == null)
     {
@@ -269,10 +279,4 @@ Train.prototype.step = function(dt, path)
         this.particles.push(s);
     }
 
-    for (let part of this.particles)
-    {
-        part.step(dt);
-    }
-
-    this.particles = this.particles.filter(p => p.lifetime > 0);
 }

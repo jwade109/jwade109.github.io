@@ -8,50 +8,74 @@ let NOMINAL_DT = 1 / NOMINAL_FRAMERATE;
 let LAST_MOUSE_POSITION = null;
 let PAUSED = false;
 let STEPS = 0;
-let MAX_CURVATURE = 4E-3;
+let MAX_CURVATURE = 6E-3;
 let NEW_SEGMENT_GENERATION_LENGTH = [300, 1200];
 let MOUSEDOWN_AT = [];
-let IGNORE_MOUSE = false;
+let IGNORE_MOUSE = true;
 
 let CURRENT_NEXT_SEGMENT = null;
 
 function WorldState()
 {
     this.track = new Track([
-        generate_clothoid([0, 0], [1, 1], 200, 20, 0,
+        generate_clothoid([0, 0], [1, 1], 100, 10, 0,
             rand(-MAX_CURVATURE, MAX_CURVATURE))
     ]);
+
+    let p = this.track.segments[0].evaluate(1);
+    let u = this.track.segments[0].tangent(1);
+
+    let arclength = 500;
+
+    this.track.segments = this.track.segments.concat(
+        generate_clothoid_sweep(p, u, arclength, arclength / 10,
+            [this.track.segments[0].k_0],
+            linspace(-MAX_CURVATURE, MAX_CURVATURE, 5)))
+
     this.trains = make_trains(this.track.length());
+
+    this.multitrack = new MultiTrack(
+        this.track.segments);
+
+    this.zoom_scale = 1;
+    this.target_zoom_scale = 1;
 }
 
 WorldState.prototype.step = function(dt)
 {
+    let track_changed = false;
+
     for (let t of this.trains)
     {
         t.step(dt, this.track);
 
-        let [max_s, min_s] = t.s_limits();
-        if (max_s > this.track.length())
-        {
-            let arclength = rand(NEW_SEGMENT_GENERATION_LENGTH[0], NEW_SEGMENT_GENERATION_LENGTH[1]);
-            this.track.extend(max_s, arclength, CURRENT_NEXT_SEGMENT);
-        }
-        this.track.prune(min_s);
+        // let [max_s, min_s] = t.s_limits();
+        // if (max_s > this.track.length())
+        // {
+        //     let arclength = rand(NEW_SEGMENT_GENERATION_LENGTH[0], NEW_SEGMENT_GENERATION_LENGTH[1]);
+        //     track_changed |= this.track.extend(max_s, arclength, CURRENT_NEXT_SEGMENT);
+        // }
+        // track_changed |= this.track.prune(min_s);
     }
     normalize_path_coords(this.track, this.trains);
 }
 
 WorldState.prototype.draw = function()
 {
+    this.zoom_scale += (this.target_zoom_scale - this.zoom_scale) * 0.5;
+
     // get current camera viewport bounds
     let center = [0, 0];
-    let t = this.track.s_to_t(this.trains[0].pos);
-    if (t != null)
+    if (this.trains.length)
     {
-        center = this.track.evaluate(t);
+        let t = this.track.s_to_t(this.trains[0].pos);
+        if (t != null)
+        {
+            center = this.track.evaluate(t);
+        }
     }
 
-    let rctx = get_render_context(center);
+    let rctx = get_render_context(center, this.zoom_scale);
 
     rctx.ctx.save();
 
@@ -78,29 +102,8 @@ WorldState.prototype.draw = function()
         CURRENT_NEXT_SEGMENT = targeted_clothoid(p, u, k_0, world);
         CURRENT_NEXT_SEGMENT.draw(rctx);
     }
-    else
-    {
-        CURRENT_NEXT_SEGMENT = null;
 
-        let arclength = 500;
-        let sweep = generate_clothoid_sweep(p, u, arclength, arclength / 10,
-            [k_0], linspace(-MAX_CURVATURE, MAX_CURVATURE, 5));
-
-        for (let sw of sweep)
-        {
-            sw.draw(rctx);
-        }
-    }
-
-
-    // for (let i = 0; i < 10; ++i)
-    // {
-    //     let arclength = NEW_SEGMENT_GENERATION_LENGTH[0];
-    //     let k_f = rand(-MAX_CURVATURE, MAX_CURVATURE);
-    //     let new_segment = generate_clothoid(p, u,
-    //         arclength, arclength / 10, k_0, k_f);
-    //     new_segment.draw(rctx);
-    // }
+    // this.multitrack.draw(rctx);
 
     let text_y = 40;
     let dy = 30;
@@ -132,7 +135,7 @@ function generate_clothoid_sweep(start, dir, arclength, n, k_0_n, k_f_n)
 function make_trains(length)
 {
     let trains = [];
-    for (let i = 0; i < 1; ++i)
+    for (let i = 0; i < 0; ++i)
     {
         trains.push(new Train(rand(0, length), rand(30, 60)));
     }
@@ -175,12 +178,10 @@ function targeted_clothoid(start, dir, k_0, end)
     return best_curve;
 }
 
-let ZOOM_SCALE = 1;
-
-function get_render_context(center_world)
+function get_render_context(center_world, zoom_scale)
 {
-    let du = [ZOOM_SCALE * document.body.clientWidth / 2,
-              ZOOM_SCALE * document.body.clientHeight / 2];
+    let du = [zoom_scale * document.body.clientWidth / 2,
+              zoom_scale * document.body.clientHeight / 2];
     let min = sub2d(center_world, du);
     let max = add2d(center_world, du);
     let bounds = new AABB(min, max);
@@ -255,11 +256,11 @@ document.addEventListener('keydown', function(event)
     console.log(event);
     if (event.code == "ArrowUp")
     {
-        ZOOM_SCALE /= 1.3;
+        world_state.target_zoom_scale /= 1.7;
     }
     if (event.code == "ArrowDown")
     {
-        ZOOM_SCALE *= 1.3;
+        world_state.target_zoom_scale *= 1.7;
     }
 });
 
@@ -300,8 +301,8 @@ document.addEventListener('mousewheel', function(event)
     if (window.pageYOffset == 0)
     {
         event.preventDefault();
-        if (event.deltaY > 0) ZOOM_SCALE *= 1.3;
-        if (event.deltaY < 0) ZOOM_SCALE /= 1.3;
+        if (event.deltaY > 0) world_state.target_zoom_scale *= 1.3;
+        if (event.deltaY < 0) world_state.target_zoom_scale /= 1.3;
     }
 },
 { capture: true, passive: false});

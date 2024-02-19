@@ -39,13 +39,14 @@ AABB.prototype.draw = function(rctx)
     rctx.ctx.strokeStyle = "black";
     rctx.ctx.lineWidth = 1;
 
-    rctx.line([
+    rctx.polyline([
         [this.min[0], this.min[1]],
         [this.min[0], this.max[1]],
         [this.max[0], this.max[1]],
         [this.max[0], this.min[1]],
         [this.min[0], this.min[1]]
-    ]);
+    ],
+    2, "black", null, 100);
 
     rctx.ctx.restore();
 }

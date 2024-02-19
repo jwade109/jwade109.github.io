@@ -441,7 +441,12 @@ function draw_line_list(ctx, points, alphas=[])
     ctx.restore();
 }
 
-function rand(min, max)
+function rand(min=0, max=1)
 {
     return Math.random() * (max - min) + min;
+}
+
+function randint(min, max)
+{
+    return Math.floor(rand(min, max));
 }

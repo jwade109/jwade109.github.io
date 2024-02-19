@@ -5,13 +5,11 @@ function TrackSegment(points, k_0, k_f)
     this.points = points;
     this.k_0 = k_0;
     this.k_f = k_f;
-    this.lengths = [0];
     this.length = 0;
     for (let i = 0; i + 1 < this.points.length; ++i)
     {
         let d = distance(this.points[i], this.points[i+1]);
         this.length += d;
-        this.lengths.push(this.length);
     }
 
     this.aabb = aabb_from_points(this.points);
@@ -143,34 +141,10 @@ TrackSegment.prototype.s_to_t = function(s)
         return null;
     }
 
-    let n = this.points.length - 1;
-
-    let left = 0;
-    let right = n;
-    while (left + 1 < right)
-    {
-        let i = Math.floor((left + right) / 2);
-        let s_test = this.lengths[i];
-        if (s >= s_test)
-        {
-            left = i;
-        }
-        else if (s <= s_test)
-        {
-            right = i;
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    let ls = this.lengths[left];
-    let rs = this.lengths[right];
-    let tt = (s - ls) / (rs - ls);
-    let ti = left / n;
-    let res = tt / n + ti;
-    return res;
+    // generated segments are linearly spaced;
+    // need to bring back the binary search if that assumption
+    // stops holding true
+    return s / this.length;
 }
 
 TrackSegment.prototype.draw = function(rctx)
@@ -335,12 +309,14 @@ Track.prototype.s_to_t = function(s)
 
 Track.prototype.extend = function(s, arclength, candidate)
 {
+    let changed = false;
     while (this.offset + this.length() < s)
     {
         if (candidate)
         {
             this.segments.push(candidate);
             candidate = null;
+            changed = true;
             continue;
         }
 
@@ -354,19 +330,46 @@ Track.prototype.extend = function(s, arclength, candidate)
 
         let new_segment = generate_clothoid(p, u, arclength, arclength / 10, k_0, k_f);
         this.segments.push(new_segment);
+        changed = true;
     }
+    return changed;
 }
 
 Track.prototype.prune = function(s_prune)
 {
+    let changed = false;
     if (s_prune < this.offset)
     {
-        return;
+        return changed;
     }
 
     while (this.segments.length > 0 && (this.segments[0].length + this.offset < s_prune))
     {
         this.offset += this.segments[0].length;
         this.segments = this.segments.slice(1);
+        changed = true;
+    }
+
+    return changed;
+}
+
+function MultiTrack(segments, connections)
+{
+    this.segments = segments;
+    this.connections = connections;
+}
+
+MultiTrack.prototype.draw = function(rctx)
+{
+    for (let segment of this.segments)
+    {
+        segment.aabb.draw(rctx);
+    }
+
+    for (let [from, to] of this.connections)
+    {
+        let s1 = this.segments[from];
+        let s2 = this.segments[to];
+        rctx.polyline([s1.evaluate(0.5), s2.evaluate(0.5)], 5, "purple");
     }
 }
