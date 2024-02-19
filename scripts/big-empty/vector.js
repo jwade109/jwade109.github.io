@@ -250,6 +250,11 @@ function renderv2d(c, v, ctx, width=2, style="black")
 
 function render_line(vs, ctx, width=2, stroke_style="black")
 {
+    if (vs.length == 0)
+    {
+        return;
+    }
+
     ctx.save();
     ctx.beginPath();
     ctx.strokeStyle = stroke_style;

@@ -6,23 +6,48 @@ function AABB(u, v)
     let ymin = Math.min(u[1], v[1]);
     let ymax = Math.max(u[1], v[1]);
 
-    this.p1 = [xmin, ymin];
-    this.p2 = [xmax, ymax];
+    this.min = [xmin, ymin];
+    this.max = [xmax, ymax];
 }
 
-AABB.prototype.draw = function(ctx)
+AABB.prototype.to_parametric = function(p)
 {
-    ctx.globalAlpha = 0.1;
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 1;
+    let dx = this.max[0] - this.min[0];
+    let dy = this.max[1] - this.min[1];
 
-    ctx.beginPath();
-    ctx.moveTo(this.p1[0], this.p1[1]);
-    ctx.lineTo(this.p1[0], this.p2[1]);
-    ctx.lineTo(this.p2[0], this.p2[1]);
-    ctx.lineTo(this.p2[0], this.p1[1]);
-    ctx.lineTo(this.p1[0], this.p1[1]);
-    ctx.stroke();
+    let tx = (p[0] - this.min[0]) / dx;
+    let ty = (p[1] - this.min[1]) / dy;
+    return [tx, ty];
+}
+
+AABB.prototype.evaluate = function(tx, ty)
+{
+    let dx = this.max[0] - this.min[0];
+    let dy = this.max[1] - this.min[1];
+    return [tx * dx, ty * dy];
+}
+
+AABB.prototype.center = function()
+{
+    return mult2d(add2d(this.min, this.max), 0.5);
+}
+
+AABB.prototype.draw = function(rctx)
+{
+    rctx.ctx.save();
+    rctx.ctx.globalAlpha = 0.1;
+    rctx.ctx.strokeStyle = "black";
+    rctx.ctx.lineWidth = 1;
+
+    rctx.line([
+        [this.min[0], this.min[1]],
+        [this.min[0], this.max[1]],
+        [this.max[0], this.max[1]],
+        [this.max[0], this.min[1]],
+        [this.min[0], this.min[1]]
+    ]);
+
+    rctx.ctx.restore();
 }
 
 function aabb_from_points(pts)

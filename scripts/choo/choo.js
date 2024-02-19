@@ -1,7 +1,7 @@
 "use strict"
 
 const LINKAGE_OFFSET = 3;
-const S_LIMITS_BUFFER = 100;
+const S_LIMITS_BUFFER = 0;
 
 function SmokeParticle(pos, vel, lifetime)
 {
@@ -19,14 +19,12 @@ SmokeParticle.prototype.step = function(dt)
     this.lifetime -= dt;
 }
 
-SmokeParticle.prototype.draw = function(ctx)
+SmokeParticle.prototype.draw = function(rctx)
 {
     let r = 4 + this.growth_rate * (this.max_lifetime - this.lifetime);
-    ctx.globalAlpha = 0.6 * this.lifetime / this.max_lifetime;
-    ctx.fillStyle = "black";
-    ctx.beginPath();
-    ctx.arc(this.pos[0], this.pos[1], r, 0, 2 * Math.PI);
-    ctx.fill();
+    let alpha = 0.6 * this.lifetime / this.max_lifetime;
+
+    rctx.point(this.pos, r, "black", null, alpha, 0, 1000);
 }
 
 function Railcar(length, width, color, is_loco)
@@ -45,7 +43,7 @@ function Train(position, n_cars, width, height)
     this.vel = this.maxspeed;
     this.pos = position;
     this.dir = 1; // Math.random() < 0.5 ? 1 : -1;
-    this.emits_smoke = Math.random() < 0.2;
+    this.emits_smoke = true; // Math.random() < 0.2;
     this.has_caboose = Math.random() < 0.15;
 
     this.particles = [];
@@ -134,25 +132,23 @@ Train.prototype.length = function()
     return sum - LINKAGE_OFFSET;
 }
 
-Train.prototype.draw = function(ctx, path)
+Train.prototype.draw = function(rctx, path)
 {
-    ctx.save();
+    rctx.ctx.save();
 
-    ctx.fillStyle = "green";
+    rctx.ctx.fillStyle = "green";
 
-    for (let s = 0; s < this.pos; s += 50)
-    {
-        let t = path.s_to_t(s);
-        if (t == null)
-        {
-            continue;
-        }
+    // for (let s = 0; s < this.pos; s += 50)
+    // {
+    //     let t = path.s_to_t(s);
+    //     if (t == null)
+    //     {
+    //         continue;
+    //     }
 
-        let p = path.evaluate(t);
-        ctx.beginPath();
-        ctx.arc(p[0], p[1], 2, 0, 2 * Math.PI);
-        ctx.fill();
-    }
+    //     let p = path.evaluate(t);
+    //     rctx.point(p, 2, "green", "blue", 1, 1);
+    // }
 
     let s = this.pos;
     for (let i = 0; i < this.cars.length; ++i)
@@ -169,18 +165,21 @@ Train.prototype.draw = function(ctx, path)
         let tangent = path.tangent(t);
         let normal = rot2d(tangent, Math.PI / 2);
 
-        // if (i == 0)
-        // {
-        //     ctx.fillStyle = "black";
-        //     ctx.globalAlpha = 1;
-        //     ctx.font = "18px Cambria Bold";
-        //     // ctx.fillText("train fountain", p[0] + 30, p[1]);
-        //     ctx.fillText("t = " + t.toFixed(2), p[0] + 30, p[1]);
-        //     ctx.fillText("s = " + s.toFixed(2), p[0] + 30, p[1] + 15);
-        //     ctx.fillText("v = " + this.vel.toFixed(2), p[0] + 30, p[1] + 30);
-        // }
+        if (i == 0)
+        {
+            // rctx.ctx.fillText("train fountain", p[0] + 30, p[1]);
 
-        s -= ((c.length / 2 + LINKAGE_OFFSET) * this.dir);
+            let scr = rctx.world_to_screen(p);
+            let k = rctx.scalar();
+
+            rctx.text("t = " + t.toFixed(2),        add2d(scr, [30 * k, 0]));
+            rctx.text("s = " + s.toFixed(2),        add2d(scr, [30 * k, 25]));
+            rctx.text("v = " + this.vel.toFixed(2), add2d(scr, [30 * k, 50]));
+            rctx.text("p = " + p[0].toFixed(1) + ", " + p[1].toFixed(1),
+                add2d(scr, [30 * k, 75]));
+        }
+
+        s -= ((c.length / 2 + LINKAGE_OFFSET / 2) * this.dir);
 
         if (i + 1 < this.cars.length)
         {
@@ -191,8 +190,10 @@ Train.prototype.draw = function(ctx, path)
             }
 
             let p_link = path.evaluate(t_link);
-            render2d(p_link, ctx, 3, "black", 0.5);
+            rctx.point(p_link, 3, "black", null, 1, 0);
         }
+
+        s -= LINKAGE_OFFSET / 2;
 
         function draw_rect(length, width, fill_style)
         {
@@ -204,18 +205,11 @@ Train.prototype.draw = function(ctx, path)
             let p3 = add2d(p, add2d(mult2d(l2, -1), mult2d(w2, -1)));
             let p4 = add2d(p, add2d(mult2d(l2, -1), mult2d(w2,  1)));
 
-            ctx.strokeStyle = "black";
-            ctx.lineWidth = 1.3;
-            ctx.fillStyle = fill_style;
+            rctx.ctx.strokeStyle = "black";
+            rctx.ctx.lineWidth = 1.3;
+            rctx.ctx.fillStyle = fill_style;
 
-            ctx.beginPath();
-            ctx.moveTo(p1[0], p1[1]);
-            ctx.lineTo(p2[0], p2[1]);
-            ctx.lineTo(p3[0], p3[1]);
-            ctx.lineTo(p4[0], p4[1]);
-            ctx.lineTo(p1[0], p1[1]);
-            ctx.fill();
-            ctx.stroke();
+            rctx.polyline([p1, p2, p3, p4, p1], 2, "black", fill_style, 100);
         }
 
         draw_rect(c.length, c.width, c.color);
@@ -234,18 +228,18 @@ Train.prototype.draw = function(ctx, path)
     //     }
 
     //     let p = path.evaluate(t);
-    //     ctx.fillStyle = "blue";
-    //     ctx.beginPath();
-    //     ctx.arc(p[0], p[1], 5, 0, 2 * Math.PI);
-    //     ctx.fill();
+    //     rctx.ctx.fillStyle = "blue";
+    //     rctx.ctx.beginPath();
+    //     rctx.ctx.arc(p[0], p[1], 5, 0, 2 * Math.PI);
+    //     rctx.ctx.fill();
     // }
 
     for (let part of this.particles)
     {
-        part.draw(ctx);
+        part.draw(rctx);
     }
 
-    ctx.restore();
+    rctx.ctx.restore();
 }
 
 Train.prototype.step = function(dt, path)

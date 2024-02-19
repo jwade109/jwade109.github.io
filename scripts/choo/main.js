@@ -5,55 +5,128 @@ var HEIGHT = document.body.scrollHeight;
 
 let NOMINAL_FRAMERATE = 30;
 let NOMINAL_DT = 1 / NOMINAL_FRAMERATE;
-let LAST_MOUSE_POSITION = [];
+let LAST_MOUSE_POSITION = null;
 let PAUSED = false;
 let STEPS = 0;
-
 let MAX_CURVATURE = 4E-3;
-
 let NEW_SEGMENT_GENERATION_LENGTH = [300, 1200];
-
 let MOUSEDOWN_AT = [];
+let IGNORE_MOUSE = false;
 
-function generate_clothoid_sweep(start, dir, arclength, n, n0, nf, c_max)
+let CURRENT_NEXT_SEGMENT = null;
+
+function WorldState()
 {
-    let segments = [];
+    this.track = new Track([
+        generate_clothoid([0, 0], [1, 1], 200, 20, 0,
+            rand(-MAX_CURVATURE, MAX_CURVATURE))
+    ]);
+    this.trains = make_trains(this.track.length());
+}
 
-    for (let i = 0; i < n0; ++i)
+WorldState.prototype.step = function(dt)
+{
+    for (let t of this.trains)
     {
-        let k0 = lerp(-c_max, c_max, i / (n0 - 1));
-        for (let j = 0; j < nf; ++j)
-        {
-            let kf = lerp(-c_max, c_max, j / (nf - 1));
+        t.step(dt, this.track);
 
-            let t = generate_clothoid(start, dir, arclength, n, k0, kf);
-            segments.push(t);
+        let [max_s, min_s] = t.s_limits();
+        if (max_s > this.track.length())
+        {
+            let arclength = rand(NEW_SEGMENT_GENERATION_LENGTH[0], NEW_SEGMENT_GENERATION_LENGTH[1]);
+            this.track.extend(max_s, arclength, CURRENT_NEXT_SEGMENT);
+        }
+        this.track.prune(min_s);
+    }
+    normalize_path_coords(this.track, this.trains);
+}
+
+WorldState.prototype.draw = function()
+{
+    // get current camera viewport bounds
+    let center = [0, 0];
+    let t = this.track.s_to_t(this.trains[0].pos);
+    if (t != null)
+    {
+        center = this.track.evaluate(t);
+    }
+
+    let rctx = get_render_context(center);
+
+    rctx.ctx.save();
+
+    rctx.polyline([[-2000, 0], [2000, 0]], 1, "lightgray", -1);
+    rctx.polyline([[0, -2000], [0, 2000]], 1, "lightgray", -1);
+
+    this.track.draw(rctx);
+
+    for (let t of this.trains)
+    {
+        t.draw(rctx, this.track);
+    }
+
+    let end_segment = this.track.segments[this.track.segments.length - 1];
+    let p = end_segment.evaluate(1);
+    let u = end_segment.tangent(1);
+    let k_0 = end_segment.k_f;
+
+    if (LAST_MOUSE_POSITION && !IGNORE_MOUSE)
+    {
+        rctx.screen_point(LAST_MOUSE_POSITION, 3);
+
+        let world = rctx.screen_to_world(LAST_MOUSE_POSITION);
+        CURRENT_NEXT_SEGMENT = targeted_clothoid(p, u, k_0, world);
+        CURRENT_NEXT_SEGMENT.draw(rctx);
+    }
+    else
+    {
+        CURRENT_NEXT_SEGMENT = null;
+
+        let arclength = 500;
+        let sweep = generate_clothoid_sweep(p, u, arclength, arclength / 10,
+            [k_0], linspace(-MAX_CURVATURE, MAX_CURVATURE, 5));
+
+        for (let sw of sweep)
+        {
+            sw.draw(rctx);
         }
     }
 
-    return segments;
+
+    // for (let i = 0; i < 10; ++i)
+    // {
+    //     let arclength = NEW_SEGMENT_GENERATION_LENGTH[0];
+    //     let k_f = rand(-MAX_CURVATURE, MAX_CURVATURE);
+    //     let new_segment = generate_clothoid(p, u,
+    //         arclength, arclength / 10, k_0, k_f);
+    //     new_segment.draw(rctx);
+    // }
+
+    let text_y = 40;
+    let dy = 30;
+
+    rctx.text("Right click toggles mouse following", [40, text_y += dy]);
+    rctx.text("Left click to add a new segment", [40, text_y += dy]);
+    rctx.text("Spacebar pauses simulation", [40, text_y += dy]);
+    rctx.text("Scroll wheel and arrow keys zoom in and out", [40, text_y += dy]);
+
+    rctx.draw();
+
+    rctx.ctx.restore();
 }
 
-function construct_coherent_random_track()
+function generate_clothoid_sweep(start, dir, arclength, n, k_0_n, k_f_n)
 {
-    let n0 = 3;
-    let nf = 3;
-    let arclength = document.body.clientHeight;
-    let n = arclength / 20;
-
-    let x = document.body.clientWidth / 2;
-    let y = document.body.clientHeight * 0.95;
-    let dir = [0, -1];
-
     let segments = [];
-    for (let s of generate_clothoid_sweep([x, y], dir, arclength, n, n0, nf, MAX_CURVATURE))
+    for (let k_0 of k_0_n)
     {
-        segments.push(s);
+        for (let k_f of k_f_n)
+        {
+            let t = generate_clothoid(start, dir, arclength, n, k_0, k_f);
+            segments.push(t);
+        }
     }
-
-    segments = [segments[1]];
-
-    return new Track(segments);
+    return segments;
 }
 
 function make_trains(length)
@@ -66,80 +139,58 @@ function make_trains(length)
     return trains;
 }
 
-let track = construct_coherent_random_track();
-let trains = make_trains(track.length());
-
-function targeted_clothoid(start, dir, end)
+function linspace(min, max, n)
 {
-    let arclength = distance(start, end) * 1.5;
-    let sweep = generate_clothoid_sweep(start, dir, arclength, arclength, 5, 5, MAX_CURVATURE);
-    return sweep[Math.floor(sweep.length / 2)];
-}
-
-function targeted_hyperclothoid(start, start_dir, end, end_dir)
-{
-    let midpoint = mult2d(add2d(start, end), 0.5);
-
-    let a = targeted_clothoid(start, start_dir, [0, 0]);
-    let b = targeted_clothoid(end, end_dir, [0, 0]);
-
-    return [a, b];
-    // return [null, null];
-}
-
-function draw(ctx)
-{
-    track.draw(ctx);
-
-
-    let end_segment = track.segments[track.segments.length - 1];
-    let p = end_segment.evaluate(0.999);
-    let u = end_segment.tangent(0.999);
-    let k_0 = end_segment.k_f;
-    for (let i = 0; i < 10; ++i)
+    let ret = [];
+    for (let i = 0; i <= n; ++i)
     {
-        let arclength = NEW_SEGMENT_GENERATION_LENGTH[0];
-        let k_f = rand(-MAX_CURVATURE, MAX_CURVATURE);
-        let new_segment = generate_clothoid(p, u,
-            arclength, arclength / 10, k_0, k_f);
-        new_segment.draw(ctx);
+        ret.push(lerp(min, max, i / n));
+    }
+    return ret;
+}
+
+function targeted_clothoid(start, dir, k_0, end)
+{
+    let arclength = 500;
+    let sweep = generate_clothoid_sweep(start, dir, arclength, arclength / 10,
+        linspace(-MAX_CURVATURE, MAX_CURVATURE, 10),
+        linspace(-MAX_CURVATURE, MAX_CURVATURE, 10));
+
+    let best_curve = sweep[0];
+    let d_min = distance(best_curve.points[0], end);
+    for (let i = 0; i < sweep.length; ++i)
+    {
+        let curve = sweep[i];
+        for (let p of curve.points)
+        {
+            let d = distance(p, end);
+            if (d < d_min)
+            {
+                d_min = d;
+                best_curve = curve;
+            }
+        }
     }
 
-    for (let t of trains)
-    {
-        t.draw(ctx, track);
-    }
-
-    // if (LAST_MOUSE_POSITION.length == 0)
-    // {
-    //     return;
-    // }
-
-    // ctx.strokeStyle = "black";
-    // ctx.beginPath();
-    // ctx.arc(LAST_MOUSE_POSITION[0], LAST_MOUSE_POSITION[1], 8, 0, 2 * Math.PI);
-    // ctx.stroke();
-
-    // // random walk targeted generation
-    // let x = document.body.clientWidth / 2;
-    // let y = document.body.clientHeight * 0.9;
-    // let start = [x, y];
-    // let start_dir = [0, -1];
-    // let end = LAST_MOUSE_POSITION;
-    // let end_dir = unit2d(sub2d(start, LAST_MOUSE_POSITION));
-
-    // let [a, b] = targeted_hyperclothoid(start, start_dir, LAST_MOUSE_POSITION, end_dir);
-    // if (a)
-    // {
-    //     a.draw(ctx);
-    // }
-    // if (b)
-    // {
-    //     b.draw(ctx);
-    // }
+    return best_curve;
 }
 
-let CAMERA_TRANSLATION = [0, 0];
+let ZOOM_SCALE = 1;
+
+function get_render_context(center_world)
+{
+    let du = [ZOOM_SCALE * document.body.clientWidth / 2,
+              ZOOM_SCALE * document.body.clientHeight / 2];
+    let min = sub2d(center_world, du);
+    let max = add2d(center_world, du);
+    let bounds = new AABB(min, max);
+
+    let canvas = document.getElementById("canvas");
+    let ctx = canvas.getContext("2d");
+    ctx.canvas.width = document.body.clientWidth;
+    ctx.canvas.height = document.body.clientHeight;
+    return new RenderContext(ctx, ctx.canvas.width, ctx.canvas.height, bounds);
+}
 
 function normalize_path_coords(track, trains)
 {
@@ -150,58 +201,34 @@ function normalize_path_coords(track, trains)
     track.offset = 0;
 }
 
-function update(previous, now, frame_number)
+let world_state = new WorldState();
+
+function update(previous, now)
 {
     const dt = now - previous;
-    const update_start = new Date().getTime() / 1000;
 
-    var canvas = document.getElementById("canvas");
-    var ctx = canvas.getContext("2d");
-    ctx.canvas.width = document.body.clientWidth;
-    ctx.canvas.height = document.body.clientHeight;
-
-    for (let t of trains)
+    if (!PAUSED)
     {
-        t.step(NOMINAL_DT, track);
-
-        let [max_s, min_s] = t.s_limits();
-        if (max_s > track.length())
-        {
-            let arclength = rand(NEW_SEGMENT_GENERATION_LENGTH[0], NEW_SEGMENT_GENERATION_LENGTH[1]);
-            track.extend(max_s, arclength);
-        }
-        track.prune(min_s);
+        STEPS = 0;
+        world_state.step(NOMINAL_DT);
     }
-
-    let t = track.s_to_t(trains[0].pos);
-    if (t != null)
+    else if (STEPS > 0)
     {
-        let p = track.evaluate(t);
-        CAMERA_TRANSLATION = [-p[0] + ctx.canvas.width/2, -p[1] + ctx.canvas.height/2];
+        world_state.step(NOMINAL_DT / 10);
+        STEPS -= 1;
     }
-
-    normalize_path_coords(track, trains);
-
-    ctx.save();
-    ctx.translate(CAMERA_TRANSLATION[0], CAMERA_TRANSLATION[1]);
-    draw(ctx);
-    ctx.restore();
-
-    const update_end = new Date().getTime() / 1000;
-    const real_dt = update_end - update_start;
 }
 
 const START_TIME = new Date().getTime() / 1000;
 let previous = null;
-let frame_number = 0;
 
 var gameloop = setInterval(function()
 {
     let now = new Date().getTime() / 1000 - START_TIME;
     if (previous != null)
     {
-        update(previous, now, frame_number)
-        frame_number++;
+        update(previous, now)
+        world_state.draw();
     }
     previous = now;
 
@@ -213,11 +240,27 @@ var gameloop = setInterval(function()
 document.addEventListener('keypress', function(event)
 {
     console.log(event);
+    if (event.code == "Space")
+    {
+        PAUSED = !PAUSED;
+    }
+    if (event.code == "KeyS")
+    {
+        STEPS += 1;
+    }
 });
 
 document.addEventListener('keydown', function(event)
 {
     console.log(event);
+    if (event.code == "ArrowUp")
+    {
+        ZOOM_SCALE /= 1.3;
+    }
+    if (event.code == "ArrowDown")
+    {
+        ZOOM_SCALE *= 1.3;
+    }
 });
 
 document.addEventListener('mousemove', function(event)
@@ -233,10 +276,15 @@ document.addEventListener('mousedown', function(event)
     if (event.button == 0)
     {
         MOUSEDOWN_AT = LAST_MOUSE_POSITION.slice();
+        if (CURRENT_NEXT_SEGMENT)
+        {
+            world_state.track.segments.push(CURRENT_NEXT_SEGMENT);
+            CURRENT_NEXT_SEGMENT = null;
+        }
     }
     else if (event.button == 2)
     {
-
+        IGNORE_MOUSE = !IGNORE_MOUSE;
     }
 });
 
@@ -245,6 +293,18 @@ document.addEventListener('mouseup', function(event)
     console.log(event);
     MOUSEDOWN_AT = [];
 });
+
+document.addEventListener('mousewheel', function(event)
+{
+    console.log(event);
+    if (window.pageYOffset == 0)
+    {
+        event.preventDefault();
+        if (event.deltaY > 0) ZOOM_SCALE *= 1.3;
+        if (event.deltaY < 0) ZOOM_SCALE /= 1.3;
+    }
+},
+{ capture: true, passive: false});
 
 canvas.oncontextmenu = function(e)
 {

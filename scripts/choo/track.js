@@ -15,6 +15,76 @@ function TrackSegment(points, k_0, k_f)
     }
 
     this.aabb = aabb_from_points(this.points);
+
+    this.rail_left = [];
+    this.rail_right = [];
+    this.sleeper_left = [];
+    this.sleeper_right = [];
+
+    if (this.length == 0)
+    {
+        return;
+    }
+
+    let seg_length = 3;
+    let i_max = Math.ceil(this.length / seg_length);
+    seg_length = this.length / i_max;
+
+    function get_offset_points(path, s, offset)
+    {
+        let t = path.s_to_t(s);
+        if (t == null)
+        {
+            return [null, null];
+        }
+
+        let p = path.evaluate(t);
+        let normal = path.normal(t);
+
+        let offv = mult2d(normal, offset);
+
+        let u = add2d(p, offv);
+        let v = sub2d(p, offv);
+        return [u, v];
+    }
+
+    function eval_offset_with_segment_length(path, seg_length, offset)
+    {
+        let i_max = Math.ceil(path.length / seg_length);
+
+        let left = [];
+        let right = [];
+
+        for (let i = 0; i <= i_max; ++i)
+        {
+            let s = lerp(0, path.length, i / i_max);
+            let [u, v] = get_offset_points(path, s, offset);
+            if (u)
+            {
+                left.push(u);
+                right.push(v);
+            }
+        }
+
+        return [left, right];
+    }
+
+    let sleeper_segment_length = 3;
+    let rail_segment_length = 10;
+    let bed_segment_length = 20;
+
+    let sleeper_offset = 4.5;
+    let rail_offset = 2.9;
+    let bed_offset = 13;
+
+    [this.sleeper_left, this.sleeper_right] = eval_offset_with_segment_length(
+        this, sleeper_segment_length, sleeper_offset);
+    [this.rail_left, this.rail_right] = eval_offset_with_segment_length(
+        this, rail_segment_length, rail_offset);
+    let [bed_left, bed_right] = eval_offset_with_segment_length(
+        this, bed_segment_length, bed_offset);
+
+    this.bed = [].concat(bed_left, bed_right.reverse());
 }
 
 TrackSegment.prototype.evaluate = function(t)
@@ -26,22 +96,37 @@ TrackSegment.prototype.evaluate = function(t)
 
     let n = this.points.length - 1;
     let i = Math.floor(n * t);
+    if (i == n)
+    {
+        return this.points[n];
+    }
     let j = i + 1;
     let ti = i / n;
     let tj = j / n;
     let tt = (t - ti) / (tj - ti);
+    if (this.points[i] === undefined || this.points[j] === undefined)
+    {
+        console.log(t);
+        console.log(i, j, n);
+        console.log(this.points[i]);
+        console.log(this.points[j]);
+    }
     return lerp2d(this.points[i], this.points[i+1], tt);
 }
 
 TrackSegment.prototype.tangent = function(t)
 {
-    while (t < 0) // TODO shouldn't be a while loop
+    if (t < 0 || t > 1)
     {
-        t += 1;
+        return null;
     }
-    t = t % 1.0;
+
     let n = this.points.length - 1;
     let i = Math.floor(n * t);
+    if (i == n)
+    {
+        i -= 1;
+    }
     let j = i + 1;
     return unit2d(sub2d(this.points[j], this.points[i]));
 }
@@ -84,58 +169,29 @@ TrackSegment.prototype.s_to_t = function(s)
     let rs = this.lengths[right];
     let tt = (s - ls) / (rs - ls);
     let ti = left / n;
-    if (isNaN(tt))
-    {
-        console.log(this.lengths, left, right);
-    }
-    return tt / n + ti;
+    let res = tt / n + ti;
+    return res;
 }
 
-TrackSegment.prototype.draw = function(ctx)
+TrackSegment.prototype.draw = function(rctx)
 {
-    ctx.save();
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.7;
-
-    let left = [];
-    let right = [];
-
-    ctx.strokeStyle = "#888888";
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 1;
-    for (let s = 0; s <= this.length; s += 5)
+    if (this.length == 0)
     {
-        let t = this.s_to_t(s);
-        if (t == null)
-        {
-            continue;
-        }
-
-        let p = this.evaluate(t);
-        let normal = this.normal(t);
-
-        let offset_sleepers = mult2d(normal, 4);
-
-        let u = add2d(p, offset_sleepers);
-        let v = sub2d(p, offset_sleepers);
-
-        ctx.beginPath();
-        ctx.moveTo(u[0], u[1]);
-        ctx.lineTo(v[0], v[1]);
-        ctx.stroke();
-
-        let offset_rails = mult2d(normal, 2.3);
-
-        u = add2d(p, offset_rails);
-        v = sub2d(p, offset_rails);
-
-        left.push(u);
-        right.push(v);
+        return;
     }
 
-    render_line(left,  ctx, 1, "#333333")
-    render_line(right, ctx, 1, "#333333")
+    rctx.ctx.save();
+
+    for (let i = 0; i < this.sleeper_left.length; ++i)
+    {
+        let line = [this.sleeper_left[i], this.sleeper_right[i]];
+        rctx.polyline(line, 1.5, "#888888", null, 0);
+    }
+
+    rctx.polyline(this.rail_left,  1, "#333333", null,      10);
+    rctx.polyline(this.rail_right, 1, "#333333", null,      10);
+
+    rctx.polyline(this.bed,        4, "#DDDDDD", "#DDDDDD", -3);
 
     function draw_curvature(track, t, k)
     {
@@ -143,22 +199,19 @@ TrackSegment.prototype.draw = function(ctx)
         let t0 = track.normal(t);
         let r0 = 1 / k;
         p0 = add2d(p0, mult2d(t0, -r0));
-        ctx.globalAlpha = 0.3;
-        ctx.beginPath();
-        ctx.arc(p0[0], p0[1], Math.abs(r0), 0, 2 * Math.PI);
-        ctx.stroke();
+        // render2d(p0, rctx.ctx, -Math.abs(r0), "purple", 0.3);
     }
 
-    // if (Math.abs(this.k_0) > 1E-5)
-    // {
-    //     draw_curvature(this, 0, this.k_0);
-    // }
-    // if (Math.abs(this.k_f) > 1E-5)
-    // {
-    //     draw_curvature(this, 0.999, this.k_f);
-    // }
+    if (Math.abs(this.k_0) > 1E-5)
+    {
+        draw_curvature(this, 0, this.k_0);
+    }
+    if (Math.abs(this.k_f) > 1E-5)
+    {
+        draw_curvature(this, 1, this.k_f);
+    }
 
-    ctx.restore();
+    rctx.ctx.restore();
 }
 
 function curvature_angle(phi_0, k_0, k_p, s_n)
@@ -168,6 +221,11 @@ function curvature_angle(phi_0, k_0, k_p, s_n)
 
 function generate_clothoid(start, direction, s_max, n_segments, k_0, k_f)
 {
+    if (n_segments < 5)
+    {
+        return null;
+    }
+
     let pts = [start];
 
     let k_p = (k_f - k_0) / s_max;
@@ -208,31 +266,14 @@ Track.prototype.length = function()
     return sum;
 }
 
-Track.prototype.draw = function(ctx)
+Track.prototype.draw = function(rctx)
 {
-    ctx.save();
+    rctx.ctx.save();
     for (let s of this.segments)
     {
-        s.draw(ctx);
+        s.draw(rctx);
     }
-
-    // ctx.strokeStyle = "red";
-    // ctx.lineWidth = 1;
-    // ctx.globalAlpha = 0.1;
-
-    // for (let i = 0; i < this.segments.length; ++i)
-    // {
-    //     let u = this.segments[i].evaluate(0.999);
-    //     let v = this.segments[(i+1) % this.segments.length].evaluate(0);
-    //     ctx.beginPath();
-    //     ctx.moveTo(u[0], u[1]);
-    //     ctx.lineTo(v[0], v[1]);
-    //     ctx.stroke();
-    //     ctx.beginPath();
-    //     ctx.arc(u[0], u[1], 5, 0, Math.PI * 2);
-    //     ctx.stroke();
-    // }
-    // ctx.restore();
+    rctx.ctx.restore();
 }
 
 Track.prototype.evaluate = function(t)
@@ -292,14 +333,21 @@ Track.prototype.s_to_t = function(s)
     return 0;
 }
 
-Track.prototype.extend = function(s, arclength)
+Track.prototype.extend = function(s, arclength, candidate)
 {
     while (this.offset + this.length() < s)
     {
+        if (candidate)
+        {
+            this.segments.push(candidate);
+            candidate = null;
+            continue;
+        }
+
         let end_segment = this.segments[this.segments.length - 1];
 
-        let p = end_segment.evaluate(0.999);
-        let u = end_segment.tangent(0.999);
+        let p = end_segment.evaluate(1);
+        let u = end_segment.tangent(1);
         let k_0 = end_segment.k_f;
         let k_f = rand(-MAX_CURVATURE, MAX_CURVATURE);
         // console.log(k_f);
