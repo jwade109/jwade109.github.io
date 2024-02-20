@@ -5,45 +5,87 @@ var HEIGHT = document.body.scrollHeight;
 
 let NOMINAL_FRAMERATE = 30;
 let NOMINAL_DT = 1 / NOMINAL_FRAMERATE;
-let LAST_MOUSE_POSITION = null;
 let PAUSED = false;
 let STEPS = 0;
 let MAX_CURVATURE = 6E-3;
 let NEW_SEGMENT_GENERATION_LENGTH = [300, 1200];
-let MOUSEDOWN_AT = [];
-let IGNORE_MOUSE = true;
-
 let CURRENT_NEXT_SEGMENT = null;
+let DRAGGED_OFFSET = [0, 0];
+
+function MouseState()
+{
+    this.last_mouse_pos = null;
+    this.mouse_down_at = null;
+}
+
+MouseState.prototype.dragging = function()
+{
+    if (this.last_mouse_pos == null || this.mouse_down_at == null)
+    {
+        return null;
+    }
+    return sub2d(this.last_mouse_pos, this.mouse_down_at);
+}
+
+MouseState.prototype.down = function()
+{
+    this.mouse_down_at = this.last_mouse_pos;
+}
+
+MouseState.prototype.up = function()
+{
+    this.mouse_down_at = null;
+}
+
+let mouse_state = new MouseState();
+
+function sweep_from_segment(segment, n, arclength)
+{
+    let p = segment.evaluate(1);
+    let u = segment.tangent(1);
+    return generate_clothoid_sweep(p, u, arclength, arclength / 10,
+        [segment.k_0], linspace(-MAX_CURVATURE, MAX_CURVATURE, n));
+}
+
+function generate_sample_multitrack()
+{
+    let segments = [
+        line_clothoid([-300, -100], [-100,    0]),
+        line_clothoid([ 150,  100], [ -50,   20]),
+        line_clothoid([ -50,    0], [  50, -100]),
+        line_clothoid([  60, -100], [ 150,   80]),
+        line_clothoid([  50, -120], [  50, -200]),
+        line_clothoid([ 170,  100], [ 280,  110]),
+        line_clothoid([ 170,   90], [ 260,   70])
+    ];
+
+    let connections = [
+        [ 1,  3],
+        [ 1, -2],
+        [ 3,  5],
+        [-5,  4],
+        [-2,  6],
+        [-2,  7],
+        [ 4,  6],
+        [ 4,  7]
+    ];
+
+    return [segments, connections]
+}
 
 function WorldState()
 {
-    this.track = new Track([
-        generate_clothoid([0, 0], [1, 1], 100, 10, 0,
-            rand(-MAX_CURVATURE, MAX_CURVATURE))
-    ]);
-
-    let p = this.track.segments[0].evaluate(1);
-    let u = this.track.segments[0].tangent(1);
-
-    let arclength = 500;
-
-    this.track.segments = this.track.segments.concat(
-        generate_clothoid_sweep(p, u, arclength, arclength / 10,
-            [this.track.segments[0].k_0],
-            linspace(-MAX_CURVATURE, MAX_CURVATURE, 5)))
-
+    let [segments, connections] = generate_sample_multitrack();
+    this.track = new Track(segments);
     this.trains = make_trains(this.track.length());
-
-    this.multitrack = new MultiTrack(
-        this.track.segments);
-
+    this.multitrack = new MultiTrack(segments, connections);
     this.zoom_scale = 1;
     this.target_zoom_scale = 1;
 }
 
 WorldState.prototype.step = function(dt)
 {
-    let track_changed = false;
+    // let track_changed = false;
 
     for (let t of this.trains)
     {
@@ -82,7 +124,7 @@ WorldState.prototype.draw = function()
     rctx.polyline([[-2000, 0], [2000, 0]], 1, "lightgray", -1);
     rctx.polyline([[0, -2000], [0, 2000]], 1, "lightgray", -1);
 
-    this.track.draw(rctx);
+    // this.track.draw(rctx);
 
     for (let t of this.trains)
     {
@@ -94,23 +136,32 @@ WorldState.prototype.draw = function()
     let u = end_segment.tangent(1);
     let k_0 = end_segment.k_f;
 
-    if (LAST_MOUSE_POSITION && !IGNORE_MOUSE)
+    if (mouse_state.last_mouse_pos)
     {
-        rctx.screen_point(LAST_MOUSE_POSITION, 3);
+        rctx.screen_point(mouse_state.last_mouse_pos, 3);
+        let dragging = mouse_state.dragging();
+        if (dragging != null)
+        {
+            let d = add2d(dragging, mouse_state.mouse_down_at);
+            let base = rctx.screen_to_world(mouse_state.mouse_down_at);
+            let tip = rctx.screen_to_world(d);
+            rctx.arrow(base, tip, 3, "red", 5000);
+            console.log(base, tip);
+        }
 
-        let world = rctx.screen_to_world(LAST_MOUSE_POSITION);
-        CURRENT_NEXT_SEGMENT = targeted_clothoid(p, u, k_0, world);
-        CURRENT_NEXT_SEGMENT.draw(rctx);
+        // let world = rctx.screen_to_world(mouse_state.last_mouse_pos);
+        // CURRENT_NEXT_SEGMENT = targeted_clothoid(p, u, k_0, world);
+        // CURRENT_NEXT_SEGMENT.draw(rctx);
     }
 
-    // this.multitrack.draw(rctx);
+    this.multitrack.draw(rctx);
 
     let text_y = 40;
     let dy = 30;
 
-    rctx.text("Right click toggles mouse following", [40, text_y += dy]);
-    rctx.text("Left click to add a new segment", [40, text_y += dy]);
-    rctx.text("Spacebar pauses simulation", [40, text_y += dy]);
+    // rctx.text("Right click toggles mouse following", [40, text_y += dy]);
+    // rctx.text("Left click to add a new segment", [40, text_y += dy]);
+    rctx.text("Spacebar increments route index", [40, text_y += dy]);
     rctx.text("Scroll wheel and arrow keys zoom in and out", [40, text_y += dy]);
 
     rctx.draw();
@@ -145,9 +196,10 @@ function make_trains(length)
 function linspace(min, max, n)
 {
     let ret = [];
-    for (let i = 0; i <= n; ++i)
+    n = Math.floor(n);
+    for (let i = 0; i < n; ++i)
     {
-        ret.push(lerp(min, max, i / n));
+        ret.push(lerp(min, max, i / (n - 1)));
     }
     return ret;
 }
@@ -244,6 +296,7 @@ document.addEventListener('keypress', function(event)
     if (event.code == "Space")
     {
         PAUSED = !PAUSED;
+        ROUTE_INDEX += 1;
     }
     if (event.code == "KeyS")
     {
@@ -267,7 +320,7 @@ document.addEventListener('keydown', function(event)
 document.addEventListener('mousemove', function(event)
 {
     var box = canvas.getBoundingClientRect();
-    LAST_MOUSE_POSITION = [event.clientX - box.left, event.clientY - box.top];
+    mouse_state.last_mouse_pos = [event.clientX - box.left, event.clientY - box.top];
 });
 
 document.addEventListener('mousedown', function(event)
@@ -276,29 +329,33 @@ document.addEventListener('mousedown', function(event)
 
     if (event.button == 0)
     {
-        MOUSEDOWN_AT = LAST_MOUSE_POSITION.slice();
-        if (CURRENT_NEXT_SEGMENT)
-        {
-            world_state.track.segments.push(CURRENT_NEXT_SEGMENT);
-            CURRENT_NEXT_SEGMENT = null;
-        }
+        mouse_state.down();
+        // if (CURRENT_NEXT_SEGMENT)
+        // {
+        //     world_state.track.segments.push(CURRENT_NEXT_SEGMENT);
+        //     CURRENT_NEXT_SEGMENT = null;
+        // }
     }
     else if (event.button == 2)
     {
-        IGNORE_MOUSE = !IGNORE_MOUSE;
+        // right click
     }
 });
 
 document.addEventListener('mouseup', function(event)
 {
     console.log(event);
-    MOUSEDOWN_AT = [];
+    if (mouse_state.dragging())
+    {
+        DRAGGED_OFFSET = mouse_state.dragging();
+    }
+    mouse_state.up();
 });
 
 document.addEventListener('mousewheel', function(event)
 {
     console.log(event);
-    if (window.pageYOffset == 0)
+    if (window.scrollY == 0)
     {
         event.preventDefault();
         if (event.deltaY > 0) world_state.target_zoom_scale *= 1.3;

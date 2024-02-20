@@ -45,7 +45,8 @@ RenderContext.prototype.screen_to_world = function(v)
     return add2d(this.aabb.evaluate(tx - 0.5, ty - 0.5), this.aabb.center());
 }
 
-RenderContext.prototype.point = function(u, radius, fill_color, stroke_color, alpha, linewidth, z_index=0)
+RenderContext.prototype.point = function(u, radius=1,
+    fill_color="black", stroke_color=null, alpha=1, linewidth=0, z_index=0)
 {
     this.render_array.push(new Circle(u, radius, fill_color, stroke_color, alpha, linewidth, z_index));
 }
@@ -58,6 +59,11 @@ RenderContext.prototype.screen_point = function(u, radius)
 RenderContext.prototype.polyline = function(points, linewidth=1, stroke_color="black", fill_color=null, z_index=0)
 {
     this.render_array.push(new Polyline(points, linewidth, stroke_color, fill_color, z_index));
+}
+
+RenderContext.prototype.arrow = function(base, tip, linewidth=1, color="black", z_index=0)
+{
+    this.render_array.push(new Arrow(base, tip, linewidth, color, z_index));
 }
 
 RenderContext.prototype.text = function(text, screen_coords)
@@ -158,4 +164,48 @@ Circle.prototype.draw = function(rctx)
     }
 
     rctx.ctx.restore();
+}
+
+function Arrow(base, tip, linewidth, color, z_index)
+{
+    this.base = base;
+    this.tip = tip;
+    this.linewidth = linewidth;
+    this.color = color;
+    this.z_index = z_index;
+}
+
+Arrow.prototype.draw = function(rctx)
+{
+    let base = rctx.world_to_screen(this.base);
+    let tip = rctx.world_to_screen(this.tip);
+
+    let u = mult2d(unit2d(sub2d(tip, base)), 12);
+
+    let left  = add2d(tip, rot2d(u,  Math.PI * 1.1));
+    let right = add2d(tip, rot2d(u, -Math.PI * 1.1));
+
+    rctx.ctx.globalAlpha = 1;
+    rctx.ctx.lineWidth = this.linewidth;
+    rctx.ctx.strokeStyle = this.color;
+    rctx.ctx.fillStyle = this.color;
+    rctx.ctx.beginPath();
+    rctx.ctx.moveTo(base[0], base[1]);
+    rctx.ctx.lineTo(tip[0], tip[1]);
+    rctx.ctx.stroke();
+    rctx.ctx.beginPath();
+    rctx.ctx.moveTo(tip[0], tip[1]);
+    rctx.ctx.lineTo(left[0], left[1]);
+    rctx.ctx.stroke();
+    rctx.ctx.beginPath();
+    rctx.ctx.moveTo(tip[0], tip[1]);
+    rctx.ctx.lineTo(right[0], right[1]);
+    rctx.ctx.stroke();
+    rctx.ctx.beginPath();
+    rctx.ctx.moveTo(tip[0], tip[1]);
+    rctx.ctx.lineTo(right[0], right[1]);
+    rctx.ctx.lineTo(left[0], left[1]);
+    rctx.ctx.moveTo(tip[0], tip[1]);
+    rctx.ctx.fill();
+
 }

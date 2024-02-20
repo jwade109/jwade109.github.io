@@ -41,8 +41,8 @@ function TrackSegment(points, k_0, k_f)
 
         let offv = mult2d(normal, offset);
 
-        let u = add2d(p, offv);
-        let v = sub2d(p, offv);
+        let u = sub2d(p, offv);
+        let v = add2d(p, offv);
         return [u, v];
     }
 
@@ -83,6 +83,11 @@ function TrackSegment(points, k_0, k_f)
         this, bed_segment_length, bed_offset);
 
     this.bed = [].concat(bed_left, bed_right.reverse());
+}
+
+TrackSegment.prototype.reversed = function()
+{
+    return new TrackSegment(this.points.toReversed(), this.k_0, this.k_f);
 }
 
 TrackSegment.prototype.evaluate = function(t)
@@ -224,6 +229,19 @@ function generate_clothoid(start, direction, s_max, n_segments, k_0, k_f)
     return new TrackSegment(pts, k_0, k_f);
 }
 
+function line_clothoid(beg, end)
+{
+    let d = distance(beg, end);
+    let pts = [];
+    let n = Math.max(Math.ceil(d / 25), 3);
+    for (let t of linspace(0, 1, n))
+    {
+        let p = lerp2d(beg, end, t);
+        pts.push(p);
+    }
+    return new TrackSegment(pts, 0, 0);
+}
+
 function Track(segments)
 {
     this.segments = segments;
@@ -326,7 +344,6 @@ Track.prototype.extend = function(s, arclength, candidate)
         let u = end_segment.tangent(1);
         let k_0 = end_segment.k_f;
         let k_f = rand(-MAX_CURVATURE, MAX_CURVATURE);
-        // console.log(k_f);
 
         let new_segment = generate_clothoid(p, u, arclength, arclength / 10, k_0, k_f);
         this.segments.push(new_segment);
@@ -353,23 +370,209 @@ Track.prototype.prune = function(s_prune)
     return changed;
 }
 
+function push_set(set, element)
+{
+    if (!set.includes(element))
+    {
+        set.push(element);
+    }
+}
+
+function get_nodes(edges)
+{
+    let nodes = [];
+    for (let [d, s] of edges)
+    {
+        push_set(nodes, d);
+        push_set(nodes, s);
+    }
+
+    return nodes;
+}
+
+function get_adjecent_nodes(node, edges)
+{
+    let upstream = [];
+    let downstream = [];
+    for (let [s, d] of edges)
+    {
+        if (s == node)
+        {
+            push_set(downstream, d);
+        }
+        if (d == node)
+        {
+            push_set(upstream, s);
+        }
+    }
+    return {"upstream": upstream, "downstream": downstream};
+}
+
+function get_leaves(edges)
+{
+    let sources = [];
+    let sinks = [];
+    for (let node of get_nodes(edges))
+    {
+        let adjacent = get_adjecent_nodes(node, edges);
+        if (adjacent.upstream.length == 0)
+        {
+            // this node has no upstream neighbors; it's a source
+            push_set(sources, node);
+        }
+        if (adjacent.downstream.length == 0)
+        {
+            // this node has no destinations; it's an exit
+            push_set(sinks, node);
+        }
+    }
+    return {"sources": sources, "sinks": sinks};
+}
+
+function get_routes_from(node, edges, sinks)
+{
+    // base case: current node is a sink
+    if (sinks.includes(node))
+    {
+        return [[node]];
+    }
+    let adj = get_adjecent_nodes(node, edges);
+    let routes = [];
+    for (let ds of adj.downstream)
+    {
+        let rts = get_routes_from(ds, edges, sinks);
+        for (let i = 0; i < rts.length; ++i)
+        {
+            rts[i] = [node].concat(rts[i]);
+        }
+        routes = routes.concat(rts);
+    }
+    return routes;
+}
+
+function get_routes(edges)
+{
+    let routes = [];
+    let leaves = get_leaves(edges);
+
+    for (let node of leaves.sources)
+    {
+        let rts = get_routes_from(node, edges, leaves.sinks);
+        routes = routes.concat(rts);
+    }
+
+    return routes;
+}
+
 function MultiTrack(segments, connections)
 {
     this.segments = segments;
     this.connections = connections;
+
+    let n = this.connections.length;
+
+    // TODO implicit connections
+    for (let i = 0; i < n; ++i)
+    {
+        let [src, dst] = this.connections[i];
+        this.connections.push([-dst, -src]);
+    }
+
+    this.routes = get_routes(this.connections);
+    this.routes.sort();
 }
+
+let ROUTE_INDEX = 0;
 
 MultiTrack.prototype.draw = function(rctx)
 {
-    for (let segment of this.segments)
+    let tmin = 0.1;
+    let tmax = 0.9;
+
+    let current_time = new Date().getTime() / 1000;
+
+    ROUTE_INDEX %= this.routes.length;
+    let current_route = this.routes[ROUTE_INDEX];
+    rctx.text("Route index: " + ROUTE_INDEX, [600, 100]);
+    rctx.text("Route: " + current_route, [600, 150]);
+    let segments = [];
+    for (let signed_id of current_route)
     {
-        segment.aabb.draw(rctx);
+        let dir = Math.sign(signed_id);
+        let segment_id = Math.abs(signed_id) - 1;
+        let seg = this.segments[segment_id];
+        if (dir == 1)
+        {
+            segments.push(seg);
+        }
+        else
+        {
+            segments.push(seg.reversed());
+        }
     }
 
-    for (let [from, to] of this.connections)
+    let track = new Track(segments);
+    let t = track.s_to_t((200 * current_time) % track.length());
+    let p = track.evaluate(t);
+    rctx.point(p, 10);
+
+    for (let conn of this.connections)
     {
-        let s1 = this.segments[from];
-        let s2 = this.segments[to];
-        rctx.polyline([s1.evaluate(0.5), s2.evaluate(0.5)], 5, "purple");
+        let src = conn[0];
+        let dst = conn[1];
+
+        let src_i = Math.abs(src) - 1;
+        let dst_i = Math.abs(dst) - 1;
+
+        let src_seg = this.segments[src_i];
+        let dst_seg = this.segments[dst_i];
+
+        let p = null;
+        let q = null;
+
+        if (Math.sign(src) > 0 && Math.sign(dst) > 0)
+        {
+            // right rail to right rail
+            p = src_seg.rail_right[src_seg.rail_right.length - 1];
+            q = dst_seg.rail_right[0];
+        }
+        else if (Math.sign(src) < 0 && Math.sign(dst) > 0)
+        {
+            // left rail to right rail
+            p = src_seg.rail_left[0];
+            q = dst_seg.rail_right[0];
+        }
+        else if (Math.sign(src) > 0 && Math.sign(dst) < 0)
+        {
+            // right rail to left rail
+            p = src_seg.rail_right[src_seg.rail_right.length - 1];
+            q = dst_seg.rail_left[dst_seg.rail_left.length - 1];
+        }
+        else if (Math.sign(src) < 0 && Math.sign(dst) < 0)
+        {
+            // left rail to left rail
+            p = src_seg.rail_left[0];
+            q = dst_seg.rail_left[dst_seg.rail_left.length - 1];
+        }
+        else
+        {
+            console.log("Unhandled:", src, dst);
+        }
+
+        if (p)
+        {
+            rctx.arrow(p, q);
+        }
+    }
+
+    for (let i = 0; i < this.segments.length; ++i)
+    {
+        let seg = this.segments[i];
+
+        rctx.polyline(seg.rail_left, 1, "red");
+        rctx.polyline(seg.rail_right, 2, "green");
+        let p_center = seg.evaluate(0.5);
+        rctx.text(i + 1, rctx.world_to_screen(p_center));
     }
 }
+
