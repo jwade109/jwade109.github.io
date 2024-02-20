@@ -570,8 +570,8 @@ MultiTrack.prototype.draw = function(rctx)
     {
         let seg = this.segments[i];
 
-        rctx.polyline(seg.rail_left, 1, "red");
-        rctx.polyline(seg.rail_right, 2, "green");
+        rctx.polyline(seg.rail_left, 1, "red", null, 5000);
+        rctx.polyline(seg.rail_right, 2, "green", null, 5000);
         let p_center = seg.evaluate(0.5);
         rctx.text(i + 1, rctx.world_to_screen(p_center));
     }

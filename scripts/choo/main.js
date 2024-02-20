@@ -58,9 +58,9 @@ function generate_sample_multitrack()
         line_clothoid([ 170,  100], [ 280,  110]),
         line_clothoid([ 170,   90], [ 260,   70]),
 
-        // line_clothoid([ -50,   40], [ 30,  250]),
-        // line_clothoid([ -50,   40], [ 30,  250]),
-        // line_clothoid([ 170,   90], [ 260,   70]),
+        line_clothoid([ -50,   40], [  30,  250]),
+        line_clothoid([ 150,  120], [  50,  250]),
+        line_clothoid([  40,  260], [  50,  340]),
         // line_clothoid([ 170,   90], [ 260,   70]),
     ];
 
@@ -72,7 +72,12 @@ function generate_sample_multitrack()
         [-2,  6],
         [-2,  7],
         [ 4,  6],
-        [ 4,  7]
+        [ 4,  7],
+
+        [8, 10],
+        [9, 10],
+        [1, 8],
+        [-6, 9]
     ];
 
     return [segments, connections]
