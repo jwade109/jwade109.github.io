@@ -61,7 +61,10 @@ function generate_sample_multitrack()
         line_clothoid([ -50,   40], [  30,  250]),
         line_clothoid([ 150,  120], [  50,  250]),
         line_clothoid([  40,  260], [  50,  340]),
-        // line_clothoid([ 170,   90], [ 260,   70]),
+
+        // loop de loop
+        line_clothoid([ 280,  110], [ 180,  320]),
+        line_clothoid([ 180,  320], [  50,  340]),
     ];
 
     let connections = [
@@ -73,11 +76,15 @@ function generate_sample_multitrack()
         [-2,  7],
         [ 4,  6],
         [ 4,  7],
+        [ 1,  8],
+        [-6,  9],
+        [ 8, 10],
+        [ 9, 10],
 
-        [8, 10],
-        [9, 10],
-        [1, 8],
-        [-6, 9]
+        // uh oh! it's a loop!
+        [10, -12],
+        [6, 11],
+        [11, 12]
     ];
 
     return [segments, connections]
@@ -156,7 +163,6 @@ WorldState.prototype.draw = function()
             let base = rctx.screen_to_world(mouse_state.mouse_down_at);
             let tip = rctx.screen_to_world(d);
             rctx.arrow(base, tip, 3, "red", 5000);
-            console.log(base, tip);
         }
 
         // let world = rctx.screen_to_world(mouse_state.last_mouse_pos);

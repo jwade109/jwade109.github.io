@@ -429,8 +429,13 @@ function get_leaves(edges)
     return {"sources": sources, "sinks": sinks};
 }
 
-function get_routes_from(node, edges, sinks)
+function get_routes_from(node, edges, sinks, visited)
 {
+    if (visited.includes(node))
+    {
+        return [[node]];
+    }
+    visited.push(node);
     // base case: current node is a sink
     if (sinks.includes(node))
     {
@@ -440,13 +445,14 @@ function get_routes_from(node, edges, sinks)
     let routes = [];
     for (let ds of adj.downstream)
     {
-        let rts = get_routes_from(ds, edges, sinks);
+        let rts = get_routes_from(ds, edges, sinks, visited);
         for (let i = 0; i < rts.length; ++i)
         {
             rts[i] = [node].concat(rts[i]);
         }
         routes = routes.concat(rts);
     }
+    routes = routes.filter(r => sinks.includes(r[r.length - 1]));
     return routes;
 }
 
@@ -457,7 +463,7 @@ function get_routes(edges)
 
     for (let node of leaves.sources)
     {
-        let rts = get_routes_from(node, edges, leaves.sinks);
+        let rts = get_routes_from(node, edges, leaves.sinks, []);
         routes = routes.concat(rts);
     }
 
@@ -493,7 +499,7 @@ MultiTrack.prototype.draw = function(rctx)
 
     ROUTE_INDEX %= this.routes.length;
     let current_route = this.routes[ROUTE_INDEX];
-    rctx.text("Route index: " + ROUTE_INDEX, [600, 100]);
+    rctx.text("Route " + ROUTE_INDEX + " of " + this.routes.length, [600, 100]);
     rctx.text("Route: " + current_route, [600, 150]);
     let segments = [];
     for (let signed_id of current_route)
@@ -512,10 +518,14 @@ MultiTrack.prototype.draw = function(rctx)
     }
 
     let track = new Track(segments);
-    let t = track.s_to_t((200 * current_time) % track.length());
-    let p = track.evaluate(t);
     track.draw(rctx);
-    rctx.point(p, 10);
+    for (let s of linspace(0, track.length(), track.length() / 20))
+    {
+        let t = track.s_to_t((100 * current_time + s) % track.length());
+        let p = track.evaluate(t);
+        let u = track.normal(t);
+        rctx.point(add2d(p, mult2d(u, 4)), 3);
+    }
 
     for (let conn of this.connections)
     {
