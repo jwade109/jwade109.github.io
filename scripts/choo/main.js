@@ -56,7 +56,12 @@ function generate_sample_multitrack()
         line_clothoid([  60, -100], [ 150,   80]),
         line_clothoid([  50, -120], [  50, -200]),
         line_clothoid([ 170,  100], [ 280,  110]),
-        line_clothoid([ 170,   90], [ 260,   70])
+        line_clothoid([ 170,   90], [ 260,   70]),
+
+        // line_clothoid([ -50,   40], [ 30,  250]),
+        // line_clothoid([ -50,   40], [ 30,  250]),
+        // line_clothoid([ 170,   90], [ 260,   70]),
+        // line_clothoid([ 170,   90], [ 260,   70]),
     ];
 
     let connections = [

@@ -514,6 +514,7 @@ MultiTrack.prototype.draw = function(rctx)
     let track = new Track(segments);
     let t = track.s_to_t((200 * current_time) % track.length());
     let p = track.evaluate(t);
+    track.draw(rctx);
     rctx.point(p, 10);
 
     for (let conn of this.connections)
