@@ -71,7 +71,7 @@ function Train(position, n_cars, width, height)
         }
         else if (rand(0, 1) < 0.1)
         {
-            let rgb = Math.floor(Math.random() * 60 + 150).toString(16);
+            let rgb = randint(80, 120).toString(16);
             color = "#" + rgb + rgb + rgb;
         }
         else if (rand(0, 1) < 0.1)
@@ -194,7 +194,7 @@ Train.prototype.draw = function(rctx, path)
             }
 
             let p_link = path.evaluate(t_link);
-            rctx.point(p_link, 3, "black", null, 1, 0);
+            rctx.point(p_link, 3, "black", null, 1, 0, 99);
         }
 
         s -= LINKAGE_OFFSET / 2;

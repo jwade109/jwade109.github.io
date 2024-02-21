@@ -171,8 +171,6 @@ TrackSegment.prototype.draw = function(rctx)
         return;
     }
 
-    rctx.ctx.save();
-
     for (let i = 0; i < this.sleeper_left.length; ++i)
     {
         let line = [this.sleeper_left[i], this.sleeper_right[i]];
@@ -201,8 +199,6 @@ TrackSegment.prototype.draw = function(rctx)
     {
         draw_curvature(this, 1, this.k_f);
     }
-
-    rctx.ctx.restore();
 }
 
 TrackSegment.prototype.extend_clothoid = function(arclength, curvature, backwards)
@@ -220,7 +216,7 @@ TrackSegment.prototype.extend_clothoid = function(arclength, curvature, backward
     {
         u = mult2d(u, -1);
     }
-    return generate_clothoid(p, u, arclength, arclength / 20, k_f, curvature);
+    return generate_clothoid(p, u, arclength, arclength / 3, k_f, curvature);
 }
 
 function curvature_angle(phi_0, k_0, k_p, s_n)
