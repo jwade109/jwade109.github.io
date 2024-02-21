@@ -450,3 +450,14 @@ function randint(min, max)
 {
     return Math.floor(rand(min, max));
 }
+
+function linspace(min, max, n)
+{
+    let ret = [];
+    n = Math.floor(n);
+    for (let i = 0; i < n; ++i)
+    {
+        ret.push(lerp(min, max, i / (n - 1)));
+    }
+    return ret;
+}

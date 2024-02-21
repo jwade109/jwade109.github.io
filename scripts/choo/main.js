@@ -9,8 +9,11 @@ let PAUSED = false;
 let STEPS = 0;
 let MAX_CURVATURE = 6E-3;
 let NEW_SEGMENT_GENERATION_LENGTH = [300, 1200];
-let CURRENT_NEXT_SEGMENT = null;
 let DRAGGED_OFFSET = [0, 0];
+
+let WORLD_GRID = {};
+
+const GRID_SCALE_FACTOR = 1000;
 
 function MouseState()
 {
@@ -43,7 +46,7 @@ function sweep_from_segment(segment, n, arclength)
 {
     let p = segment.evaluate(1);
     let u = segment.tangent(1);
-    return generate_clothoid_sweep(p, u, arclength, arclength / 10,
+    return generate_clothoid_sweep(p, u, arclength / 10, [arclength],
         [segment.k_0], linspace(-MAX_CURVATURE, MAX_CURVATURE, n));
 }
 
@@ -90,71 +93,133 @@ function generate_sample_multitrack()
     return [segments, connections]
 }
 
+function build_procedural_track()
+{
+    let c0 = generate_clothoid([0, -400], [0, 1], 300, 50, -MAX_CURVATURE/4, 0);
+
+    let tb = new TrackBuilder(c0);
+
+    for (let c of linspace(-MAX_CURVATURE/2, MAX_CURVATURE/2, 3))
+    {
+        tb.cursor(1);
+        tb.extend(400, c);
+    }
+
+    tb.cursor(3);
+    tb.extend(400, -MAX_CURVATURE/3);
+    tb.extend(200, -MAX_CURVATURE);
+    tb.extend(500, -MAX_CURVATURE);
+    tb.extend(200, 0);
+
+    tb.cursor(4);
+    tb.extend(400, 0);
+    tb.extend(300, -MAX_CURVATURE);
+    tb.extend(300, -MAX_CURVATURE);
+
+    tb.cursor(9);
+    tb.extend(200, MAX_CURVATURE);
+    tb.extend(200, MAX_CURVATURE);
+    tb.extend(600, -MAX_CURVATURE/2);
+
+    tb.cursor(-8);
+    tb.extend(500, 0);
+    tb.extend(300, 0);
+
+    tb.cursor(14);
+    let ctr = tb.extend(600, MAX_CURVATURE/2);
+    tb.cursor(14);
+    tb.extend(300, -MAX_CURVATURE/2);
+    tb.cursor(-ctr);
+    tb.extend(100, -MAX_CURVATURE);
+    tb.extend(300, MAX_CURVATURE);
+    tb.cursor(ctr);
+    tb.connect(-1);
+
+    tb.cursor(8);
+    tb.connect(2);
+
+    for (let c of linspace(-MAX_CURVATURE/2, MAX_CURVATURE/2, 3))
+    {
+        tb.cursor(-1);
+        tb.extend(400, c);
+    }
+
+    tb.cursor(15);
+    tb.connect(24);
+    tb.cursor(16);
+    tb.connect(24);
+
+    tb.cursor(6);
+    tb.connect(-16);
+
+    tb.cursor(-12);
+    tb.connect(-6);
+
+    return [tb.segments, tb.connections];
+}
+
 function WorldState()
 {
-    let [segments, connections] = generate_sample_multitrack();
-    this.track = new Track(segments);
-    this.trains = make_trains(this.track.length());
+    let [segments, connections] = build_procedural_track();
+    this.trains = make_trains(100);
     this.multitrack = new MultiTrack(segments, connections);
     this.zoom_scale = 1;
     this.target_zoom_scale = 1;
+
+    for (let t of this.trains)
+    {
+        t.path = [1, 3, 5, 6, 7, 8, 22, -2, -1, -21, -17, -14, -13, -12, 29, 6, 28, 16, 27, -24];
+    }
 }
 
 WorldState.prototype.step = function(dt)
 {
-    // let track_changed = false;
-
     for (let t of this.trains)
     {
-        t.step(dt, this.track);
-
-        // let [max_s, min_s] = t.s_limits();
-        // if (max_s > this.track.length())
-        // {
-        //     let arclength = rand(NEW_SEGMENT_GENERATION_LENGTH[0], NEW_SEGMENT_GENERATION_LENGTH[1]);
-        //     track_changed |= this.track.extend(max_s, arclength, CURRENT_NEXT_SEGMENT);
-        // }
-        // track_changed |= this.track.prune(min_s);
+        let track = this.multitrack.get_track(t.path);
+        t.step(dt, track);
+        // TODO probably not a good idea in the long run
+        t.pos %= track.length();
     }
-    normalize_path_coords(this.track, this.trains);
+    // normalize_path_coords(track, this.trains);
 }
 
 WorldState.prototype.draw = function()
 {
     this.zoom_scale += (this.target_zoom_scale - this.zoom_scale) * 0.5;
 
+
     // get current camera viewport bounds
     let center = [0, 0];
     if (this.trains.length)
     {
-        let t = this.track.s_to_t(this.trains[0].pos);
+        let track = this.multitrack.get_track(this.trains[0].path);
+        let t = track.s_to_t(this.trains[0].pos);
         if (t != null)
         {
-            center = this.track.evaluate(t);
+            center = track.evaluate(t);
         }
     }
 
     let rctx = get_render_context(center, this.zoom_scale);
 
-    rctx.ctx.save();
-
+    // origin gridlines
     rctx.polyline([[-2000, 0], [2000, 0]], 1, "lightgray", -1);
     rctx.polyline([[0, -2000], [0, 2000]], 1, "lightgray", -1);
 
-    // this.track.draw(rctx);
-
     for (let t of this.trains)
     {
-        t.draw(rctx, this.track);
+        let track = this.multitrack.get_track(t.path);
+        t.draw(rctx, track);
     }
-
-    let end_segment = this.track.segments[this.track.segments.length - 1];
-    let p = end_segment.evaluate(1);
-    let u = end_segment.tangent(1);
-    let k_0 = end_segment.k_f;
 
     if (mouse_state.last_mouse_pos)
     {
+        let world = rctx.screen_to_world(mouse_state.last_mouse_pos);
+        // let gi = to_grid_index(world, GRID_SCALE_FACTOR);
+        // let aabb = grid_aabb(gi, GRID_SCALE_FACTOR);
+        // aabb.draw(rctx);
+
         rctx.screen_point(mouse_state.last_mouse_pos, 3);
         let dragging = mouse_state.dragging();
         if (dragging != null)
@@ -165,9 +230,16 @@ WorldState.prototype.draw = function()
             rctx.arrow(base, tip, 3, "red", 5000);
         }
 
-        // let world = rctx.screen_to_world(mouse_state.last_mouse_pos);
-        // CURRENT_NEXT_SEGMENT = targeted_clothoid(p, u, k_0, world);
-        // CURRENT_NEXT_SEGMENT.draw(rctx);
+        if (mouse_state.mouse_down_at)
+        {
+            world = rctx.screen_to_world(mouse_state.mouse_down_at);
+        }
+        let u = [0, 1];
+        if (dragging && mag2d(dragging) > 0)
+        {
+            u = unit2d(dragging);
+            u[1] *= -1;
+        }
     }
 
     this.multitrack.draw(rctx);
@@ -177,23 +249,24 @@ WorldState.prototype.draw = function()
 
     // rctx.text("Right click toggles mouse following", [40, text_y += dy]);
     // rctx.text("Left click to add a new segment", [40, text_y += dy]);
-    rctx.text("Spacebar increments route index", [40, text_y += dy]);
+    rctx.text("Spacebar pauses the simulation", [40, text_y += dy]);
     rctx.text("Scroll wheel and arrow keys zoom in and out", [40, text_y += dy]);
 
     rctx.draw();
-
-    rctx.ctx.restore();
 }
 
-function generate_clothoid_sweep(start, dir, arclength, n, k_0_n, k_f_n)
+function generate_clothoid_sweep(start, dir, n, arclengths, k_0_n, k_f_n)
 {
     let segments = [];
-    for (let k_0 of k_0_n)
+    for (let a of arclengths)
     {
-        for (let k_f of k_f_n)
+        for (let k_0 of k_0_n)
         {
-            let t = generate_clothoid(start, dir, arclength, n, k_0, k_f);
-            segments.push(t);
+            for (let k_f of k_f_n)
+            {
+                let t = generate_clothoid(start, dir, a, n, k_0, k_f);
+                segments.push(t);
+            }
         }
     }
     return segments;
@@ -202,48 +275,11 @@ function generate_clothoid_sweep(start, dir, arclength, n, k_0_n, k_f_n)
 function make_trains(length)
 {
     let trains = [];
-    for (let i = 0; i < 0; ++i)
+    for (let i = 0; i < 1; ++i)
     {
-        trains.push(new Train(rand(0, length), rand(30, 60)));
+        trains.push(new Train(rand(0, length), rand(15, 22)));
     }
     return trains;
-}
-
-function linspace(min, max, n)
-{
-    let ret = [];
-    n = Math.floor(n);
-    for (let i = 0; i < n; ++i)
-    {
-        ret.push(lerp(min, max, i / (n - 1)));
-    }
-    return ret;
-}
-
-function targeted_clothoid(start, dir, k_0, end)
-{
-    let arclength = 500;
-    let sweep = generate_clothoid_sweep(start, dir, arclength, arclength / 10,
-        linspace(-MAX_CURVATURE, MAX_CURVATURE, 10),
-        linspace(-MAX_CURVATURE, MAX_CURVATURE, 10));
-
-    let best_curve = sweep[0];
-    let d_min = distance(best_curve.points[0], end);
-    for (let i = 0; i < sweep.length; ++i)
-    {
-        let curve = sweep[i];
-        for (let p of curve.points)
-        {
-            let d = distance(p, end);
-            if (d < d_min)
-            {
-                d_min = d;
-                best_curve = curve;
-            }
-        }
-    }
-
-    return best_curve;
 }
 
 function get_render_context(center_world, zoom_scale)
@@ -312,7 +348,6 @@ document.addEventListener('keypress', function(event)
     if (event.code == "Space")
     {
         PAUSED = !PAUSED;
-        ROUTE_INDEX += 1;
     }
     if (event.code == "KeyS")
     {

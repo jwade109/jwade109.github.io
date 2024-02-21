@@ -51,6 +51,13 @@ AABB.prototype.draw = function(rctx)
     rctx.ctx.restore();
 }
 
+AABB.prototype.random = function()
+{
+    let x = lerp(this.min[0], this.max[0], rand(0, 1));
+    let y = lerp(this.min[1], this.max[1], rand(0, 1));
+    return [x, y];
+}
+
 function aabb_from_points(pts)
 {
     let min = pts[0].slice();

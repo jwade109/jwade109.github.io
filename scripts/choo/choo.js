@@ -43,9 +43,9 @@ function Train(position, n_cars, width, height)
     this.vel = this.maxspeed;
     this.pos = position;
     this.dir = 1; // Math.random() < 0.5 ? 1 : -1;
-    this.emits_smoke = true; // Math.random() < 0.2;
+    this.emits_smoke = Math.random() < 0.2;
     this.has_caboose = Math.random() < 0.15;
-    this.p_n = 0;
+    this.path = 0;
 
     this.particles = [];
 
@@ -180,7 +180,7 @@ Train.prototype.draw = function(rctx, path)
             rctx.text("v = " + this.vel.toFixed(2), add2d(scr, [30 * k, text_y += dy]));
             rctx.text("p = " + p[0].toFixed(1) + ", " + p[1].toFixed(1),
                                                     add2d(scr, [30 * k, text_y += dy]));
-            rctx.text("p_n = " + this.p_n,          add2d(scr, [30 * k, text_y += dy]));
+            // rctx.text("path = " + this.path,          add2d(scr, [30 * k, text_y += dy]));
         }
 
         s -= ((c.length / 2 + LINKAGE_OFFSET / 2) * this.dir);

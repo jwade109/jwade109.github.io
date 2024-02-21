@@ -1,5 +1,10 @@
 "use strict"
 
+const DEBUG_DRAW_NETWORK_ARROWS = false;
+const DEBUG_DRAW_TRACK_IDS = false;
+const DEBUG_DRAW_JUNCTIONS = true;
+const DEBUG_DRAW_RAIL_ORIENTATION_COLORS = false;
+
 function TrackSegment(points, k_0, k_f)
 {
     this.points = points;
@@ -88,6 +93,13 @@ function TrackSegment(points, k_0, k_f)
 TrackSegment.prototype.reversed = function()
 {
     return new TrackSegment(this.points.toReversed(), this.k_0, this.k_f);
+}
+
+TrackSegment.prototype.junction_at = function(t)
+{
+    let p = this.evaluate(t);
+    let u = this.tangent(t);
+    return new Junction(p, u);
 }
 
 TrackSegment.prototype.evaluate = function(t)
@@ -191,6 +203,24 @@ TrackSegment.prototype.draw = function(rctx)
     }
 
     rctx.ctx.restore();
+}
+
+TrackSegment.prototype.extend_clothoid = function(arclength, curvature, backwards)
+{
+    let t = 1;
+    let k_f = this.k_f;
+    if (backwards)
+    {
+        t = 0;
+        k_f = this.k_0;
+    }
+    let p = this.evaluate(t);
+    let u = this.tangent(t);
+    if (backwards)
+    {
+        u = mult2d(u, -1);
+    }
+    return generate_clothoid(p, u, arclength, arclength / 20, k_f, curvature);
 }
 
 function curvature_angle(phi_0, k_0, k_p, s_n)
@@ -456,18 +486,10 @@ function get_routes_from(node, edges, sinks, visited)
     return routes;
 }
 
-function get_routes(edges)
+function get_route_between(src, dst, edges)
 {
-    let routes = [];
-    let leaves = get_leaves(edges);
-
-    for (let node of leaves.sources)
-    {
-        let rts = get_routes_from(node, edges, leaves.sinks, []);
-        routes = routes.concat(rts);
-    }
-
-    return routes;
+    let routes = get_routes_from(src, edges, [dst], []);
+    console.log(routes);
 }
 
 function MultiTrack(segments, connections)
@@ -483,29 +505,14 @@ function MultiTrack(segments, connections)
         let [src, dst] = this.connections[i];
         this.connections.push([-dst, -src]);
     }
-
-    this.routes = get_routes(this.connections);
-    this.routes.sort();
 }
 
-let ROUTE_INDEX = 0;
-
-MultiTrack.prototype.draw = function(rctx)
+MultiTrack.prototype.get_track = function(route)
 {
-    let tmin = 0.1;
-    let tmax = 0.9;
-
-    let current_time = new Date().getTime() / 1000;
-
-    ROUTE_INDEX %= this.routes.length;
-    let current_route = this.routes[ROUTE_INDEX];
-    rctx.text("Route " + ROUTE_INDEX + " of " + this.routes.length, [600, 100]);
-    rctx.text("Route: " + current_route, [600, 150]);
     let segments = [];
-    for (let signed_id of current_route)
+    for (let signed_id of route)
     {
-        let dir = Math.sign(signed_id);
-        let segment_id = Math.abs(signed_id) - 1;
+        let [segment_id, dir] = split_signed_index(signed_id);
         let seg = this.segments[segment_id];
         if (dir == 1)
         {
@@ -516,15 +523,32 @@ MultiTrack.prototype.draw = function(rctx)
             segments.push(seg.reversed());
         }
     }
+    return new Track(segments);
+}
 
-    let track = new Track(segments);
-    track.draw(rctx);
-    for (let s of linspace(0, track.length(), track.length() / 20))
+MultiTrack.prototype.draw = function(rctx)
+{
+    let current_time = new Date().getTime() / 1000;
+
+    for (let seg of this.segments)
     {
-        let t = track.s_to_t((100 * current_time + s) % track.length());
-        let p = track.evaluate(t);
-        let u = track.normal(t);
-        rctx.point(add2d(p, mult2d(u, 4)), 3);
+        seg.draw(rctx);
+    }
+
+    for (let i = 0; i < this.segments.length && DEBUG_DRAW_TRACK_IDS; ++i)
+    {
+        let seg = this.segments[i];
+        let p_center = seg.evaluate(0.5);
+        rctx.text(i + 1, rctx.world_to_screen(p_center));
+    }
+
+    for (let i = 0; i < this.segments.length && DEBUG_DRAW_JUNCTIONS; ++i)
+    {
+        let seg = this.segments[i];
+        let j1 = seg.junction_at(0);
+        j1.draw(rctx);
+        let j2 = seg.junction_at(1);
+        j2.draw(rctx);
     }
 
     for (let conn of this.connections)
@@ -570,20 +594,43 @@ MultiTrack.prototype.draw = function(rctx)
             console.log("Unhandled:", src, dst);
         }
 
-        if (p)
+        if (p && DEBUG_DRAW_NETWORK_ARROWS)
         {
             rctx.arrow(p, q);
         }
     }
 
-    for (let i = 0; i < this.segments.length; ++i)
+    for (let i = 0; i < this.segments.length && DEBUG_DRAW_RAIL_ORIENTATION_COLORS; ++i)
     {
         let seg = this.segments[i];
-
         rctx.polyline(seg.rail_left, 1, "red", null, 5000);
         rctx.polyline(seg.rail_right, 2, "green", null, 5000);
-        let p_center = seg.evaluate(0.5);
-        rctx.text(i + 1, rctx.world_to_screen(p_center));
     }
 }
 
+function Junction(pos, dir, side_a, side_b)
+{
+    this.pos = pos;
+    this.tangent = unit2d(dir);
+    this.normal = rot2d(this.tangent, Math.PI / 2);
+    this.side_a = side_a;
+    this.side_b = side_b;
+}
+
+Junction.prototype.draw = function(rctx)
+{
+    let length = 4;
+    let width = 12;
+
+    let l2 = mult2d(this.tangent, length / 2);
+    let w2 = mult2d(this.normal,  width  / 2);
+
+    let p1 = add2d(this.pos, add2d(mult2d(l2,  1), mult2d(w2,  1)));
+    let p2 = add2d(this.pos, add2d(mult2d(l2,  1), mult2d(w2, -1)));
+    let p3 = add2d(this.pos, add2d(mult2d(l2, -1), mult2d(w2, -1)));
+    let p4 = add2d(this.pos, add2d(mult2d(l2, -1), mult2d(w2,  1)));
+    let p5 = add2d(this.pos, mult2d(l2,  1));
+
+    rctx.polyline([p1, p2, p3, p4, p1], 2, "black", "#222222");
+    rctx.polyline([this.pos, p5], 2, "black", "#222222");
+}
