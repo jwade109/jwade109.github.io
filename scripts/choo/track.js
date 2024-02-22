@@ -1,9 +1,10 @@
 "use strict"
 
-const DEBUG_DRAW_NETWORK_ARROWS = false;
-const DEBUG_DRAW_TRACK_IDS = false;
-const DEBUG_DRAW_JUNCTIONS = true;
-const DEBUG_DRAW_RAIL_ORIENTATION_COLORS = false;
+let DEBUG_DRAW_NETWORK_ARROWS = false;
+let DEBUG_DRAW_TRACK_IDS = false;
+let DEBUG_DRAW_JUNCTIONS = false;
+let DEBUG_DRAW_RAIL_ORIENTATION_COLORS = false;
+let DEBUG_DRAW_CURVATURE = false;
 
 function TrackSegment(points, k_0, k_f)
 {
@@ -72,7 +73,7 @@ function TrackSegment(points, k_0, k_f)
         return [left, right];
     }
 
-    let sleeper_segment_length = 3;
+    let sleeper_segment_length = 4.5;
     let rail_segment_length = 10;
     let bed_segment_length = 20;
 
@@ -180,24 +181,27 @@ TrackSegment.prototype.draw = function(rctx)
     rctx.polyline(this.rail_left,  1, "#333333", null,      10);
     rctx.polyline(this.rail_right, 1, "#333333", null,      10);
 
-    rctx.polyline(this.bed,        4, "#DDDDDD", "#DDDDDD", -3);
+    // rctx.polyline(this.bed,        4, "#DDDDDD", "#DDDDDD", -3);
 
-    function draw_curvature(track, t, k)
+    if (DEBUG_DRAW_CURVATURE)
     {
-        let p0 = track.evaluate(t);
-        let t0 = track.normal(t);
-        let r0 = 1 / k;
-        p0 = add2d(p0, mult2d(t0, -r0));
-        // render2d(p0, rctx.ctx, -Math.abs(r0), "purple", 0.3);
-    }
+        function draw_curvature(track, t, k)
+        {
+            let p0 = track.evaluate(t);
+            let t0 = track.normal(t);
+            let r0 = 1 / k;
+            p0 = add2d(p0, mult2d(t0, -r0));
+            rctx.point(p0, Math.abs(r0), null, "purple", 0.3);
+        }
 
-    if (Math.abs(this.k_0) > 1E-5)
-    {
-        draw_curvature(this, 0, this.k_0);
-    }
-    if (Math.abs(this.k_f) > 1E-5)
-    {
-        draw_curvature(this, 1, this.k_f);
+        if (Math.abs(this.k_0) > 1E-5)
+        {
+            draw_curvature(this, 0, this.k_0);
+        }
+        if (Math.abs(this.k_f) > 1E-5)
+        {
+            draw_curvature(this, 1, this.k_f);
+        }
     }
 }
 
@@ -296,6 +300,10 @@ Track.prototype.draw = function(rctx)
 
 Track.prototype.evaluate = function(t)
 {
+    if (this.segments.length == 0)
+    {
+        return null;
+    }
     if (t < 0 || t > this.segments.length)
     {
         return null;
@@ -309,6 +317,10 @@ Track.prototype.evaluate = function(t)
 
 Track.prototype.tangent = function(t)
 {
+    if (this.segments.length == 0)
+    {
+        return null;
+    }
     if (t < 0 || t > this.segments.length)
     {
         return null;
@@ -323,6 +335,35 @@ Track.prototype.tangent = function(t)
 Track.prototype.normal = function(t)
 {
     return rot2d(this.tangent(t), Math.PI / 2);
+}
+
+Track.prototype.t_to_s = function(t)
+{
+    if (this.segments.length == 0)
+    {
+        return null;
+    }
+    if (t < 0 || t > this.segments.length)
+    {
+        return null;
+    }
+    if (t == 0)
+    {
+        return 0;
+    }
+    if (t == this.segments.length)
+    {
+        return this.length();
+    }
+    let sum = 0;
+    let max_i = Math.floor(t);
+    let tt = t - max_i;
+    for (let i = 0; i < max_i; ++i)
+    {
+        sum += this.segments[i].length;
+    }
+    sum += this.segments[max_i].length * tt;
+    return sum;
 }
 
 Track.prototype.s_to_t = function(s)
@@ -484,8 +525,7 @@ function get_routes_from(node, edges, sinks, visited)
 
 function get_route_between(src, dst, edges)
 {
-    let routes = get_routes_from(src, edges, [dst], []);
-    console.log(routes);
+    return get_routes_from(src, edges, [dst], []);
 }
 
 function MultiTrack(segments, connections)
@@ -503,13 +543,23 @@ function MultiTrack(segments, connections)
     }
 }
 
-MultiTrack.prototype.get_track = function(route)
+MultiTrack.prototype.get_track_from_route = function(route)
 {
     let segments = [];
     for (let signed_id of route)
     {
-        let [segment_id, dir] = split_signed_index(signed_id);
-        let seg = this.segments[segment_id];
+        let [sidx, dir] = split_signed_index(signed_id);
+        if (sidx >= this.segments.length || sidx < 0)
+        {
+            console.log("tried to get segment", sidx, route);
+            return null;
+        }
+        let seg = this.segments[sidx];
+        if (seg === undefined)
+        {
+            console.log("tried to get segment", sidx, route);
+            return null;
+        }
         if (dir == 1)
         {
             segments.push(seg);
@@ -524,8 +574,6 @@ MultiTrack.prototype.get_track = function(route)
 
 MultiTrack.prototype.draw = function(rctx)
 {
-    let current_time = new Date().getTime() / 1000;
-
     for (let seg of this.segments)
     {
         seg.draw(rctx);
@@ -547,52 +595,50 @@ MultiTrack.prototype.draw = function(rctx)
         j2.draw(rctx);
     }
 
-    for (let conn of this.connections)
+    if (DEBUG_DRAW_NETWORK_ARROWS)
     {
-        let src = conn[0];
-        let dst = conn[1];
+        for (let conn of this.connections)
+        {
+            let src = conn[0];
+            let dst = conn[1];
 
-        let src_i = Math.abs(src) - 1;
-        let dst_i = Math.abs(dst) - 1;
+            let src_i = Math.abs(src) - 1;
+            let dst_i = Math.abs(dst) - 1;
 
-        let src_seg = this.segments[src_i];
-        let dst_seg = this.segments[dst_i];
+            let src_seg = this.segments[src_i];
+            let dst_seg = this.segments[dst_i];
 
-        let p = null;
-        let q = null;
+            let p = null;
+            let q = null;
 
-        if (Math.sign(src) > 0 && Math.sign(dst) > 0)
-        {
-            // right rail to right rail
-            p = src_seg.rail_right[src_seg.rail_right.length - 1];
-            q = dst_seg.rail_right[0];
-        }
-        else if (Math.sign(src) < 0 && Math.sign(dst) > 0)
-        {
-            // left rail to right rail
-            p = src_seg.rail_left[0];
-            q = dst_seg.rail_right[0];
-        }
-        else if (Math.sign(src) > 0 && Math.sign(dst) < 0)
-        {
-            // right rail to left rail
-            p = src_seg.rail_right[src_seg.rail_right.length - 1];
-            q = dst_seg.rail_left[dst_seg.rail_left.length - 1];
-        }
-        else if (Math.sign(src) < 0 && Math.sign(dst) < 0)
-        {
-            // left rail to left rail
-            p = src_seg.rail_left[0];
-            q = dst_seg.rail_left[dst_seg.rail_left.length - 1];
-        }
-        else
-        {
-            console.log("Unhandled:", src, dst);
-        }
-
-        if (p && DEBUG_DRAW_NETWORK_ARROWS)
-        {
-            rctx.arrow(p, q);
+            if (Math.sign(src) > 0 && Math.sign(dst) > 0)
+            {
+                // right rail to right rail
+                p = src_seg.rail_right[src_seg.rail_right.length - 1];
+                q = dst_seg.rail_right[0];
+            }
+            else if (Math.sign(src) < 0 && Math.sign(dst) > 0)
+            {
+                // left rail to right rail
+                p = src_seg.rail_left[0];
+                q = dst_seg.rail_right[0];
+            }
+            else if (Math.sign(src) > 0 && Math.sign(dst) < 0)
+            {
+                // right rail to left rail
+                p = src_seg.rail_right[src_seg.rail_right.length - 1];
+                q = dst_seg.rail_left[dst_seg.rail_left.length - 1];
+            }
+            else if (Math.sign(src) < 0 && Math.sign(dst) < 0)
+            {
+                // left rail to left rail
+                p = src_seg.rail_left[0];
+                q = dst_seg.rail_left[dst_seg.rail_left.length - 1];
+            }
+            else
+            {
+                console.log("Unhandled:", src, dst);
+            }
         }
     }
 
@@ -602,6 +648,16 @@ MultiTrack.prototype.draw = function(rctx)
         rctx.polyline(seg.rail_left, 1, "red", null, 5000);
         rctx.polyline(seg.rail_right, 2, "green", null, 5000);
     }
+}
+
+MultiTrack.prototype.route_between = function(src, dst)
+{
+    let routes = get_route_between(src, dst, this.connections);
+    if (routes.length == 0)
+    {
+        return null;
+    }
+    return routes[0];
 }
 
 function Junction(pos, dir, side_a, side_b)

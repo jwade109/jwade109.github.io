@@ -44,7 +44,6 @@ TrackBuilder.prototype.connect = function(dst)
 
     let p0 = this.segments[cidx].evaluate(t0);
     let u0 = this.segments[cidx].tangent(t0);
-    console.log(idx, this.segments[idx], this.segments.length);
     let p1 = this.segments[idx].evaluate(t1);
     let u1 = this.segments[idx].tangent(t1);
 

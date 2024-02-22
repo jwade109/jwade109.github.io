@@ -1,8 +1,5 @@
 "use strict";
 
-var WIDTH = document.body.clientWidth;
-var HEIGHT = document.body.scrollHeight;
-
 let NOMINAL_FRAMERATE = 30;
 let NOMINAL_DT = 1 / NOMINAL_FRAMERATE;
 let PAUSED = false;
@@ -50,49 +47,6 @@ function sweep_from_segment(segment, n, arclength)
         [segment.k_0], linspace(-MAX_CURVATURE, MAX_CURVATURE, n));
 }
 
-function generate_sample_multitrack()
-{
-    let segments = [
-        line_clothoid([-300, -100], [-100,    0]),
-        line_clothoid([ 150,  100], [ -50,   20]),
-        line_clothoid([ -50,    0], [  50, -100]),
-        line_clothoid([  60, -100], [ 150,   80]),
-        line_clothoid([  50, -120], [  50, -200]),
-        line_clothoid([ 170,  100], [ 280,  110]),
-        line_clothoid([ 170,   90], [ 260,   70]),
-
-        line_clothoid([ -50,   40], [  30,  250]),
-        line_clothoid([ 150,  120], [  50,  250]),
-        line_clothoid([  40,  260], [  50,  340]),
-
-        // loop de loop
-        line_clothoid([ 280,  110], [ 180,  320]),
-        line_clothoid([ 180,  320], [  50,  340]),
-    ];
-
-    let connections = [
-        [ 1,  3],
-        [ 1, -2],
-        [ 3,  5],
-        [-5,  4],
-        [-2,  6],
-        [-2,  7],
-        [ 4,  6],
-        [ 4,  7],
-        [ 1,  8],
-        [-6,  9],
-        [ 8, 10],
-        [ 9, 10],
-
-        // uh oh! it's a loop!
-        [10, -12],
-        [6, 11],
-        [11, 12]
-    ];
-
-    return [segments, connections]
-}
-
 function build_procedural_track()
 {
     let c0 = generate_clothoid([0, -400], [0, 1], 300, 50, -MAX_CURVATURE/4, 0);
@@ -109,12 +63,12 @@ function build_procedural_track()
     tb.extend(400, -MAX_CURVATURE/3);
     tb.extend(200, -MAX_CURVATURE);
     tb.extend(500, -MAX_CURVATURE);
-    tb.extend(200, 0);
+    tb.extend(30, MAX_CURVATURE);
 
     tb.cursor(4);
     tb.extend(400, 0);
     tb.extend(300, -MAX_CURVATURE);
-    tb.extend(300, -MAX_CURVATURE);
+    tb.extend(300, MAX_CURVATURE);
 
     tb.cursor(9);
     tb.extend(200, MAX_CURVATURE);
@@ -155,20 +109,101 @@ function build_procedural_track()
     tb.cursor(-12);
     tb.connect(-6);
 
+    let root = 16;
+    let endpoint = null;
+    for (let i = 0; i < 4; ++i)
+    {
+        tb.cursor(root);
+        tb.extend(200, -MAX_CURVATURE);
+        tb.extend(50, 0);
+        tb.extend(300, 0);
+        tb.extend(200, -MAX_CURVATURE);
+        tb.extend(30, 0);
+        tb.extend(600, 0);
+
+        if (i == 0)
+        {
+            tb.extend(400, 0);
+            endpoint = tb.extend(100, 0);
+            tb.connect(23);
+        }
+        else
+        {
+            tb.connect(-endpoint);
+        }
+
+        tb.cursor(root);
+        root = tb.extend(30, 0);
+    }
+
+    tb.cursor(18);
+    tb.extend(700, 0);
+    tb.extend(1000, 0);
+    tb.extend(200, -MAX_CURVATURE);
+    let end = tb.extend(200, -MAX_CURVATURE);
+
+    tb.cursor(11);
+    tb.connect(end)
+
+    tb.cursor(25);
+    tb.connect(34);
+
+    tb.cursor(20);
+    tb.connect(-11);
+
+    tb.cursor(-14);
+    tb.connect(20);
+
     return [tb.segments, tb.connections];
+}
+
+function build_simple_test_track()
+{
+    let tb = new TrackBuilder(
+        generate_clothoid([0, -400], [0, 1], 300, 50, MAX_CURVATURE/5, MAX_CURVATURE/5)
+    );
+    for (let i = 0; i < 20; ++i)
+    {
+        tb.extend(300, -MAX_CURVATURE/2.5 + 0.001 * i);
+    }
+    // tb.connect(-1);
+    return [tb.segments, tb.connections];
+}
+
+function get_nontrivial_random_route(src, multitrack)
+{
+    for (let i = 0; i < 100; ++i)
+    {
+        if (src == null)
+        {
+            src = randint(-multitrack.segments.length, multitrack.segments.length + 1);
+        }
+        let dst = randint(-multitrack.segments.length, multitrack.segments.length + 1);
+        let rt = multitrack.route_between(src, dst);
+        if (rt && rt.length > 5)
+        {
+            return rt;
+        }
+    }
+    return null;
 }
 
 function WorldState()
 {
+    // let [segments, connections] = build_simple_test_track();
     let [segments, connections] = build_procedural_track();
-    this.trains = make_trains(100);
+    this.trains = make_trains();
     this.multitrack = new MultiTrack(segments, connections);
     this.zoom_scale = 1;
     this.target_zoom_scale = 1;
 
     for (let t of this.trains)
     {
-        t.path = [1, 3, 5, 6, 7, 8, 22, -2, -1, -21, -17, -14, -13, -12, 29, 6, 28, 16, 27, -24];
+        let route = get_nontrivial_random_route(null, this.multitrack);
+        if (route)
+        {
+            t.enqueue_route(route);
+        }
     }
 }
 
@@ -176,26 +211,33 @@ WorldState.prototype.step = function(dt)
 {
     for (let t of this.trains)
     {
-        let track = this.multitrack.get_track(t.path);
-        t.step(dt, track);
-        // TODO probably not a good idea in the long run
-        t.pos %= track.length();
+        t.step(dt, this.multitrack);
+
+        if (t.history.length > 0 && t.tbd.length == 0 && t.vel < 10)
+        {
+            console.log("New route");
+            let segno = t.history[t.history.length - 1];
+            let route = get_nontrivial_random_route(segno, this.multitrack);
+            if (route)
+            {
+                t.enqueue_route(route);
+            }
+        }
     }
-    // normalize_path_coords(track, this.trains);
 }
 
 WorldState.prototype.draw = function()
 {
     this.zoom_scale += (this.target_zoom_scale - this.zoom_scale) * 0.5;
 
-
     // get current camera viewport bounds
     let center = [0, 0];
     if (this.trains.length)
     {
-        let track = this.multitrack.get_track(this.trains[0].path);
-        let t = track.s_to_t(this.trains[0].pos);
-        if (t != null)
+        let tr = this.trains[0];
+        let track = tr.get_track(this.multitrack);
+        let t = track.s_to_t(tr.pos);
+        if (t != null && t !== undefined)
         {
             center = track.evaluate(t);
         }
@@ -209,8 +251,7 @@ WorldState.prototype.draw = function()
 
     for (let t of this.trains)
     {
-        let track = this.multitrack.get_track(t.path);
-        t.draw(rctx, track);
+        t.draw(rctx, this.multitrack);
     }
 
     if (mouse_state.last_mouse_pos)
@@ -277,7 +318,7 @@ function make_trains(length)
     let trains = [];
     for (let i = 0; i < 1; ++i)
     {
-        trains.push(new Train(rand(0, length), rand(15, 22)));
+        trains.push(new Train(0, rand(7, 22)));
     }
     return trains;
 }
@@ -344,7 +385,7 @@ var gameloop = setInterval(function()
 
 document.addEventListener('keypress', function(event)
 {
-    console.log(event);
+    // console.log(event);
     if (event.code == "Space")
     {
         PAUSED = !PAUSED;
@@ -357,7 +398,7 @@ document.addEventListener('keypress', function(event)
 
 document.addEventListener('keydown', function(event)
 {
-    console.log(event);
+    // console.log(event);
     if (event.code == "ArrowUp")
     {
         world_state.target_zoom_scale /= 1.7;
@@ -376,16 +417,11 @@ document.addEventListener('mousemove', function(event)
 
 document.addEventListener('mousedown', function(event)
 {
-    console.log(event);
+    // console.log(event);
 
     if (event.button == 0)
     {
         mouse_state.down();
-        // if (CURRENT_NEXT_SEGMENT)
-        // {
-        //     world_state.track.segments.push(CURRENT_NEXT_SEGMENT);
-        //     CURRENT_NEXT_SEGMENT = null;
-        // }
     }
     else if (event.button == 2)
     {
@@ -395,7 +431,7 @@ document.addEventListener('mousedown', function(event)
 
 document.addEventListener('mouseup', function(event)
 {
-    console.log(event);
+    // console.log(event);
     if (mouse_state.dragging())
     {
         DRAGGED_OFFSET = mouse_state.dragging();
@@ -405,7 +441,7 @@ document.addEventListener('mouseup', function(event)
 
 document.addEventListener('mousewheel', function(event)
 {
-    console.log(event);
+    // console.log(event);
     if (window.scrollY == 0)
     {
         event.preventDefault();

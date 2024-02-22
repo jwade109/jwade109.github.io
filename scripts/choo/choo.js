@@ -1,7 +1,12 @@
 "use strict"
 
 const LINKAGE_OFFSET = 3;
-const S_LIMITS_BUFFER = 1000;
+const S_LIMITS_BUFFER = 10;
+let DEBUG_DRAW_TRAIN_PROPERTIES = false;
+let DEBUG_DRAW_TRAIN_ARCLENGTH_LIMITS = false;
+let DEBUG_DRAW_TRAIN_HISTORY = false;
+let DEBUG_DRAW_CURRENT_PLANNED_ROUTES = false;
+let DEBUG_DRAW_OCCUPIED_SEGMENTS = false;
 
 function SmokeParticle(pos, vel, lifetime)
 {
@@ -38,15 +43,15 @@ function Railcar(length, width, color, is_loco)
 function Train(position, n_cars, width, height)
 {
     this.cars = [];
-    this.acc = 40;
-    this.maxspeed = 200;
-    this.vel = this.maxspeed;
+    this.acc = rand(40, 65);
+    this.vel = 0;
+    this.max_vel = rand(100, 160);
     this.pos = position;
     this.dir = 1; // Math.random() < 0.5 ? 1 : -1;
     this.emits_smoke = Math.random() < 0.2;
     this.has_caboose = Math.random() < 0.15;
-    this.path = 0;
-
+    this.tbd = [];
+    this.history = [];
     this.particles = [];
 
     this.acc *= this.dir;
@@ -92,10 +97,6 @@ function Train(position, n_cars, width, height)
         }
         else if (rand(0, 1) < 0.1)
         {
-            color = "#eeeeee";
-        }
-        else if (rand(0, 1) < 0.1)
-        {
             color = "#444444";
         }
 
@@ -116,6 +117,79 @@ function Train(position, n_cars, width, height)
     }
 }
 
+Train.prototype.total_route = function()
+{
+    return this.history.concat(this.tbd);
+}
+
+Train.prototype.enqueue_route = function(new_path)
+{
+    this.tbd = this.tbd.concat(new_path);
+}
+
+Train.prototype.get_track = function(multitrack)
+{
+    return multitrack.get_track_from_route(this.total_route());
+}
+
+Train.prototype.occupied = function(track)
+{
+    let [max, min] = this.s_limits();
+    let s_0 = track.offset;
+    let indices = [];
+    for (let i = 0; i < track.segments.length; ++i)
+    {
+        let seg = track.segments[i];
+        let s_f = s_0 + seg.length;
+
+        // segment is "occupied" if the extent of train, [min, max],
+        // intersects with the extent of the segment, [s_0, s_f]
+        //
+        //            min ----------------- max
+        // YES:                  s_0 ------------------- s_f
+        // YES: s_0----------s_f
+        // YES:                s_0 -------- s_f
+        // NO:                                    s_0 ----------- s_f
+
+        // console.log(i, s_0, s_f, min, max, intersecting);
+        let intersecting = s_0 < max && s_f > min;
+        if (intersecting)
+        {
+            indices.push(i);
+        }
+        s_0 = s_f;
+    }
+    return indices;
+}
+
+Train.prototype.occupied_indices = function(track)
+{
+    let path = this.total_route();
+    let indices = this.occupied(track);
+    for (let i = 0; i < indices.length; ++i)
+    {
+        indices[i] = path[indices[i]];
+    }
+    return indices;
+}
+
+Train.prototype.segment_number = function(track)
+{
+    if (track == null)
+    {
+        console.log("Null track!")
+        return null;
+    }
+    let t = track.s_to_t(this.pos);
+    if (t == null)
+    {
+        console.log("Null t value!", this.pos, track.length())
+        return null;
+    }
+    let combined = this.total_route();
+    return combined[Math.floor(t)];
+}
+
 Train.prototype.s_limits = function()
 {
     // front, back
@@ -133,67 +207,100 @@ Train.prototype.length = function()
     return sum - LINKAGE_OFFSET;
 }
 
-Train.prototype.draw = function(rctx, path)
+function draw_animated_route(track, current_time, rctx)
 {
-    rctx.ctx.save();
+    for (let s of linspace(0, track.length(), track.length() / 50))
+    {
+        let t = track.s_to_t((100 * current_time + s) % track.length());
+        if (t == null)
+        {
+            continue;
+        }
+        let p = track.evaluate(t);
+        let u = track.normal(t);
+        rctx.point(add2d(p, mult2d(u, 4)), 3, "red", null, 1, 0, 12000);
+    }
+}
 
-    rctx.ctx.fillStyle = "green";
+Train.prototype.draw = function(rctx, multitrack)
+{
+    let combined = this.total_route();
 
-    // for (let s = 0; s < this.pos; s += 50)
-    // {
-    //     let t = path.s_to_t(s);
-    //     if (t == null)
-    //     {
-    //         continue;
-    //     }
+    let track = this.get_track(multitrack);
 
-    //     let p = path.evaluate(t);
-    //     rctx.point(p, 2, "green", "blue", 1, 1);
-    // }
+    let current_time = new Date().getTime() / 1000;
+    if (DEBUG_DRAW_CURRENT_PLANNED_ROUTES)
+    {
+        draw_animated_route(track, current_time, rctx);
+    }
+
+    for (let s = this.pos; s > 0 && DEBUG_DRAW_TRAIN_HISTORY; s -= 50)
+    {
+        let t = track.s_to_t(s);
+        if (t == null)
+        {
+            continue;
+        }
+
+        let p = track.evaluate(t);
+        rctx.point(p, 3, "green", null, 1, 0, 10000);
+    }
 
     let s = this.pos;
     for (let i = 0; i < this.cars.length; ++i)
     {
         let c = this.cars[i];
         s -= ((c.length / 2) * this.dir);
-        let t = path.s_to_t(s);
+        let t = track.s_to_t(s);
         if (t == null)
         {
             continue;
         }
 
-        let p = path.evaluate(t);
-        let tangent = path.tangent(t);
+        let p = track.evaluate(t);
+        let tangent = track.tangent(t);
         let normal = rot2d(tangent, Math.PI / 2);
 
-        if (i == 0)
+        if (i == 0 && DEBUG_DRAW_TRAIN_PROPERTIES)
         {
-            // rctx.ctx.fillText("train fountain", p[0] + 30, p[1]);
-
             let scr = rctx.world_to_screen(p);
             let k = rctx.scalar();
 
+            let [smax, smin] = this.s_limits();
             let dy = 25;
             let text_y = 0;
-            rctx.text("t = " + t.toFixed(2),        add2d(scr, [30 * k, text_y += dy]));
-            rctx.text("s = " + s.toFixed(2),        add2d(scr, [30 * k, text_y += dy]));
-            rctx.text("v = " + this.vel.toFixed(2), add2d(scr, [30 * k, text_y += dy]));
+            let tarc = track.length();
+            rctx.text("t = " + t.toFixed(2),
+                add2d(scr, [30 * k, text_y += dy]));
+            rctx.text("s = " + s.toFixed(2) + "/" + tarc.toFixed(),
+                add2d(scr, [30 * k, text_y += dy]));
+            rctx.text("   " + smin.toFixed(2) + ", " + smax.toFixed(2),
+                add2d(scr, [30 * k, text_y += dy]));
+            rctx.text("v = " + this.vel.toFixed(2),
+                add2d(scr, [30 * k, text_y += dy]));
             rctx.text("p = " + p[0].toFixed(1) + ", " + p[1].toFixed(1),
-                                                    add2d(scr, [30 * k, text_y += dy]));
-            // rctx.text("path = " + this.path,          add2d(scr, [30 * k, text_y += dy]));
+                add2d(scr, [30 * k, text_y += dy]));
+            rctx.text("path = " + this.total_route(),
+                add2d(scr, [30 * k, text_y += dy]));
+            rctx.text("occ = " + this.occupied_indices(track),
+                add2d(scr, [30 * k, text_y += dy]));
+            rctx.text("his = " + this.history,
+                add2d(scr, [30 * k, text_y += dy]));
+            rctx.text("tbd = " + this.tbd,
+                add2d(scr, [30 * k, text_y += dy]));
         }
 
         s -= ((c.length / 2 + LINKAGE_OFFSET / 2) * this.dir);
 
         if (i + 1 < this.cars.length)
         {
-            let t_link = path.s_to_t(s);
+            let t_link = track.s_to_t(s);
             if (t == null)
             {
                 continue;
             }
 
-            let p_link = path.evaluate(t_link);
+            let p_link = track.evaluate(t_link);
             rctx.point(p_link, 3, "black", null, 1, 0, 99);
         }
 
@@ -223,20 +330,30 @@ Train.prototype.draw = function(rctx, path)
         }
     }
 
-    // for (let s of this.s_limits())
-    // {
-    //     let t = path.s_to_t(s);
-    //     if (t == null)
-    //     {
-    //         continue;
-    //     }
+    if (DEBUG_DRAW_TRAIN_ARCLENGTH_LIMITS)
+    {
+        for (let s of this.s_limits())
+        {
+            let t = track.s_to_t(s);
+            if (t == null)
+            {
+                continue;
+            }
 
-    //     let p = path.evaluate(t);
-    //     rctx.ctx.fillStyle = "blue";
-    //     rctx.ctx.beginPath();
-    //     rctx.ctx.arc(p[0], p[1], 5, 0, 2 * Math.PI);
-    //     rctx.ctx.fill();
-    // }
+            let p = track.evaluate(t);
+            rctx.point(p, 7, "blue", null, 1, 0, 12000);
+        }
+    }
+
+    if (DEBUG_DRAW_OCCUPIED_SEGMENTS)
+    {
+        for (let i of this.occupied(track))
+        {
+            let seg = track.segments[i];
+            rctx.polyline(seg.rail_left, 2, "blue", null, 1000);
+            rctx.polyline(seg.rail_right, 2, "blue", null, 1000);
+        }
+    }
 
     for (let part of this.particles)
     {
@@ -246,13 +363,74 @@ Train.prototype.draw = function(rctx, path)
     rctx.ctx.restore();
 }
 
-Train.prototype.step = function(dt, path)
+Train.prototype.drop_history = function(multitrack)
 {
-    if (Math.abs(this.vel) < this.maxspeed)
+    while (this.history.length > 30)
+    {
+        let track = this.get_track(multitrack);
+        let segno = this.segment_number(track);
+        let h = this.history[0];
+        let [idx, sign] = split_signed_index(segno);
+        let arclength = multitrack.segments[idx].length;
+        let t = track.s_to_t(this.pos);
+        if (t == null || t < 1)
+        {
+            return;
+        }
+        t -= 1;
+        this.history.shift();
+        let t2 = this.get_track(multitrack);
+        this.pos = t2.t_to_s(t);
+    }
+}
+
+Train.prototype.step = function(dt, multitrack)
+{
+    this.drop_history(multitrack);
+    let track = this.get_track(multitrack);
+
+    let [smax, smin] = this.s_limits();
+    let remaining = Math.max(0, track.length() - smax);
+
+    let hard_stop_distance = Math.abs(this.vel * this.vel / (2 * this.acc));
+
+    let target_vel = this.max_vel;
+    if (remaining < hard_stop_distance + 10)
+    {
+        target_vel = 0;
+    }
+
+    if (this.vel < target_vel)
     {
         this.vel += this.acc * dt;
     }
+    if (this.vel > target_vel)
+    {
+        this.vel -= this.acc * dt;
+    }
+    this.vel = clamp(this.vel, 0, 500);
+
     this.pos += this.vel * dt;
+
+    this.pos %= track.length();
+
+    let segno = this.segment_number(track);
+    if (segno == null)
+    {
+        console.log("Got null segment number!")
+    }
+    else if (this.history.length == 0 || this.history[this.history.length - 1] != segno)
+    {
+        this.history.push(segno);
+    }
+
+    if (this.tbd.length > 0 && segno == this.tbd[0])
+    {
+        let [idx, sign] = split_signed_index(segno);
+        // let arclength = multitrack.segments[idx].length;
+        // this.pos -= arclength;
+        this.tbd.shift();
+    }
 
     for (let part of this.particles)
     {
@@ -260,14 +438,19 @@ Train.prototype.step = function(dt, path)
     }
     this.particles = this.particles.filter(p => p.lifetime > 0);
 
-    let t = path.s_to_t(this.pos - 20);
+    let t = track.s_to_t(this.pos - 20);
     if (t == null)
     {
         return;
     }
 
-    let p = path.evaluate(t);
-    let u = path.tangent(t);
+    let p = track.evaluate(t);
+    let u = track.tangent(t);
+    if (p == null || u == null)
+    {
+        console.log("got null with t = ", t);
+        return;
+    }
 
     let train_v = mult2d(u, this.vel);
     train_v[0] += rand(-10, 10);
@@ -278,5 +461,4 @@ Train.prototype.step = function(dt, path)
         let s = new SmokeParticle(p, train_v, rand(4, 6));
         this.particles.push(s);
     }
-
 }
