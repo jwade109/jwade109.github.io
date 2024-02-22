@@ -211,14 +211,17 @@ function draw_animated_route(track, current_time, rctx)
 {
     for (let s of linspace(0, track.length(), track.length() / 50))
     {
-        let t = track.s_to_t((100 * current_time + s) % track.length());
-        if (t == null)
+        let s_start = (100 * current_time + s) % track.length();
+        let s_end = s_start + 30;
+        let t1 = track.s_to_t(s_start);
+        let t2 = track.s_to_t(s_end);
+        if (t1 == null || t2 == null)
         {
             continue;
         }
-        let p = track.evaluate(t);
-        let u = track.normal(t);
-        rctx.point(add2d(p, mult2d(u, 4)), 3, "red", null, 1, 0, 12000);
+        let p1 = track.evaluate(t1);
+        let p2 = track.evaluate(t2);
+        rctx.polyline([p1, p2], 3, "red", null, 12000);
     }
 }
 
@@ -228,10 +231,11 @@ Train.prototype.draw = function(rctx, multitrack)
 
     let track = this.get_track(multitrack);
 
+    let future_track = multitrack.get_track_from_route(this.tbd);
     let current_time = new Date().getTime() / 1000;
     if (DEBUG_DRAW_CURRENT_PLANNED_ROUTES)
     {
-        draw_animated_route(track, current_time, rctx);
+        draw_animated_route(future_track, current_time, rctx);
     }
 
     for (let s = this.pos; s > 0 && DEBUG_DRAW_TRAIN_HISTORY; s -= 50)
