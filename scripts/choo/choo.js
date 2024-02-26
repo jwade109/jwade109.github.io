@@ -1,7 +1,7 @@
 "use strict"
 
 const LINKAGE_OFFSET = 4;
-const S_LIMITS_BUFFER = 10;
+const S_LIMITS_BUFFER = 2;
 let DEBUG_DRAW_TRAIN_PROPERTIES = false;
 let DEBUG_DRAW_TRAIN_ARCLENGTH_LIMITS = false;
 let DEBUG_DRAW_TRAIN_HISTORY = false;
@@ -43,9 +43,9 @@ function Railcar(length, width, color, is_loco)
 function Train(position, n_cars, width, height)
 {
     this.cars = [];
-    this.acc = 300; // rand(40, 65);
+    this.acc = 40; // rand(40, 65);
     this.vel = 0;
-    this.max_vel = 700; // rand(100, 160);
+    this.max_vel = 150; // rand(100, 160);
     this.pos = position;
     this.emits_smoke = false; // Math.random() < 0.2;
     this.has_caboose = Math.random() < 0.15;
@@ -417,14 +417,14 @@ Train.prototype.step = function(dt, multitrack)
     {
         target_vel = 0;
     }
-    if (remaining < this.max_vel / 4)
-    {
-        this.vel = Math.max(1, remaining * 4);
-    }
-    if (remaining < 10)
-    {
-        this.vel = 0;
-    }
+    // if (remaining < this.max_vel / 4)
+    // {
+    //     this.vel = Math.max(1, remaining * 4);
+    // }
+    // if (remaining < 10)
+    // {
+    //     this.vel = 0;
+    // }
 
     if (this.vel < target_vel)
     {

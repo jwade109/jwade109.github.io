@@ -185,7 +185,7 @@ function build_simple_test_track()
 function build_multi_junction_issue_track()
 {
     let tb = new TrackBuilder(
-        line_clothoid([-300, 0], [0, 0])
+        line_clothoid([-20, 0], [20, 0])
     );
 
     let right_endpoints = [];
@@ -195,14 +195,14 @@ function build_multi_junction_issue_track()
 
     for (let c of linspace(-MAX_CURVATURE, MAX_CURVATURE, n))
     {
-        tb.cursor();
+        tb.cursor(1);
         let h = tb.extend(500, c);
         right_endpoints.push(h);
     }
 
     for (let c of linspace(-MAX_CURVATURE, MAX_CURVATURE, n))
     {
-        tb.cursor(-right_endpoints[0]);
+        tb.cursor(-1);
         let h = tb.extend(500, c);
         left_endpoints.push(h);
     }
@@ -229,43 +229,15 @@ function build_multi_junction_issue_track()
         turnaround(tb, left_endpoints[i]);
     }
 
-    // TODO this is garbage.
-    tb.segments.shift();
-    let new_connections = [];
-    for (let [src, dst] of tb.connections)
-    {
-        if (src == 1 || src == -1 || dst == 1 || dst == -1)
-        {
-            continue;
-        }
-
-        if (src < 0)
-        {
-            src += 1;
-        }
-        else
-        {
-            src -= 1;
-        }
-        if (dst < 0)
-        {
-            dst += 1;
-        }
-        else
-        {
-            dst -= 1;
-        }
-        new_connections.push([src, dst]);
-    }
-
-    return new MultiTrack(tb.segments, new_connections);
+    return new MultiTrack(tb.segments, tb.connections);
 }
 
 function WorldState()
 {
     this.atc = new AutomaticTrainControl(
-        make_trains(),
-        build_multi_junction_issue_track()
+        make_trains(3),
+        build_procedural_track(),
+        // build_multi_junction_issue_track()
     );
 
     this.zoom_scale = 1;
@@ -320,10 +292,10 @@ WorldState.prototype.draw = function()
     rctx.draw();
 }
 
-function make_trains(length)
+function make_trains(number_of_trains)
 {
     let trains = [];
-    for (let i = 0; i < 12; ++i)
+    for (let i = 0; i < number_of_trains; ++i)
     {
         trains.push(new Train(0, 12));
     }

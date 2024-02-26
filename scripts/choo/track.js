@@ -1,6 +1,7 @@
 "use strict"
 
 let DEBUG_DRAW_TRACK_IDS = false;
+let DEBUG_DRAW_TRACK_CONNECTIVITY = false;
 let DEBUG_DRAW_JUNCTIONS = true;
 let DEBUG_DRAW_RAIL_ORIENTATION_COLORS = false;
 let DEBUG_DRAW_CURVATURE = false;
@@ -499,33 +500,6 @@ function get_leaves(edges)
     return {"sources": sources, "sinks": sinks};
 }
 
-// function get_routes_to(node, edges, sinks, visited)
-// {
-//     if (visited.includes(node))
-//     {
-//         return [[node]];
-//     }
-//     visited.push(node);
-//     // base case: current node is a sink
-//     if (sinks.includes(node))
-//     {
-//         return [[node]];
-//     }
-//     let adj = get_adjecent_nodes(node, edges);
-//     let routes = [];
-//     for (let ds of adj.downstream)
-//     {
-//         let rts = get_routes_to(ds, edges, sinks, visited);
-//         for (let i = 0; i < rts.length; ++i)
-//         {
-//             rts[i] = [node].concat(rts[i]);
-//         }
-//         routes = routes.concat(rts);
-//     }
-//     routes = routes.filter(r => sinks.includes(r[r.length - 1]));
-//     return routes;
-// }
-
 function get_route_between(src, target, edges, weights)
 {
     let dist = {};
@@ -638,7 +612,7 @@ MultiTrack.prototype.draw = function(rctx)
 
     let r = 25;
 
-    if (DEBUG_DRAW_TRACK_IDS)
+    if (DEBUG_DRAW_TRACK_CONNECTIVITY)
     {
         for (let [si, di] of this.connections)
         {
@@ -749,4 +723,32 @@ function generate_clothoid_sweep(start, dir, n, arclengths, k_0_n, k_f_n)
         }
     }
     return segments;
+}
+
+// list unsigned segments which share a junction side with the given segment
+function get_block_members(node, edges)
+{
+    let adj = get_adjecent_nodes(node, edges)
+
+    let ret = [];
+
+    for (let n of adj.upstream)
+    {
+        let a = get_adjecent_nodes(n, edges);
+        for (let ds of a.downstream)
+        {
+            push_set(ret, Math.abs(ds));
+        }
+    }
+
+    for (let n of adj.downstream)
+    {
+        let a = get_adjecent_nodes(n, edges);
+        for (let us of a.upstream)
+        {
+            push_set(ret, Math.abs(us));
+        }
+    }
+
+    return ret;
 }
