@@ -32,6 +32,9 @@ function AutomaticTrainControl(trains, multitrack)
     this.multitrack = multitrack;
     this.reservations = {};
     this.target_segments = {0: 96, 1: 96};
+
+    this.deadlock_timer = 0;
+    this.reroute_timer = 0;
 }
 
 AutomaticTrainControl.prototype.step = function(dt)
@@ -60,6 +63,10 @@ AutomaticTrainControl.prototype.step = function(dt)
         }
     }
 
+    let max_vel = 0;
+
+    this.reroute_timer += dt;
+
     for (let i = 0; i < this.trains.length; ++i)
     {
         let t = this.trains[i];
@@ -67,12 +74,33 @@ AutomaticTrainControl.prototype.step = function(dt)
 
         let n = this.multitrack.segments.length;
 
-        this.send_train(this.target_segments[i], i)
+        if (this.reroute_timer > 1)
+        {
+            this.send_train(this.target_segments[i], i)
+        }
 
         if (t.tbd.length == 0 && t.vel < 2)
         {
             this.target_segments[i] = randint(-n, n + 1);
         }
+
+        max_vel = Math.max(max_vel, t.vel);
+    }
+
+    if (this.reroute_timer > 1)
+    {
+        this.reroute_timer = 0;
+    }
+
+    if (max_vel < 0.05)
+    {
+        this.deadlock_timer += dt;
+    }
+
+    if (this.deadlock_timer > 5)
+    {
+        this.reservations = {};
+        this.deadlock_timer = 0;
     }
 }
 

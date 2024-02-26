@@ -276,7 +276,7 @@ function build_multi_junction_issue_track()
 function WorldState()
 {
     this.atc = new AutomaticTrainControl(
-        make_trains(2),
+        make_trains(3),
         build_procedural_track(),
         // build_multi_junction_issue_track()
     );
