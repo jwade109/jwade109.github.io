@@ -166,6 +166,47 @@ function build_procedural_track()
     tb.extend(300, 0);
     tb.connect(-38);
 
+    tb.cursor(-16);
+    tb.extend(100, -MAX_CURVATURE);
+    tb.extend(30, 0);
+    tb.extend(400, 0);
+    let h1 = tb.extend(100, 0);
+    tb.cursor(-8);
+    tb.connect(-h1);
+
+    let hroot = tb.segments.length - 1;
+    let ls = tb.segments[hroot];
+
+    let n_yard = 7;
+
+    for (let i = 0; i < n_yard; ++i)
+    {
+        let [x1, y1] = ls.points[ls.points.length - 1];
+
+        let p1 = [x1 + 20 * i, y1 + 400];
+        let p2 = [x1 + 20 * i, y1 + 1100];
+
+        tb.segments.push(line_clothoid(p1, p2));
+    }
+
+    for (let i = 0; i < n_yard; ++i)
+    {
+        tb.cursor(hroot);
+        tb.connect(-(hroot + i + 2));
+    }
+
+    tb.cursor(hroot + 2);
+    tb.extend(400, MAX_CURVATURE);
+    let h_exit = tb.extend(200, 0);
+    tb.extend(900, 0);
+    tb.connect(11);
+
+    for (let i = 1; i < n_yard; ++i)
+    {
+        tb.cursor(-h_exit);
+        tb.connect(hroot + i + 2);
+    }
+
     return new MultiTrack(tb.segments, tb.connections);
 }
 
@@ -235,7 +276,7 @@ function build_multi_junction_issue_track()
 function WorldState()
 {
     this.atc = new AutomaticTrainControl(
-        make_trains(3),
+        make_trains(2),
         build_procedural_track(),
         // build_multi_junction_issue_track()
     );

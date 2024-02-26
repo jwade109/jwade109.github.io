@@ -660,19 +660,6 @@ MultiTrack.prototype.draw = function(rctx)
     }
 }
 
-MultiTrack.prototype.route_between = function(src, dst)
-{
-    let weights = {}
-    for (let i = 1; i <= this.segments.length; ++i)
-    {
-        weights[i]  = this.segments[i-1].arclength;
-        weights[-i] = this.segments[i-1].arclength;
-    }
-    let route = get_route_between(src, dst, this.connections, weights);
-    route.shift(); // TODO remove first element
-    return route;
-}
-
 function Junction(pos, dir, side_a, side_b)
 {
     this.pos = pos;
