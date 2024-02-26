@@ -1,6 +1,6 @@
 "use strict"
 
-const LINKAGE_OFFSET = 3;
+const LINKAGE_OFFSET = 4;
 const S_LIMITS_BUFFER = 10;
 let DEBUG_DRAW_TRAIN_PROPERTIES = false;
 let DEBUG_DRAW_TRAIN_ARCLENGTH_LIMITS = false;
@@ -43,18 +43,15 @@ function Railcar(length, width, color, is_loco)
 function Train(position, n_cars, width, height)
 {
     this.cars = [];
-    this.acc = rand(40, 65);
+    this.acc = 300; // rand(40, 65);
     this.vel = 0;
-    this.max_vel = rand(100, 160);
+    this.max_vel = 700; // rand(100, 160);
     this.pos = position;
-    this.dir = 1; // Math.random() < 0.5 ? 1 : -1;
-    this.emits_smoke = Math.random() < 0.2;
+    this.emits_smoke = false; // Math.random() < 0.2;
     this.has_caboose = Math.random() < 0.15;
     this.tbd = [];
     this.history = [];
     this.particles = [];
-
-    this.acc *= this.dir;
 
     let n_locos = Math.max(1, Math.ceil(n_cars / 12));
 
@@ -62,11 +59,11 @@ function Train(position, n_cars, width, height)
 
     for (let i = 0; i < n_cars + n_locos; ++i)
     {
-        let l = rand(25, 34);
-        let w = rand(7, 11);
+        let l = rand(35, 44);
+        let w = rand(9, 11);
         if (i < n_locos)
         {
-            l = 37;
+            l = 41;
             w = 10;
         }
 
@@ -127,6 +124,11 @@ Train.prototype.enqueue_route = function(new_path)
     this.tbd = this.tbd.concat(new_path);
 }
 
+Train.prototype.set_route = function(new_path)
+{
+    this.tbd = new_path.slice();
+}
+
 Train.prototype.get_track = function(multitrack)
 {
     return multitrack.get_track_from_route(this.total_route());
@@ -140,7 +142,7 @@ Train.prototype.occupied = function(track)
     for (let i = 0; i < track.segments.length; ++i)
     {
         let seg = track.segments[i];
-        let s_f = s_0 + seg.length;
+        let s_f = s_0 + seg.arclength;
 
         // segment is "occupied" if the extent of train, [min, max],
         // intersects with the extent of the segment, [s_0, s_f]
@@ -183,7 +185,7 @@ Train.prototype.segment_number = function(track)
     let t = track.s_to_t(this.pos);
     if (t == null)
     {
-        console.log("Null t value!", this.pos, track.length())
+        console.log("Null t value!", this.pos, track.arclength())
         return null;
     }
     let combined = this.total_route();
@@ -193,10 +195,10 @@ Train.prototype.segment_number = function(track)
 Train.prototype.s_limits = function()
 {
     // front, back
-    return [this.pos + S_LIMITS_BUFFER, this.pos - this.length() - S_LIMITS_BUFFER]
+    return [this.pos + S_LIMITS_BUFFER, this.pos - this.arclength() - S_LIMITS_BUFFER]
 }
 
-Train.prototype.length = function()
+Train.prototype.arclength = function()
 {
     // TODO this doesn't take the linkage buffer into account
     let sum = 0;
@@ -209,9 +211,9 @@ Train.prototype.length = function()
 
 function draw_animated_route(track, current_time, rctx)
 {
-    for (let s of linspace(0, track.length(), track.length() / 50))
+    for (let s of linspace(0, track.arclength(), track.arclength() / 50))
     {
-        let s_start = (100 * current_time + s) % track.length();
+        let s_start = (100 * current_time + s) % track.arclength();
         let s_end = s_start + 30;
         let t1 = track.s_to_t(s_start);
         let t2 = track.s_to_t(s_end);
@@ -231,10 +233,10 @@ Train.prototype.draw = function(rctx, multitrack)
 
     let track = this.get_track(multitrack);
 
-    let future_track = multitrack.get_track_from_route(this.tbd);
-    let current_time = new Date().getTime() / 1000;
     if (DEBUG_DRAW_CURRENT_PLANNED_ROUTES)
     {
+        let future_track = multitrack.get_track_from_route(this.tbd);
+        let current_time = new Date().getTime() / 1000;
         draw_animated_route(future_track, current_time, rctx);
     }
 
@@ -254,35 +256,36 @@ Train.prototype.draw = function(rctx, multitrack)
     for (let i = 0; i < this.cars.length; ++i)
     {
         let c = this.cars[i];
-        s -= ((c.length / 2) * this.dir);
-        let t = track.s_to_t(s);
-        if (t == null)
+
+        s -= c.length / 2
+
+        let front = track.evaluate(track.s_to_t(s + c.length * 0.4));
+        let back = track.evaluate(track.s_to_t(s - c.length * 0.4));
+        if (front == null || back == null)
         {
             continue;
         }
 
-        let p = track.evaluate(t);
-        let tangent = track.tangent(t);
+        let tangent = unit2d(sub2d(front, back));
+        let center = mult2d(add2d(front, back), 0.5);
         let normal = rot2d(tangent, Math.PI / 2);
 
         if (i == 0 && DEBUG_DRAW_TRAIN_PROPERTIES)
         {
-            let scr = rctx.world_to_screen(p);
+            let scr = rctx.world_to_screen(center);
             let k = rctx.scalar();
 
             let [smax, smin] = this.s_limits();
             let dy = 25;
             let text_y = 0;
-            let tarc = track.length();
-            rctx.text("t = " + t.toFixed(2),
+            let tarc = track.arclength();
+            rctx.text("t = " + track.s_to_t(this.pos),
                 add2d(scr, [30 * k, text_y += dy]));
             rctx.text("s = " + s.toFixed(2) + "/" + tarc.toFixed(),
                 add2d(scr, [30 * k, text_y += dy]));
             rctx.text("   " + smin.toFixed(2) + ", " + smax.toFixed(2),
                 add2d(scr, [30 * k, text_y += dy]));
             rctx.text("v = " + this.vel.toFixed(2),
-                add2d(scr, [30 * k, text_y += dy]));
-            rctx.text("p = " + p[0].toFixed(1) + ", " + p[1].toFixed(1),
                 add2d(scr, [30 * k, text_y += dy]));
             rctx.text("path = " + this.total_route(),
                 add2d(scr, [30 * k, text_y += dy]));
@@ -294,12 +297,17 @@ Train.prototype.draw = function(rctx, multitrack)
                 add2d(scr, [30 * k, text_y += dy]));
         }
 
-        s -= ((c.length / 2 + LINKAGE_OFFSET / 2) * this.dir);
+        s -= c.length / 2 + LINKAGE_OFFSET / 2;
+
+        if (s < 0)
+        {
+            continue;
+        }
 
         if (i + 1 < this.cars.length)
         {
             let t_link = track.s_to_t(s);
-            if (t == null)
+            if (t_link == null)
             {
                 continue;
             }
@@ -315,14 +323,10 @@ Train.prototype.draw = function(rctx, multitrack)
             let l2 = mult2d(tangent, length / 2);
             let w2 = mult2d(normal,  width  / 2);
 
-            let p1 = add2d(p, add2d(mult2d(l2,  1), mult2d(w2,  1)));
-            let p2 = add2d(p, add2d(mult2d(l2,  1), mult2d(w2, -1)));
-            let p3 = add2d(p, add2d(mult2d(l2, -1), mult2d(w2, -1)));
-            let p4 = add2d(p, add2d(mult2d(l2, -1), mult2d(w2,  1)));
-
-            rctx.ctx.strokeStyle = "black";
-            rctx.ctx.lineWidth = 1.3;
-            rctx.ctx.fillStyle = fill_style;
+            let p1 = add2d(center, add2d(mult2d(l2,  1), mult2d(w2,  1)));
+            let p2 = add2d(center, add2d(mult2d(l2,  1), mult2d(w2, -1)));
+            let p3 = add2d(center, add2d(mult2d(l2, -1), mult2d(w2, -1)));
+            let p4 = add2d(center, add2d(mult2d(l2, -1), mult2d(w2,  1)));
 
             rctx.polyline([p1, p2, p3, p4, p1], 2, "black", fill_style, 100);
         }
@@ -345,7 +349,7 @@ Train.prototype.draw = function(rctx, multitrack)
             }
 
             let p = track.evaluate(t);
-            rctx.point(p, 7, "blue", null, 1, 0, 12000);
+            rctx.point(p, 2, "blue", null, 1, 0, 12000);
         }
     }
 
@@ -369,13 +373,18 @@ Train.prototype.draw = function(rctx, multitrack)
 
 Train.prototype.drop_history = function(multitrack)
 {
-    while (this.history.length > 30)
+    while (this.history.length > 0)
     {
         let track = this.get_track(multitrack);
-        let segno = this.segment_number(track);
+        let occupied = this.occupied_indices(track);
         let h = this.history[0];
+        if (occupied.includes(h))
+        {
+            break;
+        }
+        let segno = this.segment_number(track);
         let [idx, sign] = split_signed_index(segno);
-        let arclength = multitrack.segments[idx].length;
+        let arclength = multitrack.segments[idx].arclength;
         let t = track.s_to_t(this.pos);
         if (t == null || t < 1)
         {
@@ -393,8 +402,13 @@ Train.prototype.step = function(dt, multitrack)
     this.drop_history(multitrack);
     let track = this.get_track(multitrack);
 
+    if (track.segments.length == 0)
+    {
+        return;
+    }
+
     let [smax, smin] = this.s_limits();
-    let remaining = Math.max(0, track.length() - smax);
+    let remaining = Math.max(0, track.arclength() - smax);
 
     let hard_stop_distance = Math.abs(this.vel * this.vel / (2 * this.acc));
 
@@ -402,6 +416,14 @@ Train.prototype.step = function(dt, multitrack)
     if (remaining < hard_stop_distance + 10)
     {
         target_vel = 0;
+    }
+    if (remaining < this.max_vel / 4)
+    {
+        this.vel = Math.max(1, remaining * 4);
+    }
+    if (remaining < 10)
+    {
+        this.vel = 0;
     }
 
     if (this.vel < target_vel)
@@ -416,12 +438,13 @@ Train.prototype.step = function(dt, multitrack)
 
     this.pos += this.vel * dt;
 
-    this.pos %= track.length();
+    this.pos %= track.arclength();
 
     let segno = this.segment_number(track);
     if (segno == null)
     {
         console.log("Got null segment number!")
+        throw "whatever";
     }
     else if (this.history.length == 0 || this.history[this.history.length - 1] != segno)
     {
@@ -431,8 +454,6 @@ Train.prototype.step = function(dt, multitrack)
     if (this.tbd.length > 0 && segno == this.tbd[0])
     {
         let [idx, sign] = split_signed_index(segno);
-        // let arclength = multitrack.segments[idx].length;
-        // this.pos -= arclength;
         this.tbd.shift();
     }
 
@@ -452,7 +473,7 @@ Train.prototype.step = function(dt, multitrack)
     let u = track.tangent(t);
     if (p == null || u == null)
     {
-        console.log("got null with t = ", t);
+        console.log("got null with t =", t);
         return;
     }
 

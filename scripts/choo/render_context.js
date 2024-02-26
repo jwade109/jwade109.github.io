@@ -66,9 +66,9 @@ RenderContext.prototype.arrow = function(base, tip, linewidth=1, color="black", 
     this.render_array.push(new Arrow(base, tip, linewidth, color, z_index));
 }
 
-RenderContext.prototype.text = function(text, screen_coords)
+RenderContext.prototype.text = function(text, screen_coords, alignment="left", z_index=10000)
 {
-    this.render_array.push(new Text(screen_coords, text));
+    this.render_array.push(new Text(screen_coords, text, alignment, z_index));
 }
 
 function Polyline(points, linewidth, stroke_color, fill_color, z_index)
@@ -115,11 +115,12 @@ Polyline.prototype.draw = function(rctx)
     rctx.ctx.restore();
 }
 
-function Text(screen_coords, text)
+function Text(screen_coords, text, alignment, z_index)
 {
     this.screen_coords = screen_coords;
     this.text = text;
-    this.z_index = 10000;
+    this.alignment = alignment;
+    this.z_index = z_index;
 }
 
 Text.prototype.draw = function(rctx)
@@ -127,6 +128,7 @@ Text.prototype.draw = function(rctx)
     rctx.ctx.fillStyle = "black";
     rctx.ctx.globalAlpha = 1;
     rctx.ctx.font = "24px Cambria Bold";
+    rctx.ctx.textAlign = this.alignment;
     rctx.ctx.fillText(this.text, this.screen_coords[0], this.screen_coords[1]);
 }
 
@@ -180,7 +182,7 @@ Arrow.prototype.draw = function(rctx)
     let base = rctx.world_to_screen(this.base);
     let tip = rctx.world_to_screen(this.tip);
 
-    let u = mult2d(unit2d(sub2d(tip, base)), 12);
+    let u = mult2d(unit2d(sub2d(tip, base)), 9 * this.linewidth);
 
     let left  = add2d(tip, rot2d(u,  Math.PI * 1.1));
     let right = add2d(tip, rot2d(u, -Math.PI * 1.1));

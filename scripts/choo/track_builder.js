@@ -15,6 +15,11 @@ function split_signed_index(signed_index)
 
 TrackBuilder.prototype.extend = function(arclength, curvature)
 {
+    function connect(tb, src, dst)
+    {
+        tb.connections.push([src, dst]);
+    };
+
     let [idx, sign] = split_signed_index(this.signed_index);
     let backwards = sign < 0;
     let c = this.segments[idx];
@@ -22,7 +27,20 @@ TrackBuilder.prototype.extend = function(arclength, curvature)
     this.segments.push(n);
     let old = this.signed_index;
     this.signed_index = this.segments.length;
-    this.connections.push([old, this.signed_index]);
+    connect(this, old, this.signed_index);
+    for (let [src, dst] of this.connections)
+    {
+        if (dst == -old)
+        {
+            for (let [src2, dst2] of this.connections)
+            {
+                if (src2 == src && -dst2 != old)
+                {
+                    connect(this, -dst2, this.signed_index);
+                }
+            }
+        }
+    }
     return this.signed_index;
 }
 
@@ -92,7 +110,7 @@ TrackBuilder.prototype.connect = function(dst)
     return this.signed_index;
 }
 
-TrackBuilder.prototype.cursor = function(index)
+TrackBuilder.prototype.cursor = function(index = 1)
 {
     this.signed_index = index;
 }
