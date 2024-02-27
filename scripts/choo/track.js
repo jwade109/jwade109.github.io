@@ -1,6 +1,6 @@
 "use strict"
 
-let DEBUG_DRAW_TRACK_IDS = true;
+let DEBUG_DRAW_TRACK_IDS = false;
 let DEBUG_DRAW_TRACK_CONNECTIVITY = false;
 let DEBUG_DRAW_JUNCTIONS = true;
 let DEBUG_DRAW_RAIL_ORIENTATION_COLORS = false;
