@@ -44,7 +44,7 @@ TrackBuilder.prototype.extend = function(arclength, curvature)
     return this.signed_index;
 }
 
-TrackBuilder.prototype.connect = function(dst)
+TrackBuilder.prototype.connect = function(dst, strength_mult = 0.4)
 {
     let [cidx, csign] = split_signed_index(this.signed_index);
     let [idx, sign] = split_signed_index(dst);
@@ -74,7 +74,7 @@ TrackBuilder.prototype.connect = function(dst)
         u1 = mult2d(u1, -1);
     }
 
-    let strength = distance(p0, p1) * 0.4;
+    let strength = distance(p0, p1) * strength_mult;
 
     let d0 = add2d(p0, mult2d(u0, strength));
     let d1 = add2d(p1, mult2d(u1, strength));

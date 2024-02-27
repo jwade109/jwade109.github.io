@@ -248,12 +248,6 @@ function build_multi_junction_issue_track()
         left_endpoints.push(h);
     }
 
-    // for (let i = 0; i < n; ++i)
-    // {
-    //     tb.cursor(right_endpoints[i]);
-    //     tb.connect(left_endpoints[n-i-1]);
-    // }
-
     function turnaround(tb, root_node)
     {
         tb.cursor(root_node);
@@ -273,17 +267,60 @@ function build_multi_junction_issue_track()
     return new MultiTrack(tb.segments, tb.connections);
 }
 
+function build_unidirectional_track()
+{
+    let tb = new TrackBuilder([]);
+
+    tb.segments = [
+        line_clothoid([ 20, -400], [ 20,  -300])
+    ];
+
+    tb.cursor();
+
+    for (let i = 0; i < 6; ++i)
+    {
+        tb.extend(100, 0);
+    }
+
+    tb.extend(50, MAX_CURVATURE);
+    tb.extend(490, MAX_CURVATURE);
+    tb.extend(50, 0);
+
+    for (let i = 0; i < 8; ++i)
+    {
+        tb.extend(100, 0);
+    }
+
+    tb.connect(-1, 0.8);
+
+    tb.cursor(1);
+    tb.extend(200, -MAX_CURVATURE);
+    tb.extend(50, MAX_CURVATURE);
+    tb.extend(200, 0);
+    tb.extend(200, 0);
+    tb.extend(200, MAX_CURVATURE/2);
+    tb.extend(200, MAX_CURVATURE);
+    tb.extend(200, MAX_CURVATURE);
+    tb.extend(150, -MAX_CURVATURE/2);
+    tb.connect(-10);
+
+    return new MultiTrack(tb.segments, tb.connections);
+}
+
 function WorldState()
 {
     this.atc = new AutomaticTrainControl(
-        make_trains(3),
-        build_procedural_track(),
-        // build_multi_junction_issue_track()
+        make_trains(4, 7),
+        // build_procedural_track(),
+        // build_multi_junction_issue_track(),
+        build_unidirectional_track()
     );
 
     this.zoom_scale = 1;
     this.target_zoom_scale = 1;
     this.viewport_center = [0, 0];
+    this.viewport_easing = [0, 0];
+    this.follow_train_index = 1;
 }
 
 WorldState.prototype.step = function(dt)
@@ -309,6 +346,15 @@ WorldState.prototype.draw = function()
         mouse_state.dragged_bias = [0, 0];
     }
 
+    if (this.follow_train_index > 0 && this.follow_train_index <= this.atc.trains.length)
+    {
+        let p = this.atc.get_train_pos(this.follow_train_index - 1);
+        if (p != null)
+        {
+            this.viewport_center = p.slice();
+        }
+    }
+
     let rctx = get_render_context(vpc, this.zoom_scale);
 
     // origin gridlines
@@ -323,22 +369,27 @@ WorldState.prototype.draw = function()
     // rctx.text("Right click toggles mouse following", [40, text_y += dy]);
     // rctx.text("Left click to add a new segment", [40, text_y += dy]);
     rctx.text("Spacebar pauses the simulation", [40, text_y += dy]);
-    rctx.text("Scroll wheel and arrow keys zoom in and out", [40, text_y += dy]);
+    rctx.text("Scroll wheel and UD arrow keys zoom in and out", [40, text_y += dy]);
+    rctx.text("LR arrow keys switch between trains", [40, text_y += dy]);
     rctx.text("Left click and drag to move around", [40, text_y += dy]);
     if (PAUSED)
     {
         rctx.text("PAUSED", [40, text_y += dy]);
     }
+    if (this.follow_train_index)
+    {
+        rctx.text("Following train " + this.follow_train_index, [40, text_y += dy]);
+    }
 
     rctx.draw();
 }
 
-function make_trains(number_of_trains)
+function make_trains(number_of_trains, length)
 {
     let trains = [];
     for (let i = 0; i < number_of_trains; ++i)
     {
-        trains.push(new Train(0, 12));
+        trains.push(new Train(0, length));
     }
     return trains;
 }
@@ -427,6 +478,28 @@ document.addEventListener('keydown', function(event)
     {
         world_state.target_zoom_scale *= 1.7;
     }
+    if (event.code == "ArrowRight")
+    {
+        world_state.follow_train_index += 1;
+        world_state.follow_train_index %= (world_state.atc.trains.length + 1);
+
+        if (world_state.follow_train_index > 0)
+        {
+            world_state.target_zoom_scale = 0.6;
+        }
+    }
+    if (event.code == "ArrowLeft")
+    {
+        if (world_state.follow_train_index > 0)
+        {
+            world_state.follow_train_index -= 1;
+        }
+
+        if (world_state.follow_train_index > 0)
+        {
+            world_state.target_zoom_scale = 0.6;
+        }
+    }
     if (event.code == "KeyZ")
     {
 
@@ -442,6 +515,7 @@ document.addEventListener('mousedown', function(event)
 {
     // console.log(event);
     mouse_state.last_mouse_pos = [event.clientX, event.clientY];
+    world_state.follow_train_index = 0;
 
     if (event.button == 0)
     {

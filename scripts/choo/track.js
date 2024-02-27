@@ -1,6 +1,6 @@
 "use strict"
 
-let DEBUG_DRAW_TRACK_IDS = false;
+let DEBUG_DRAW_TRACK_IDS = true;
 let DEBUG_DRAW_TRACK_CONNECTIVITY = false;
 let DEBUG_DRAW_JUNCTIONS = true;
 let DEBUG_DRAW_RAIL_ORIENTATION_COLORS = false;
@@ -559,14 +559,13 @@ function MultiTrack(segments, connections)
     this.segments = segments;
     this.connections = connections;
 
-    let n = this.connections.length;
-
     // TODO implicit connections
-    for (let i = 0; i < n; ++i)
-    {
-        let [src, dst] = this.connections[i];
-        this.connections.push([-dst, -src]);
-    }
+    // let n = this.connections.length;
+    // for (let i = 0; i < n; ++i)
+    // {
+    //     let [src, dst] = this.connections[i];
+    //     this.connections.push([-dst, -src]);
+    // }
 }
 
 MultiTrack.prototype.get_track_from_route = function(route)
@@ -598,6 +597,14 @@ MultiTrack.prototype.get_track_from_route = function(route)
     return new Track(segments);
 }
 
+MultiTrack.prototype.random_node = function()
+{
+    let nodes = get_nodes(this.connections);
+    let i = randint(0, nodes.length);
+    // console.log(nodes, i);
+    return nodes[i];
+}
+
 MultiTrack.prototype.draw = function(rctx)
 {
     for (let seg of this.segments)
@@ -610,7 +617,7 @@ MultiTrack.prototype.draw = function(rctx)
         return seg.evaluate(0.8);
     }
 
-    let r = 25;
+    let r = 14;
 
     if (DEBUG_DRAW_TRACK_CONNECTIVITY)
     {
@@ -639,8 +646,8 @@ MultiTrack.prototype.draw = function(rctx)
         let p_center = get_segment_label_position(seg);
         let off = mult2d([0, r], 0.3 / rctx.scalar());
         let p_text = sub2d(p_center, off);
-        rctx.point(p_center, r / rctx.scalar(), "lightblue", "black", 1, 2 / rctx.scalar(), z);
-        rctx.text(i + 1, rctx.world_to_screen(p_text), "center", z);
+        rctx.point(p_center, r / rctx.scalar(), "white", "black", 0.6, 2 / rctx.scalar(), z);
+        rctx.text(i + 1, rctx.world_to_screen(p_text), "14px Arial", "center", z);
     }
 
     for (let i = 0; i < this.segments.length && DEBUG_DRAW_JUNCTIONS; ++i)

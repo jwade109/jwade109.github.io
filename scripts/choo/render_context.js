@@ -66,9 +66,9 @@ RenderContext.prototype.arrow = function(base, tip, linewidth=1, color="black", 
     this.render_array.push(new Arrow(base, tip, linewidth, color, z_index));
 }
 
-RenderContext.prototype.text = function(text, screen_coords, alignment="left", z_index=10000)
+RenderContext.prototype.text = function(text, screen_coords, font="24px Cambria Bold", alignment="left", z_index=10000)
 {
-    this.render_array.push(new Text(screen_coords, text, alignment, z_index));
+    this.render_array.push(new Text(screen_coords, text, font, alignment, z_index));
 }
 
 function Polyline(points, linewidth, stroke_color, fill_color, z_index)
@@ -115,10 +115,11 @@ Polyline.prototype.draw = function(rctx)
     rctx.ctx.restore();
 }
 
-function Text(screen_coords, text, alignment, z_index)
+function Text(screen_coords, text, font, alignment, z_index)
 {
     this.screen_coords = screen_coords;
     this.text = text;
+    this.font = font;
     this.alignment = alignment;
     this.z_index = z_index;
 }
@@ -127,7 +128,7 @@ Text.prototype.draw = function(rctx)
 {
     rctx.ctx.fillStyle = "black";
     rctx.ctx.globalAlpha = 1;
-    rctx.ctx.font = "24px Cambria Bold";
+    rctx.ctx.font = this.font;
     rctx.ctx.textAlign = this.alignment;
     rctx.ctx.fillText(this.text, this.screen_coords[0], this.screen_coords[1]);
 }
