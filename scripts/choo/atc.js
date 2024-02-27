@@ -5,7 +5,7 @@ let DEBUG_DRAW_ROUTE_RESERVATIONS = true;
 let GENERATED_COLORS = {
     0: "salmon",
     1: "lightblue",
-    2: "green",
+    2: "lightgreen",
     3: "orange"
 };
 

@@ -43,11 +43,11 @@ function Railcar(length, width, color, is_loco)
 function Train(position, n_cars, width, height)
 {
     this.cars = [];
-    this.acc = 400; // rand(40, 65);
+    this.acc = rand(40, 65);
     this.vel = 0;
-    this.max_vel = 600; // rand(100, 160);
+    this.max_vel = rand(100, 160);
     this.pos = position;
-    this.emits_smoke = false; // Math.random() < 0.2;
+    this.emits_smoke = Math.random() < 0.5;
     this.has_caboose = Math.random() < 0.15;
     this.tbd = [];
     this.history = [];
@@ -477,7 +477,7 @@ Train.prototype.step = function(dt, multitrack)
     train_v[0] += rand(-10, 10);
     train_v[1] += rand(-10, 10);
 
-    if (this.emits_smoke)
+    if (this.emits_smoke && this.vel > 10)
     {
         let s = new SmokeParticle(p, train_v, rand(4, 6));
         this.particles.push(s);
