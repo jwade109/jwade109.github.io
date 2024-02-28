@@ -1,14 +1,19 @@
 "use strict"
 
-let DEBUG_DRAW_TRACK_IDS = false;
+let DEBUG_DRAW_TRACK_IDS = true;
 let DEBUG_DRAW_TRACK_CONNECTIVITY = false;
 let DEBUG_DRAW_JUNCTIONS = true;
 let DEBUG_DRAW_RAIL_ORIENTATION_COLORS = false;
 let DEBUG_DRAW_CURVATURE = false;
 let DEBUG_DRAW_REAL_TRACKS = true;
 
+let UNIQUE_TRACK_SEGMENT_ID = 100;
+
 function TrackSegment(points, k_0, k_f)
 {
+    this.id = UNIQUE_TRACK_SEGMENT_ID;
+    ++UNIQUE_TRACK_SEGMENT_ID;
+
     this.points = points;
     this.k_0 = k_0;
     this.k_f = k_f;
@@ -224,6 +229,24 @@ TrackSegment.prototype.extend_clothoid = function(arclength, curvature, backward
         u = mult2d(u, -1);
     }
     return generate_clothoid(p, u, arclength, arclength / 3, k_f, curvature);
+}
+
+TrackSegment.prototype.grid_cells = function(grid_size)
+{
+    let cells = [];
+    for (let pt of this.points)
+    {
+        let left  = add2d(pt, [-grid_size/2,  0])
+        let right = add2d(pt, [ grid_size/2,  0])
+        let up    = add2d(pt, [ 0,  grid_size/2])
+        let down  = add2d(pt, [ 0, -grid_size/2])
+        for (let p of [left, right, up, down, pt])
+        {
+            let gi = to_grid_index(p, grid_size);
+            push_grid_set(cells, gi);
+        }
+    }
+    return cells;
 }
 
 function curvature_angle(phi_0, k_0, k_p, s_n)
@@ -558,14 +581,6 @@ function MultiTrack(segments, connections)
 {
     this.segments = segments;
     this.connections = connections;
-
-    // TODO implicit connections
-    // let n = this.connections.length;
-    // for (let i = 0; i < n; ++i)
-    // {
-    //     let [src, dst] = this.connections[i];
-    //     this.connections.push([-dst, -src]);
-    // }
 }
 
 MultiTrack.prototype.get_track_from_route = function(route)
@@ -574,15 +589,15 @@ MultiTrack.prototype.get_track_from_route = function(route)
     for (let signed_id of route)
     {
         let [sidx, dir] = split_signed_index(signed_id);
-        if (sidx >= this.segments.length || sidx < 0)
-        {
-            console.log("tried to get segment", sidx, route);
-            return null;
-        }
-        let seg = this.segments[sidx];
+        // if (sidx >= this.segments.length || sidx < 0)
+        // {
+        //     console.log("tried to get segment", sidx, route);
+        //     return null;
+        // }
+        let seg = this.segments[sidx + 1];
         if (seg === undefined)
         {
-            console.log("tried to get segment", sidx, route);
+            console.log("tried to get segment", sidx + 1, route);
             return null;
         }
         if (dir == 1)
@@ -600,15 +615,23 @@ MultiTrack.prototype.get_track_from_route = function(route)
 MultiTrack.prototype.random_node = function()
 {
     let nodes = get_nodes(this.connections);
+    if (nodes.length == 0)
+    {
+        return null;
+    }
     let i = randint(0, nodes.length);
-    // console.log(nodes, i);
+    if (i < 0 || i >= nodes.length)
+    {
+        return null;
+    }
     return nodes[i];
 }
 
 MultiTrack.prototype.draw = function(rctx)
 {
-    for (let seg of this.segments)
+    for (let seg_id in this.segments)
     {
+        let seg = this.segments[seg_id];
         seg.draw(rctx);
     }
 
@@ -639,31 +662,40 @@ MultiTrack.prototype.draw = function(rctx)
         }
     }
 
-    for (let i = 0; i < this.segments.length && DEBUG_DRAW_TRACK_IDS; ++i)
+    if (DEBUG_DRAW_TRACK_IDS)
     {
-        let z = 17000 + i;
-        let seg = this.segments[i];
-        let p_center = get_segment_label_position(seg);
-        let off = mult2d([0, r], 0.3 / rctx.scalar());
-        let p_text = sub2d(p_center, off);
-        rctx.point(p_center, r / rctx.scalar(), "white", "black", 0.6, 2 / rctx.scalar(), z);
-        rctx.text(i + 1, rctx.world_to_screen(p_text), "14px Arial", "center", z);
+        for (let seg_id in this.segments)
+        {
+            let seg = this.segments[seg_id];
+            let z = 17000;
+            let p_center = get_segment_label_position(seg);
+            let off = mult2d([0, r], 0.3 / rctx.scalar());
+            let p_text = sub2d(p_center, off);
+            rctx.point(p_center, r / rctx.scalar(), "white", "black", 0.6, 2 / rctx.scalar(), z);
+            rctx.text(seg.id, rctx.world_to_screen(p_text), "14px Arial", "center", z);
+        }
     }
 
-    for (let i = 0; i < this.segments.length && DEBUG_DRAW_JUNCTIONS; ++i)
+    if (DEBUG_DRAW_JUNCTIONS)
     {
-        let seg = this.segments[i];
-        let j1 = seg.junction_at(0);
-        j1.draw(rctx);
-        let j2 = seg.junction_at(1);
-        j2.draw(rctx);
+        for (let seg_id in this.segments)
+        {
+            let seg = this.segments[seg_id];
+            let j1 = seg.junction_at(0);
+            j1.draw(rctx);
+            let j2 = seg.junction_at(1);
+            j2.draw(rctx);
+        }
     }
 
-    for (let i = 0; i < this.segments.length && DEBUG_DRAW_RAIL_ORIENTATION_COLORS; ++i)
+    if (DEBUG_DRAW_RAIL_ORIENTATION_COLORS)
     {
-        let seg = this.segments[i];
-        rctx.polyline(seg.rail_left, 1, "red", null, 5000);
-        rctx.polyline(seg.rail_right, 2, "green", null, 5000);
+        for (let seg_id in this.segments)
+        {
+            let seg = this.segments[seg_id];
+            rctx.polyline(seg.rail_left, 1, "red", null, 5000);
+            rctx.polyline(seg.rail_right, 2, "green", null, 5000);
+        }
     }
 }
 
@@ -692,31 +724,6 @@ Junction.prototype.draw = function(rctx)
 
     rctx.polyline([p1, p2, p3, p4, p1], 2, "black", "#222222");
     rctx.polyline([this.pos, p5], 2, "black", "#222222");
-}
-
-function sweep_from_segment(segment, n, arclength)
-{
-    let p = segment.evaluate(1);
-    let u = segment.tangent(1);
-    return generate_clothoid_sweep(p, u, arclength / 10, [arclength],
-        [segment.k_0], linspace(-MAX_CURVATURE, MAX_CURVATURE, n));
-}
-
-function generate_clothoid_sweep(start, dir, n, arclengths, k_0_n, k_f_n)
-{
-    let segments = [];
-    for (let a of arclengths)
-    {
-        for (let k_0 of k_0_n)
-        {
-            for (let k_f of k_f_n)
-            {
-                let t = generate_clothoid(start, dir, a, n, k_0, k_f);
-                segments.push(t);
-            }
-        }
-    }
-    return segments;
 }
 
 // list unsigned segments which share a junction side with the given segment

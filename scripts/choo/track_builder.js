@@ -1,9 +1,9 @@
 
-function TrackBuilder(initial_segment)
+function TrackBuilder()
 {
-    this.segments = [initial_segment];
+    this.segments = {};
     this.connections = [];
-    this.signed_index = 1;
+    this.signed_index = null;
 }
 
 function split_signed_index(signed_index)
@@ -13,6 +13,13 @@ function split_signed_index(signed_index)
     return [idx, sign];
 }
 
+TrackBuilder.prototype.add = function(segment)
+{
+    this.segments[segment.id] = segment;
+    this.signed_index = segment.id;
+    return this.signed_index;
+}
+
 TrackBuilder.prototype.extend = function(arclength, curvature)
 {
     function connect(tb, src, dst)
@@ -20,13 +27,15 @@ TrackBuilder.prototype.extend = function(arclength, curvature)
         tb.connections.push([src, dst]);
     };
 
+    console.log(this.signed_index);
     let [idx, sign] = split_signed_index(this.signed_index);
     let backwards = sign < 0;
-    let c = this.segments[idx];
+    let c = this.segments[idx + 1];
+    console.log(this.segments, idx + 1, c);
     let n = c.extend_clothoid(arclength, curvature, backwards);
-    this.segments.push(n);
+    this.segments[n.id] = n;
     let old = this.signed_index;
-    this.signed_index = this.segments.length;
+    this.signed_index = n.id;
     connect(this, old, this.signed_index);
     for (let [src, dst] of this.connections)
     {
@@ -60,10 +69,10 @@ TrackBuilder.prototype.connect = function(dst, strength_mult = 0.4)
         t1 = 0;
     }
 
-    let p0 = this.segments[cidx].evaluate(t0);
-    let u0 = this.segments[cidx].tangent(t0);
-    let p1 = this.segments[idx].evaluate(t1);
-    let u1 = this.segments[idx].tangent(t1);
+    let p0 = this.segments[cidx + 1].evaluate(t0);
+    let u0 = this.segments[cidx + 1].tangent(t0);
+    let p1 = this.segments[idx + 1].evaluate(t1);
+    let u1 = this.segments[idx + 1].tangent(t1);
 
     if (csign < 0)
     {
@@ -102,9 +111,9 @@ TrackBuilder.prototype.connect = function(dst, strength_mult = 0.4)
     }
 
     let path = new TrackSegment(points, 0, 0);
-    this.segments.push(path);
+    this.segments[path.id] = path;
     let old = this.signed_index;
-    this.signed_index = this.segments.length;
+    this.signed_index = path.id;
     this.connections.push([old, this.signed_index]);
     this.connections.push([this.signed_index, -dst]);
     return this.signed_index;

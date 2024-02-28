@@ -269,13 +269,9 @@ function build_multi_junction_issue_track()
 
 function build_unidirectional_track()
 {
-    let tb = new TrackBuilder([]);
+    let tb = new TrackBuilder();
 
-    tb.segments = [
-        line_clothoid([ 20, -400], [ 20,  -300])
-    ];
-
-    tb.cursor();
+    let root = tb.add(line_clothoid([-400, -100], [-300, -100]));
 
     for (let i = 0; i < 6; ++i)
     {
@@ -284,16 +280,16 @@ function build_unidirectional_track()
 
     tb.extend(50, MAX_CURVATURE);
     tb.extend(490, MAX_CURVATURE);
-    tb.extend(50, 0);
+    let h2 = tb.extend(50, 0);
 
     for (let i = 0; i < 8; ++i)
     {
         tb.extend(100, 0);
     }
 
-    tb.connect(-1, 0.8);
+    tb.connect(-root, 0.8);
 
-    tb.cursor(1);
+    tb.cursor(root);
     tb.extend(200, -MAX_CURVATURE);
     tb.extend(50, MAX_CURVATURE);
     tb.extend(200, 0);
@@ -302,7 +298,7 @@ function build_unidirectional_track()
     tb.extend(200, MAX_CURVATURE);
     tb.extend(200, MAX_CURVATURE);
     tb.extend(150, -MAX_CURVATURE/2);
-    tb.connect(-10);
+    tb.connect(-h2);
 
     return new MultiTrack(tb.segments, tb.connections);
 }
@@ -320,7 +316,7 @@ function WorldState()
     this.target_zoom_scale = 1;
     this.viewport_center = [0, 0];
     this.viewport_easing = [0, 0];
-    this.follow_train_index = 1;
+    this.follow_train_index = 0;
 }
 
 WorldState.prototype.step = function(dt)

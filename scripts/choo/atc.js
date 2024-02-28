@@ -3,6 +3,8 @@
 let DEBUG_DRAW_ROUTE_RESERVATIONS = true;
 let DEBUG_DRAW_TRAIN_TARGET_SEGMENTS = true;
 
+const ATC_RESERVATION_GRID_SIZE = 10;
+
 let GENERATED_COLORS = {
     0: "lightblue",
     1: "salmon",
@@ -33,6 +35,7 @@ function AutomaticTrainControl(trains, multitrack)
     this.multitrack = multitrack;
     this.reservations = {};
     this.target_segments = {};
+    this.reserved_grids = [];
 
     this.deadlock_timer = 0;
     this.reroute_timer = 0;
@@ -75,7 +78,7 @@ AutomaticTrainControl.prototype.step = function(dt)
 
         let n = this.multitrack.segments.length;
 
-        if (this.reroute_timer > 1)
+        // if (this.reroute_timer > 1)
         {
             this.send_train(this.target_segments[i], i)
         }
@@ -85,7 +88,11 @@ AutomaticTrainControl.prototype.step = function(dt)
              t.history[t.history.length - 1] == this.target_segments[i] &&
              t.vel < 1))
         {
-            this.target_segments[i] = this.multitrack.random_node();
+            let rn = this.multitrack.random_node();
+            if (rn != null)
+            {
+                this.target_segments[i] = rn;
+            }
         }
 
         max_vel = Math.max(max_vel, t.vel);
@@ -141,10 +148,10 @@ AutomaticTrainControl.prototype.get_train_pos = function(train_no)
 AutomaticTrainControl.prototype.route_between = function(src, dst, train_no)
 {
     let weights = {}
-    for (let i = 1; i <= this.multitrack.segments.length; ++i)
+    for (let seg_id in this.multitrack.segments)
     {
-        weights[i]  = this.multitrack.segments[i-1].arclength;
-        weights[-i] = this.multitrack.segments[i-1].arclength;
+        weights[seg_id]  = this.multitrack.segments[seg_id].arclength;
+        weights[-seg_id] = this.multitrack.segments[seg_id].arclength;
     }
 
     for (let [segment_no, tid] of Object.entries(this.reservations))
@@ -170,7 +177,6 @@ AutomaticTrainControl.prototype.send_train = function(dst, train_no)
     {
         return;
     }
-    let n = this.multitrack.segments.length;
     let src = this.multitrack.random_node();
     if (train.history.length > 0)
     {
@@ -179,6 +185,7 @@ AutomaticTrainControl.prototype.send_train = function(dst, train_no)
 
     function get_and_reserve_best_route(atc, src, nominal_dst, train_no)
     {
+        // console.log(src, nominal_dst);
         let dst = nominal_dst;
         let route = null;
 
@@ -191,7 +198,6 @@ AutomaticTrainControl.prototype.send_train = function(dst, train_no)
             route = atc.route_between(src, dst, train_no);
             if (route == null)
             {
-                // console.log("Failed to generate route between", src, "and", dst);
                 return null;
             }
 
@@ -204,7 +210,8 @@ AutomaticTrainControl.prototype.send_train = function(dst, train_no)
                 {
                     if (atc.reservations[b] === undefined || atc.reservations[b] === train_no)
                     {
-                        // console.log("Reserving block containing", idx, block);
+                        // the reservation is available,
+                        // or this train has already reserved it
                     }
                     else
                     {
@@ -254,6 +261,20 @@ AutomaticTrainControl.prototype.send_train = function(dst, train_no)
     train.set_route(rt);
 }
 
+AutomaticTrainControl.prototype.grid_cells = function()
+{
+    let cells = [];
+    for (let seg of this.multitrack.segments)
+    {
+        let gis = seg.grid_cells(ATC_RESERVATION_GRID_SIZE);
+        for (let gi of gis)
+        {
+            push_grid_set(cells, gi);
+        }
+    }
+    return cells;
+}
+
 AutomaticTrainControl.prototype.draw = function(rctx)
 {
     this.multitrack.draw(rctx);
@@ -267,8 +288,7 @@ AutomaticTrainControl.prototype.draw = function(rctx)
         for (let [train_no, segment_no] of Object.entries(this.target_segments))
         {
             let c = get_stable_random_color(train_no);
-            let [seg_id, ignore] = split_signed_index(segment_no);
-            let seg = this.multitrack.segments[seg_id];
+            let seg = this.multitrack.segments[segment_no];
             rctx.polyline(seg.points, 70, c, null, -100);
         }
     }
@@ -279,9 +299,8 @@ AutomaticTrainControl.prototype.draw = function(rctx)
         {
             let c = get_stable_random_color(train_no);
             let [seg_id, ignore] = split_signed_index(segment_no);
-            let seg = this.multitrack.segments[seg_id];
+            let seg = this.multitrack.segments[seg_id + 1];
             rctx.polyline(seg.points, 25, c, null, -99);
-            // rctx.polyline(seg.rail_right, 3, c, null, 16000);
         }
     }
 }

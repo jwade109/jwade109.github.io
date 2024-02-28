@@ -11,3 +11,11 @@ function grid_aabb(gi, scale)
     let upper = [lower[0] + scale, lower[1] + scale];
     return new AABB(lower, upper);
 }
+
+function push_grid_set(cells, gi)
+{
+    if (!cells.some(e => e[0] == gi[0] && e[1] == gi[1]))
+    {
+        cells.push(gi);
+    }
+}
