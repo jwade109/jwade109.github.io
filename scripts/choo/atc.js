@@ -35,10 +35,6 @@ function AutomaticTrainControl(trains, multitrack)
     this.multitrack = multitrack;
     this.reservations = {};
     this.target_segments = {};
-    this.reserved_grids = [];
-
-    this.deadlock_timer = 0;
-    this.reroute_timer = 0;
 }
 
 AutomaticTrainControl.prototype.step = function(dt)
@@ -47,41 +43,22 @@ AutomaticTrainControl.prototype.step = function(dt)
     {
         let t = this.trains[i];
         let rt = t.total_route();
-        let route_plus_block = [];
-        for (let j = 0; j < rt.length; ++j)
-        {
-            let block = get_block_members(Math.abs(rt[j]), this.multitrack.connections);
-            for (let b of block)
-            {
-                push_set(route_plus_block, b);
-            }
-        }
-
         for (let [segment_no, train_no] of Object.entries(this.reservations))
         {
             segment_no = Number.parseInt(segment_no); // I hate JS
-            if (train_no == i && !route_plus_block.includes(segment_no))
+            if (train_no == i && !rt.includes(segment_no))
             {
                 delete this.reservations[segment_no];
             }
         }
     }
 
-    let max_vel = 0;
-
-    this.reroute_timer += dt;
-
     for (let i = 0; i < this.trains.length; ++i)
     {
         let t = this.trains[i];
         t.step(dt, this.multitrack);
 
-        let n = this.multitrack.segments.length;
-
-        // if (this.reroute_timer > 1)
-        {
-            this.send_train(this.target_segments[i], i)
-        }
+        this.send_train(this.target_segments[i], i)
 
         if ((t.history.length == 0 && this.target_segments[i] === undefined) ||
             (t.history.length > 0 &&
@@ -94,25 +71,7 @@ AutomaticTrainControl.prototype.step = function(dt)
                 this.target_segments[i] = rn;
             }
         }
-
-        max_vel = Math.max(max_vel, t.vel);
     }
-
-    if (this.reroute_timer > 1)
-    {
-        this.reroute_timer = 0;
-    }
-
-    // if (max_vel < 0.05)
-    // {
-    //     this.deadlock_timer += dt;
-    // }
-
-    // if (this.deadlock_timer > 5)
-    // {
-    //     this.reservations = {};
-    //     this.deadlock_timer = 0;
-    // }
 }
 
 AutomaticTrainControl.prototype.get_train = function(train_no)
@@ -145,7 +104,7 @@ AutomaticTrainControl.prototype.get_train_pos = function(train_no)
     return track.evaluate(t);
 }
 
-AutomaticTrainControl.prototype.route_between = function(src, dst, train_no)
+AutomaticTrainControl.prototype.route_between = function(src, dst, train_no, limit)
 {
     let weights = {}
     for (let seg_id in this.multitrack.segments)
@@ -166,6 +125,10 @@ AutomaticTrainControl.prototype.route_between = function(src, dst, train_no)
 
     let route = get_route_between(src, dst, this.multitrack.connections, weights);
     route.shift(); // TODO remove first element
+    while (route.length > limit)
+    {
+        route.pop();
+    }
     return route;
 }
 
@@ -189,13 +152,11 @@ AutomaticTrainControl.prototype.send_train = function(dst, train_no)
         let dst = nominal_dst;
         let route = null;
 
-        let to_reserve = [];
-
         while (src != dst)
         {
-            to_reserve = [];
+            let to_reserve = [];
             let reduced = false;
-            route = atc.route_between(src, dst, train_no);
+            route = atc.route_between(src, dst, train_no, 3);
             if (route == null)
             {
                 return null;
@@ -204,30 +165,21 @@ AutomaticTrainControl.prototype.send_train = function(dst, train_no)
             for (let signed_index of route)
             {
                 let idx = Math.abs(signed_index);
-                // reserve the whole block!
-                let block = get_block_members(idx, atc.multitrack.connections);
-                for (let b of block)
+                if (atc.reservations[idx] === undefined || atc.reservations[idx] === train_no)
                 {
-                    if (atc.reservations[b] === undefined || atc.reservations[b] === train_no)
+                    // the reservation is available,
+                    // or this train has already reserved it
+                }
+                else
+                {
+                    if (route.length > 1 && !reduced)
                     {
-                        // the reservation is available,
-                        // or this train has already reserved it
+                        dst = route[route.length - 2];
+                        reduced = true;
                     }
                     else
                     {
-                        if (route.length > 1 && !reduced)
-                        {
-                            dst = route[route.length - 2];
-                            reduced = true;
-                        }
-                        else
-                        {
-                            return null;
-                        }
-                    }
-                    if (reduced)
-                    {
-                        break;
+                        return null;
                     }
                 }
                 if (reduced)
@@ -235,7 +187,7 @@ AutomaticTrainControl.prototype.send_train = function(dst, train_no)
                     break;
                 }
 
-                to_reserve = to_reserve.concat(block);
+                to_reserve.push(idx);
             }
 
             if (!reduced)
@@ -305,7 +257,34 @@ AutomaticTrainControl.prototype.draw = function(rctx)
     }
 }
 
-AutomaticTrainControl.prototype.occupied = function()
+AutomaticTrainControl.prototype.get_segments_within = function(p_center, radius)
 {
+    let ret = [];
 
+    for (let seg_id in this.multitrack.segments)
+    {
+        let t_start = null;
+        let t_end = null;
+        let seg = this.multitrack.segments[seg_id];
+        for (let t of linspace(0, 1, 100))
+        {
+            let p = seg.evaluate(t);
+            let d = distance(p, p_center);
+            if (d < radius)
+            {
+                if (t_start == null)
+                {
+                    t_start = t;
+                }
+                t_end = t;
+            }
+        }
+
+        if (t_start != null && t_end != null)
+        {
+            ret.push({"segment": seg, "t_0": t_start, "t_f": t_end});
+        }
+    }
+
+    return ret;
 }

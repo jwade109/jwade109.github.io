@@ -382,9 +382,6 @@ Train.prototype.drop_history = function(multitrack)
         {
             break;
         }
-        let segno = this.segment_number(track);
-        let [idx, sign] = split_signed_index(segno);
-        let arclength = multitrack.segments[idx].arclength;
         let t = track.s_to_t(this.pos);
         if (t == null || t < 1)
         {

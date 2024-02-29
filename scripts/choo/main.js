@@ -186,7 +186,7 @@ function build_procedural_track()
         let p1 = [x1 + 20 * i, y1 + 400];
         let p2 = [x1 + 20 * i, y1 + 1100];
 
-        tb.segments.push(line_clothoid(p1, p2));
+        tb.segments.push(linear_spline(p1, p2));
     }
 
     for (let i = 0; i < n_yard; ++i)
@@ -226,7 +226,7 @@ function build_simple_test_track()
 function build_multi_junction_issue_track()
 {
     let tb = new TrackBuilder(
-        line_clothoid([-20, 0], [20, 0])
+        linear_spline([-20, 0], [20, 0])
     );
 
     let right_endpoints = [];
@@ -271,7 +271,7 @@ function build_unidirectional_track()
 {
     let tb = new TrackBuilder();
 
-    let root = tb.add(line_clothoid([-400, -100], [-300, -100]));
+    let root = tb.add(linear_spline([-400, -100], [-300, -100]));
 
     for (let i = 0; i < 6; ++i)
     {
@@ -300,13 +300,22 @@ function build_unidirectional_track()
     tb.extend(150, -MAX_CURVATURE/2);
     tb.connect(-h2);
 
+    tb.cursor(root + 3);
+    tb.extend(150, MAX_CURVATURE);
+    tb.extend(150, MAX_CURVATURE);
+    tb.extend(200, 0);
+    tb.extend(150, MAX_CURVATURE);
+    tb.extend(200, MAX_CURVATURE);
+    tb.extend(150, 0);
+    tb.connect(-(root + 17));
+
     return new MultiTrack(tb.segments, tb.connections);
 }
 
 function WorldState()
 {
     this.atc = new AutomaticTrainControl(
-        make_trains(4, 7),
+        make_trains(3, 12),
         // build_procedural_track(),
         // build_multi_junction_issue_track(),
         build_unidirectional_track()
@@ -358,6 +367,47 @@ WorldState.prototype.draw = function()
     rctx.polyline([[0, -2000], [0, 2000]], 1, "lightgray", -1);
 
     this.atc.draw(rctx);
+
+    if (mouse_state.last_mouse_pos != null)
+    {
+        let radius = 70;
+
+        let p = rctx.screen_to_world(mouse_state.last_mouse_pos);
+        rctx.point(p, 3, "#333333");
+        rctx.point(p, radius, null, "#333333");
+
+        let results = this.atc.get_segments_within(p, radius);
+        for (let res of results)
+        {
+            let polyline = [];
+            for (let t of linspace(res.t_0, res.t_f, 5))
+            {
+                polyline.push(res.segment.evaluate(t));
+            }
+            rctx.polyline(polyline, 20, "blue", null, 1000000);
+        }
+    }
+
+    for (let train of this.atc.trains)
+    {
+        let track = train.get_track(this.atc.multitrack);
+        let radius = 50;
+        for (let s of linspace(0, track.arclength(), track.arclength() / 20))
+        {
+            let t = track.s_to_t(s);
+            let p = track.evaluate(t);
+            let results = this.atc.get_segments_within(p, radius);
+            for (let res of results)
+            {
+                let polyline = [];
+                for (let t of linspace(res.t_0, res.t_f, 5))
+                {
+                    polyline.push(res.segment.evaluate(t));
+                }
+                rctx.polyline(polyline, 40, "#9966CC", null, -1000000);
+            }
+        }
+    }
 
     let text_y = 40;
     let dy = 30;

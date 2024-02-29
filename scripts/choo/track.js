@@ -1,11 +1,12 @@
 "use strict"
 
-let DEBUG_DRAW_TRACK_IDS = true;
+let DEBUG_DRAW_TRACK_IDS = false;
 let DEBUG_DRAW_TRACK_CONNECTIVITY = false;
-let DEBUG_DRAW_JUNCTIONS = true;
+let DEBUG_DRAW_JUNCTIONS = false;
 let DEBUG_DRAW_RAIL_ORIENTATION_COLORS = false;
 let DEBUG_DRAW_CURVATURE = false;
 let DEBUG_DRAW_REAL_TRACKS = true;
+let DEBUG_DRAW_SPLINE_POINTS = false;
 
 let UNIQUE_TRACK_SEGMENT_ID = 100;
 
@@ -178,6 +179,14 @@ TrackSegment.prototype.draw = function(rctx)
         return;
     }
 
+    if (DEBUG_DRAW_SPLINE_POINTS)
+    {
+        for (let pt of this.points)
+        {
+            rctx.point(pt, 0.3);
+        }
+    }
+
     for (let i = 0; i < this.sleeper_left.length && DEBUG_DRAW_REAL_TRACKS; ++i)
     {
         let line = [this.sleeper_left[i], this.sleeper_right[i]];
@@ -224,6 +233,13 @@ TrackSegment.prototype.extend_clothoid = function(arclength, curvature, backward
     }
     let p = this.evaluate(t);
     let u = this.tangent(t);
+
+    if (curvature == 0 && this.k_f == 0)
+    {
+        let p_end = add2d(p, mult2d(u, arclength));
+        return linear_spline(p, p_end);
+    }
+
     if (backwards)
     {
         u = mult2d(u, -1);
@@ -285,11 +301,12 @@ function generate_clothoid(start, direction, s_max, n_segments, k_0, k_f)
     return new TrackSegment(pts, k_0, k_f);
 }
 
-function line_clothoid(beg, end)
+function linear_spline(beg, end)
 {
+    // TODO shouldn't need the linspace here. endpoints should be enough
     let d = distance(beg, end);
     let pts = [];
-    let n = Math.max(Math.ceil(d / 25), 3);
+    let n = Math.max(Math.ceil(d / 5), 3);
     for (let t of linspace(0, 1, n))
     {
         let p = lerp2d(beg, end, t);
