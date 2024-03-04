@@ -71,6 +71,11 @@ RenderContext.prototype.text = function(text, screen_coords, font="24px Cambria 
     this.render_array.push(new Text(screen_coords, text, font, alignment, z_index));
 }
 
+RenderContext.prototype.arc = function(center, radius, linewidth, color, start_angle, end_angle, z_index=0)
+{
+    this.render_array.push(new ArcStroke(center, radius, linewidth, color, start_angle, end_angle, z_index));
+}
+
 function Polyline(points, linewidth, stroke_color, fill_color, z_index)
 {
     this.points = points;
@@ -210,5 +215,43 @@ Arrow.prototype.draw = function(rctx)
     rctx.ctx.lineTo(left[0], left[1]);
     rctx.ctx.moveTo(tip[0], tip[1]);
     rctx.ctx.fill();
+}
 
+function ArcStroke(center, radius, linewidth, color, start_angle, delta_angle, z_index=0)
+{
+    this.center = center;
+    this.radius = radius;
+    this.linewidth = linewidth;
+    this.color = color;
+    this.start_angle = start_angle;
+    this.delta_angle = delta_angle;
+    this.z_index = z_index;
+}
+
+ArcStroke.prototype.draw = function(rctx)
+{
+    rctx.ctx.save();
+    rctx.ctx.strokeStyle = this.color;
+    rctx.ctx.lineWidth = this.linewidth * rctx.scalar();
+    rctx.ctx.globalAlpha = 1;
+    let center_screen = rctx.world_to_screen(this.center);
+    rctx.ctx.beginPath();
+    if (this.delta_angle > 0)
+    {
+        rctx.ctx.arc(center_screen[0], center_screen[1],
+            this.radius * rctx.scalar(),
+            -this.start_angle,
+            -this.start_angle - this.delta_angle,
+            true);
+    }
+    else
+    {
+        rctx.ctx.arc(center_screen[0], center_screen[1],
+            this.radius * rctx.scalar(),
+            Math.PI - this.start_angle,
+            Math.PI - this.start_angle - this.delta_angle,
+            false);
+    }
+    rctx.ctx.stroke();
+    rctx.ctx.restore();
 }

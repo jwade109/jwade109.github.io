@@ -27,11 +27,9 @@ TrackBuilder.prototype.extend = function(arclength, curvature)
         tb.connections.push([src, dst]);
     };
 
-    console.log(this.signed_index);
     let [idx, sign] = split_signed_index(this.signed_index);
     let backwards = sign < 0;
     let c = this.segments[idx + 1];
-    console.log(this.segments, idx + 1, c);
     let n = c.extend_clothoid(arclength, curvature, backwards);
     this.segments[n.id] = n;
     let old = this.signed_index;

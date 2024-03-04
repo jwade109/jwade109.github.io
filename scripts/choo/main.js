@@ -9,6 +9,7 @@ let STEPS = 0;
 
 function MouseState()
 {
+    this.onclick = false;
     this.last_mouse_pos = null;
     this.mouse_down_at = null;
     this.dragged_bias = [0, 0];
@@ -26,8 +27,8 @@ MouseState.prototype.dragging = function()
 
 MouseState.prototype.down = function()
 {
-    this.last_mouse_pos =
     this.mouse_down_at = this.last_mouse_pos;
+    this.onclick = true;
 }
 
 MouseState.prototype.dragged = function()
@@ -43,6 +44,7 @@ MouseState.prototype.dragged = function()
 
 MouseState.prototype.up = function()
 {
+    this.onclick = false;
     let d = this.dragging();
     if (d != null)
     {
@@ -315,7 +317,7 @@ function build_unidirectional_track()
 function WorldState()
 {
     this.atc = new AutomaticTrainControl(
-        make_trains(3, 12),
+        make_trains(3, 6),
         // build_procedural_track(),
         // build_multi_junction_issue_track(),
         build_unidirectional_track()
@@ -351,14 +353,14 @@ WorldState.prototype.draw = function()
         mouse_state.dragged_bias = [0, 0];
     }
 
-    if (this.follow_train_index > 0 && this.follow_train_index <= this.atc.trains.length)
-    {
-        let p = this.atc.get_train_pos(this.follow_train_index - 1);
-        if (p != null)
-        {
-            this.viewport_center = p.slice();
-        }
-    }
+    // if (this.follow_train_index > 0 && this.follow_train_index <= this.atc.trains.length)
+    // {
+    //     let p = this.atc.get_train_pos(this.follow_train_index - 1);
+    //     if (p != null)
+    //     {
+    //         this.viewport_center = p.slice();
+    //     }
+    // }
 
     let rctx = get_render_context(vpc, this.zoom_scale);
 
@@ -368,46 +370,60 @@ WorldState.prototype.draw = function()
 
     this.atc.draw(rctx);
 
-    if (mouse_state.last_mouse_pos != null)
-    {
-        let radius = 70;
+    let b = new Arcspline(
+        [0, 0], [1, 0],
+        [1800, 800, 1200, 2000, Infinity, -2000, -1200,
+            -800, -1800, -1400, Infinity, 1400, 900,
+            600, 700],
+        linspace(70, 220, 15));
+    b.draw(rctx);
+    let c = new Arcspline(
+        [0, 0], [1, 1], [Infinity, 9000, 2000], [300, 100, 900]);
+    c.draw(rctx);
 
-        let p = rctx.screen_to_world(mouse_state.last_mouse_pos);
-        rctx.point(p, 3, "#333333");
-        rctx.point(p, radius, null, "#333333");
+    // if (mouse_state.last_mouse_pos != null)
+    // {
+    //     let p = rctx.screen_to_world(mouse_state.last_mouse_pos);
+    //     rctx.point(p, 3, "#333333");
 
-        let results = this.atc.get_segments_within(p, radius);
-        for (let res of results)
-        {
-            let polyline = [];
-            for (let t of linspace(res.t_0, res.t_f, 5))
-            {
-                polyline.push(res.segment.evaluate(t));
-            }
-            rctx.polyline(polyline, 20, "blue", null, 1000000);
-        }
-    }
+    //     let segment_id = this.atc.multitrack.get_nearest_segment(p);
+    //     if (segment_id != null)
+    //     {
+    //         let seg = this.atc.multitrack.segments[segment_id];
+    //         rctx.polyline(seg.points, 6, "red", null, 100);
+    //         // if (mouse_state.onclick)
+    //         // {
+    //         //     console.log(segment_id);
+    //         //     mouse_state.onclick = false;
+    //         //     this.atc.set_target(0, segment_id);
+    //         // }
+    //     }
+    // }
 
-    for (let train of this.atc.trains)
-    {
-        let track = train.get_track(this.atc.multitrack);
-        let radius = 50;
-        for (let s of linspace(0, track.arclength(), track.arclength() / 20))
-        {
-            let t = track.s_to_t(s);
-            let p = track.evaluate(t);
-            let results = this.atc.get_segments_within(p, radius);
-            for (let res of results)
-            {
-                let polyline = [];
-                for (let t of linspace(res.t_0, res.t_f, 5))
-                {
-                    polyline.push(res.segment.evaluate(t));
-                }
-                rctx.polyline(polyline, 40, "#9966CC", null, -1000000);
-            }
-        }
-    }
+    // for (let train of this.atc.trains)
+    // {
+    //     let track = train.get_track(this.atc.multitrack);
+    //     for (let s of linspace(0, track.arclength(), track.arclength() / 5))
+    //     {
+    //         let t = track.s_to_t(s);
+    //         let p = track.evaluate(t);
+    //         if (p == null)
+    //         {
+    //             continue;
+    //         }
+    //         // rctx.point(p, ATC_RESERVATION_NEARBY_RADIUS, null, "#333333");
+    //         let results = this.atc.get_segments_within(p, ATC_RESERVATION_NEARBY_RADIUS);
+    //         for (let res of results)
+    //         {
+    //             for (let i of res.indices)
+    //             {
+    //                 let u = res.segment.block_handles[i];
+    //                 let v = res.segment.block_handles[i+1];
+    //                 rctx.polyline([u, v], 40, "#9966CC", null, -1000000);
+    //             }
+    //         }
+    //     }
+    // }
 
     let text_y = 40;
     let dy = 30;
@@ -453,15 +469,6 @@ function get_render_context(center_world, zoom_scale)
     ctx.canvas.width = document.body.clientWidth;
     ctx.canvas.height = document.body.clientHeight;
     return new RenderContext(ctx, ctx.canvas.width, ctx.canvas.height, bounds);
-}
-
-function normalize_path_coords(track, trains)
-{
-    for (let t of trains)
-    {
-        t.pos -= track.offset;
-    }
-    track.offset = 0;
 }
 
 let world_state = new WorldState();

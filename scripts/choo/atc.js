@@ -2,8 +2,9 @@
 
 let DEBUG_DRAW_ROUTE_RESERVATIONS = true;
 let DEBUG_DRAW_TRAIN_TARGET_SEGMENTS = true;
+let DEBUG_DRAW_SIGNALS = true;
 
-const ATC_RESERVATION_GRID_SIZE = 10;
+const ATC_RESERVATION_NEARBY_RADIUS = 40;
 
 let GENERATED_COLORS = {
     0: "lightblue",
@@ -37,6 +38,12 @@ function AutomaticTrainControl(trains, multitrack)
     this.target_segments = {};
 }
 
+function Signal(segment_id, t)
+{
+    this.segment_id = segment_id;
+    this.t = t;
+}
+
 AutomaticTrainControl.prototype.step = function(dt)
 {
     for (let i = 0; i < this.trains.length; ++i)
@@ -58,7 +65,7 @@ AutomaticTrainControl.prototype.step = function(dt)
         let t = this.trains[i];
         t.step(dt, this.multitrack);
 
-        this.send_train(this.target_segments[i], i)
+        this.send_train(this.target_segments[i], i);
 
         if ((t.history.length == 0 && this.target_segments[i] === undefined) ||
             (t.history.length > 0 &&
@@ -72,6 +79,11 @@ AutomaticTrainControl.prototype.step = function(dt)
             }
         }
     }
+}
+
+AutomaticTrainControl.prototype.set_target = function(train_no, segment_id)
+{
+    this.target_segments[train_no] = segment_id;
 }
 
 AutomaticTrainControl.prototype.get_train = function(train_no)
@@ -213,20 +225,6 @@ AutomaticTrainControl.prototype.send_train = function(dst, train_no)
     train.set_route(rt);
 }
 
-AutomaticTrainControl.prototype.grid_cells = function()
-{
-    let cells = [];
-    for (let seg of this.multitrack.segments)
-    {
-        let gis = seg.grid_cells(ATC_RESERVATION_GRID_SIZE);
-        for (let gi of gis)
-        {
-            push_grid_set(cells, gi);
-        }
-    }
-    return cells;
-}
-
 AutomaticTrainControl.prototype.draw = function(rctx)
 {
     this.multitrack.draw(rctx);
@@ -241,7 +239,7 @@ AutomaticTrainControl.prototype.draw = function(rctx)
         {
             let c = get_stable_random_color(train_no);
             let seg = this.multitrack.segments[segment_no];
-            rctx.polyline(seg.points, 70, c, null, -100);
+            rctx.polyline(seg.points, 70, c, null, -1000001);
         }
     }
 
@@ -255,6 +253,24 @@ AutomaticTrainControl.prototype.draw = function(rctx)
             rctx.polyline(seg.points, 25, c, null, -99);
         }
     }
+
+    if (DEBUG_DRAW_SIGNALS)
+    {
+        for (let s of this.multitrack.signals)
+        {
+            let seg = this.multitrack.segments[s.segment_id];
+            let p = seg.evaluate(s.t);
+            let u = seg.normal(s.t);
+            if (p == null || u == null)
+            {
+                continue;
+            }
+            let q = sub2d(p, mult2d(u, 10));
+            let r = add2d(p, mult2d(u, 10));
+            rctx.polyline([q, r], 3, "green");
+            rctx.point(r, 3, "green");
+        }
+    }
 }
 
 AutomaticTrainControl.prototype.get_segments_within = function(p_center, radius)
@@ -263,26 +279,22 @@ AutomaticTrainControl.prototype.get_segments_within = function(p_center, radius)
 
     for (let seg_id in this.multitrack.segments)
     {
-        let t_start = null;
-        let t_end = null;
         let seg = this.multitrack.segments[seg_id];
-        for (let t of linspace(0, 1, 100))
+        let indices = [];
+        for (let i = 0; i < seg.n_blocks; ++i)
         {
-            let p = seg.evaluate(t);
-            let d = distance(p, p_center);
-            if (d < radius)
+            let u = seg.block_handles[i];
+            let v = seg.block_handles[i+1];
+
+            if (circle_intersects_line(p_center, radius, u, v))
             {
-                if (t_start == null)
-                {
-                    t_start = t;
-                }
-                t_end = t;
+                indices.push(i);
             }
         }
 
-        if (t_start != null && t_end != null)
+        if (indices.length > 0)
         {
-            ret.push({"segment": seg, "t_0": t_start, "t_f": t_end});
+            ret.push({"segment": seg, "indices": indices});
         }
     }
 

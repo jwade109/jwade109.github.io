@@ -2,6 +2,7 @@
 
 const LINKAGE_OFFSET = 4;
 const S_LIMITS_BUFFER = 2;
+
 let DEBUG_DRAW_TRAIN_PROPERTIES = false;
 let DEBUG_DRAW_TRAIN_ARCLENGTH_LIMITS = false;
 let DEBUG_DRAW_TRAIN_HISTORY = false;
@@ -137,7 +138,7 @@ Train.prototype.get_track = function(multitrack)
 Train.prototype.occupied = function(track)
 {
     let [max, min] = this.s_limits();
-    let s_0 = track.offset;
+    let s_0 = 0;
     let indices = [];
     for (let i = 0; i < track.segments.length; ++i)
     {
@@ -474,9 +475,12 @@ Train.prototype.step = function(dt, multitrack)
     train_v[0] += rand(-10, 10);
     train_v[1] += rand(-10, 10);
 
-    if (this.emits_smoke && this.vel > 10)
+    if (this.emits_smoke)
     {
         let s = new SmokeParticle(p, train_v, rand(4, 6));
-        this.particles.push(s);
+        if (this.vel > 40 || (this.vel > 20 && rand() < 0.2))
+        {
+            this.particles.push(s);
+        }
     }
 }

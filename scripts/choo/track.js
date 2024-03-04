@@ -1,12 +1,16 @@
 "use strict"
 
-let DEBUG_DRAW_TRACK_IDS = false;
+const TRACK_SEGMENT_BLOCK_ARCLENGTH = 30;
+
+let DEBUG_DRAW_TRACK_IDS = true;
 let DEBUG_DRAW_TRACK_CONNECTIVITY = false;
-let DEBUG_DRAW_JUNCTIONS = false;
+let DEBUG_DRAW_JUNCTIONS = true;
 let DEBUG_DRAW_RAIL_ORIENTATION_COLORS = false;
 let DEBUG_DRAW_CURVATURE = false;
 let DEBUG_DRAW_REAL_TRACKS = true;
 let DEBUG_DRAW_SPLINE_POINTS = false;
+let DEBUG_DRAW_SPINE = false;
+let DEBUG_DRAW_SEGMENT_BLOCK_LIMITS = false;
 
 let UNIQUE_TRACK_SEGMENT_ID = 100;
 
@@ -23,6 +27,14 @@ function TrackSegment(points, k_0, k_f)
     {
         let d = distance(this.points[i], this.points[i+1]);
         this.arclength += d;
+    }
+
+    this.n_blocks = Math.max(1, Math.round(this.arclength / TRACK_SEGMENT_BLOCK_ARCLENGTH));
+    this.block_handles = [];
+    for (let t of linspace(0, 1, this.n_blocks + 1))
+    {
+        let p = this.evaluate(t);
+        this.block_handles.push(p);
     }
 
     this.aabb = aabb_from_points(this.points);
@@ -187,6 +199,24 @@ TrackSegment.prototype.draw = function(rctx)
         }
     }
 
+    if (DEBUG_DRAW_SPINE)
+    {
+        rctx.polyline(this.points, 1, "black", null, 0);
+    }
+
+    if (DEBUG_DRAW_SEGMENT_BLOCK_LIMITS)
+    {
+        for (let t of linspace(0, 1, this.n_blocks + 1))
+        {
+            let p = this.evaluate(t);
+            let n = this.normal(t);
+            let u = add2d(p, mult2d(n, 3));
+            let v = sub2d(p, mult2d(n, 3));
+
+            rctx.polyline([u, v], 1, "black", null, -1000);
+        }
+    }
+
     for (let i = 0; i < this.sleeper_left.length && DEBUG_DRAW_REAL_TRACKS; ++i)
     {
         let line = [this.sleeper_left[i], this.sleeper_right[i]];
@@ -303,22 +333,12 @@ function generate_clothoid(start, direction, s_max, n_segments, k_0, k_f)
 
 function linear_spline(beg, end)
 {
-    // TODO shouldn't need the linspace here. endpoints should be enough
-    let d = distance(beg, end);
-    let pts = [];
-    let n = Math.max(Math.ceil(d / 5), 3);
-    for (let t of linspace(0, 1, n))
-    {
-        let p = lerp2d(beg, end, t);
-        pts.push(p);
-    }
-    return new TrackSegment(pts, 0, 0);
+    return new TrackSegment([beg, end], 0, 0);
 }
 
 function Track(segments)
 {
     this.segments = segments;
-    this.offset = 0;
 }
 
 Track.prototype.arclength = function()
@@ -329,16 +349,6 @@ Track.prototype.arclength = function()
         sum += s.arclength;
     }
     return sum;
-}
-
-Track.prototype.draw = function(rctx)
-{
-    rctx.ctx.save();
-    for (let s of this.segments)
-    {
-        s.draw(rctx);
-    }
-    rctx.ctx.restore();
 }
 
 Track.prototype.evaluate = function(t)
@@ -411,12 +421,10 @@ Track.prototype.t_to_s = function(t)
 
 Track.prototype.s_to_t = function(s)
 {
-    if (s < this.offset || s > this.offset + this.arclength())
+    if (s < 0 || s > this.arclength())
     {
         return null;
     }
-
-    s -= this.offset;
 
     let s_lower = 0;
     let s_upper = 0;
@@ -433,52 +441,6 @@ Track.prototype.s_to_t = function(s)
     }
 
     return 0;
-}
-
-Track.prototype.extend = function(s, arclength, candidate)
-{
-    let changed = false;
-    while (this.offset + this.arclength() < s)
-    {
-        if (candidate)
-        {
-            this.segments.push(candidate);
-            candidate = null;
-            changed = true;
-            continue;
-        }
-
-        let end_segment = this.segments[this.segments.length - 1];
-
-        let p = end_segment.evaluate(1);
-        let u = end_segment.tangent(1);
-        let k_0 = end_segment.k_f;
-        let k_f = rand(-MAX_CURVATURE, MAX_CURVATURE);
-
-        let new_segment = generate_clothoid(p, u, arclength, arclength / 10, k_0, k_f);
-        this.segments.push(new_segment);
-        changed = true;
-    }
-    return changed;
-}
-
-Track.prototype.prune = function(s_prune)
-{
-    let changed = false;
-    if (s_prune < this.offset)
-    {
-        return changed;
-    }
-
-    while (this.segments.length > 0 &&
-          (this.segments[0].arclength + this.offset < s_prune))
-    {
-        this.offset += this.segments[0].arclength;
-        this.segments = this.segments.slice(1);
-        changed = true;
-    }
-
-    return changed;
 }
 
 function push_set(set, element)
@@ -598,6 +560,33 @@ function MultiTrack(segments, connections)
 {
     this.segments = segments;
     this.connections = connections;
+
+    this.signals = [];
+
+    this.signals.push(new Signal(103, 0.7));
+    this.signals.push(new Signal(106, 0.3));
+    this.signals.push(new Signal(129, 0.8));
+    this.signals.push(new Signal(130, 0.8));
+}
+
+MultiTrack.prototype.get_nearest_segment = function(p)
+{
+    let best = null;
+    let dist = 0;
+    for (let seg_id in this.segments)
+    {
+        let seg = this.segments[seg_id];
+        for (let h of seg.block_handles)
+        {
+            let d = distance(p, h);
+            if (best == null || d < dist)
+            {
+                dist = d;
+                best = seg_id;
+            }
+        }
+    }
+    return best;
 }
 
 MultiTrack.prototype.get_track_from_route = function(route)
@@ -606,11 +595,6 @@ MultiTrack.prototype.get_track_from_route = function(route)
     for (let signed_id of route)
     {
         let [sidx, dir] = split_signed_index(signed_id);
-        // if (sidx >= this.segments.length || sidx < 0)
-        // {
-        //     console.log("tried to get segment", sidx, route);
-        //     return null;
-        // }
         let seg = this.segments[sidx + 1];
         if (seg === undefined)
         {
@@ -665,8 +649,8 @@ MultiTrack.prototype.draw = function(rctx)
         {
             let [src_idx, ignore1] = split_signed_index(si);
             let [dst_idx, ignore2] = split_signed_index(di);
-            let src = this.segments[src_idx];
-            let dst = this.segments[dst_idx];
+            let src = this.segments[src_idx + 1];
+            let dst = this.segments[dst_idx + 1];
             let p1 = get_segment_label_position(src);
             let p2 = get_segment_label_position(dst);
             let d = distance(p1, p2) - r / rctx.scalar();
@@ -727,8 +711,8 @@ function Junction(pos, dir, side_a, side_b)
 
 Junction.prototype.draw = function(rctx)
 {
-    let length = 4;
-    let width = 12;
+    let length = 2;
+    let width = 8;
 
     let l2 = mult2d(this.tangent, length / 2);
     let w2 = mult2d(this.normal,  width  / 2);

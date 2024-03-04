@@ -453,11 +453,45 @@ function randint(min, max)
 
 function linspace(min, max, n)
 {
-    let ret = [];
     n = Math.floor(n);
+    if (n < 2)
+    {
+        return [min];
+    }
+    let ret = [];
     for (let i = 0; i < n; ++i)
     {
         ret.push(lerp(min, max, i / (n - 1)));
     }
     return ret;
+}
+
+let downsample = 0;
+
+// finds the nearest point
+function nearest_point_to_segment(p, u, v)
+{
+    let uv = sub2d(v, u);
+    let up = sub2d(p, u);
+
+    let t = sproj2d(uv, up);
+    let d = norm2d(uv);
+
+    t = clamp(t, 0, d);
+
+    return add2d(u, mult2d(unit2d(uv), t));
+}
+
+// returns true if the circle with center c and radius r
+// intersects the line segment defined by points u, v.
+// if the circle contains [u, v], that counts as intersection
+function circle_intersects_line(c, r, u, v)
+{
+    if (distance(c, u) <= r || distance(c, v) <= r)
+    {
+        return true;
+    }
+
+    let n = nearest_point_to_segment(c, u, v);
+    return distance(c, n) <= r;
 }
