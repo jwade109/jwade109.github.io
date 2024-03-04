@@ -311,13 +311,45 @@ function build_unidirectional_track()
     tb.extend(150, 0);
     tb.connect(-(root + 17));
 
-    return new MultiTrack(tb.segments, tb.connections);
+    let blocks = {};
+    blocks[root + 3]  = UNIQUE_BLOCK_ID;
+    blocks[root + 4]  = UNIQUE_BLOCK_ID;
+    blocks[root + 5]  = UNIQUE_BLOCK_ID;
+    blocks[root + 28] = UNIQUE_BLOCK_ID;
+    UNIQUE_BLOCK_ID++;
+
+    blocks[root + 10] = UNIQUE_BLOCK_ID;
+    blocks[root + 11] = UNIQUE_BLOCK_ID;
+    blocks[root + 30] = UNIQUE_BLOCK_ID;
+    blocks[root + 31] = UNIQUE_BLOCK_ID;
+    UNIQUE_BLOCK_ID++;
+
+    blocks[root + 0]  = UNIQUE_BLOCK_ID;
+    blocks[root + 1]  = UNIQUE_BLOCK_ID;
+    blocks[root + 2]  = UNIQUE_BLOCK_ID;
+    blocks[root + 19] = UNIQUE_BLOCK_ID;
+    UNIQUE_BLOCK_ID++;
+
+    blocks[root + 14] = UNIQUE_BLOCK_ID;
+    blocks[root + 15] = UNIQUE_BLOCK_ID;
+    blocks[root + 16] = UNIQUE_BLOCK_ID;
+    blocks[root + 17] = UNIQUE_BLOCK_ID;
+    blocks[root + 34] = UNIQUE_BLOCK_ID;
+    UNIQUE_BLOCK_ID++;
+
+    blocks[root + 8]  = UNIQUE_BLOCK_ID;
+    blocks[root + 9]  = UNIQUE_BLOCK_ID;
+    blocks[root + 26] = UNIQUE_BLOCK_ID;
+    blocks[root + 27] = UNIQUE_BLOCK_ID;
+    UNIQUE_BLOCK_ID++;
+
+    return new MultiTrack(tb.segments, tb.connections, blocks);
 }
 
 function WorldState()
 {
     this.atc = new AutomaticTrainControl(
-        make_trains(3, 6),
+        make_trains(2, 12),
         // build_procedural_track(),
         // build_multi_junction_issue_track(),
         build_unidirectional_track()
@@ -353,14 +385,14 @@ WorldState.prototype.draw = function()
         mouse_state.dragged_bias = [0, 0];
     }
 
-    // if (this.follow_train_index > 0 && this.follow_train_index <= this.atc.trains.length)
-    // {
-    //     let p = this.atc.get_train_pos(this.follow_train_index - 1);
-    //     if (p != null)
-    //     {
-    //         this.viewport_center = p.slice();
-    //     }
-    // }
+    if (this.follow_train_index > 0 && this.follow_train_index <= this.atc.trains.length)
+    {
+        let p = this.atc.get_train_pos(this.follow_train_index - 1);
+        if (p != null)
+        {
+            this.viewport_center = p.slice();
+        }
+    }
 
     let rctx = get_render_context(vpc, this.zoom_scale);
 
@@ -370,59 +402,10 @@ WorldState.prototype.draw = function()
 
     this.atc.draw(rctx);
 
-    let b = new Arcspline(
-        [0, 0], [1, 0],
-        [1800, 800, 1200, 2000, Infinity, -2000, -1200,
-            -800, -1800, -1400, Infinity, 1400, 900,
-            600, 700],
-        linspace(70, 220, 15));
-    b.draw(rctx);
-    let c = new Arcspline(
-        [0, 0], [1, 1], [Infinity, 9000, 2000], [300, 100, 900]);
-    c.draw(rctx);
-
     // if (mouse_state.last_mouse_pos != null)
     // {
     //     let p = rctx.screen_to_world(mouse_state.last_mouse_pos);
     //     rctx.point(p, 3, "#333333");
-
-    //     let segment_id = this.atc.multitrack.get_nearest_segment(p);
-    //     if (segment_id != null)
-    //     {
-    //         let seg = this.atc.multitrack.segments[segment_id];
-    //         rctx.polyline(seg.points, 6, "red", null, 100);
-    //         // if (mouse_state.onclick)
-    //         // {
-    //         //     console.log(segment_id);
-    //         //     mouse_state.onclick = false;
-    //         //     this.atc.set_target(0, segment_id);
-    //         // }
-    //     }
-    // }
-
-    // for (let train of this.atc.trains)
-    // {
-    //     let track = train.get_track(this.atc.multitrack);
-    //     for (let s of linspace(0, track.arclength(), track.arclength() / 5))
-    //     {
-    //         let t = track.s_to_t(s);
-    //         let p = track.evaluate(t);
-    //         if (p == null)
-    //         {
-    //             continue;
-    //         }
-    //         // rctx.point(p, ATC_RESERVATION_NEARBY_RADIUS, null, "#333333");
-    //         let results = this.atc.get_segments_within(p, ATC_RESERVATION_NEARBY_RADIUS);
-    //         for (let res of results)
-    //         {
-    //             for (let i of res.indices)
-    //             {
-    //                 let u = res.segment.block_handles[i];
-    //                 let v = res.segment.block_handles[i+1];
-    //                 rctx.polyline([u, v], 40, "#9966CC", null, -1000000);
-    //             }
-    //         }
-    //     }
     // }
 
     let text_y = 40;
@@ -451,7 +434,7 @@ function make_trains(number_of_trains, length)
     let trains = [];
     for (let i = 0; i < number_of_trains; ++i)
     {
-        trains.push(new Train(0, length));
+        trains.push(new Train(0, randint(length/2, length)));
     }
     return trains;
 }

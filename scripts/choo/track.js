@@ -2,7 +2,8 @@
 
 const TRACK_SEGMENT_BLOCK_ARCLENGTH = 30;
 
-let DEBUG_DRAW_TRACK_IDS = true;
+let DEBUG_DRAW_SEGMENT_IDS = false;
+let DEBUG_DRAW_BLOCK_IDS = true;
 let DEBUG_DRAW_TRACK_CONNECTIVITY = false;
 let DEBUG_DRAW_JUNCTIONS = true;
 let DEBUG_DRAW_RAIL_ORIENTATION_COLORS = false;
@@ -11,6 +12,7 @@ let DEBUG_DRAW_REAL_TRACKS = true;
 let DEBUG_DRAW_SPLINE_POINTS = false;
 let DEBUG_DRAW_SPINE = false;
 let DEBUG_DRAW_SEGMENT_BLOCK_LIMITS = false;
+let DEBUG_DRAW_BLOCKS = false;
 
 let UNIQUE_TRACK_SEGMENT_ID = 100;
 
@@ -27,14 +29,6 @@ function TrackSegment(points, k_0, k_f)
     {
         let d = distance(this.points[i], this.points[i+1]);
         this.arclength += d;
-    }
-
-    this.n_blocks = Math.max(1, Math.round(this.arclength / TRACK_SEGMENT_BLOCK_ARCLENGTH));
-    this.block_handles = [];
-    for (let t of linspace(0, 1, this.n_blocks + 1))
-    {
-        let p = this.evaluate(t);
-        this.block_handles.push(p);
     }
 
     this.aabb = aabb_from_points(this.points);
@@ -202,19 +196,6 @@ TrackSegment.prototype.draw = function(rctx)
     if (DEBUG_DRAW_SPINE)
     {
         rctx.polyline(this.points, 1, "black", null, 0);
-    }
-
-    if (DEBUG_DRAW_SEGMENT_BLOCK_LIMITS)
-    {
-        for (let t of linspace(0, 1, this.n_blocks + 1))
-        {
-            let p = this.evaluate(t);
-            let n = this.normal(t);
-            let u = add2d(p, mult2d(n, 3));
-            let v = sub2d(p, mult2d(n, 3));
-
-            rctx.polyline([u, v], 1, "black", null, -1000);
-        }
     }
 
     for (let i = 0; i < this.sleeper_left.length && DEBUG_DRAW_REAL_TRACKS; ++i)
@@ -556,37 +537,21 @@ function get_route_between(src, target, edges, weights)
     return route.reverse();
 }
 
-function MultiTrack(segments, connections)
+let UNIQUE_BLOCK_ID = 400;
+
+function MultiTrack(segments, connections, blocks)
 {
     this.segments = segments;
     this.connections = connections;
+    this.blocks = blocks;
 
-    this.signals = [];
-
-    this.signals.push(new Signal(103, 0.7));
-    this.signals.push(new Signal(106, 0.3));
-    this.signals.push(new Signal(129, 0.8));
-    this.signals.push(new Signal(130, 0.8));
-}
-
-MultiTrack.prototype.get_nearest_segment = function(p)
-{
-    let best = null;
-    let dist = 0;
     for (let seg_id in this.segments)
     {
-        let seg = this.segments[seg_id];
-        for (let h of seg.block_handles)
+        if (this.blocks[seg_id] === undefined)
         {
-            let d = distance(p, h);
-            if (best == null || d < dist)
-            {
-                dist = d;
-                best = seg_id;
-            }
+            this.blocks[seg_id] = UNIQUE_BLOCK_ID++;
         }
     }
-    return best;
 }
 
 MultiTrack.prototype.get_track_from_route = function(route)
@@ -663,7 +628,7 @@ MultiTrack.prototype.draw = function(rctx)
         }
     }
 
-    if (DEBUG_DRAW_TRACK_IDS)
+    if (DEBUG_DRAW_SEGMENT_IDS)
     {
         for (let seg_id in this.segments)
         {
@@ -674,6 +639,49 @@ MultiTrack.prototype.draw = function(rctx)
             let p_text = sub2d(p_center, off);
             rctx.point(p_center, r / rctx.scalar(), "white", "black", 0.6, 2 / rctx.scalar(), z);
             rctx.text(seg.id, rctx.world_to_screen(p_text), "14px Arial", "center", z);
+        }
+    }
+
+    if (DEBUG_DRAW_BLOCK_IDS)
+    {
+        let blocks = {};
+
+        for (let [segment_id, block_id] of Object.entries(this.blocks))
+        {
+            if (blocks[block_id] === undefined)
+            {
+                blocks[block_id] = [];
+            }
+            blocks[block_id].push(segment_id);
+        }
+
+        for (let block_id in blocks)
+        {
+            if (blocks[block_id].length < 2)
+            {
+                continue;
+            }
+            let aabb = null;
+            for (let seg_id of blocks[block_id])
+            {
+                let seg = this.segments[seg_id];
+                if (aabb == null)
+                {
+                    aabb = seg.aabb;
+                }
+                else
+                {
+                    aabb = aabb.combine(seg.aabb);
+                }
+            }
+            aabb.draw(rctx);
+
+            // let z = 17000;
+            // let p_center = get_segment_label_position(seg);
+            // let off = mult2d([0, r], 0.3 / rctx.scalar());
+            // let p_text = sub2d(p_center, off);
+            // rctx.point(p_center, r / rctx.scalar(), "white", "black", 0.6, 2 / rctx.scalar(), z);
+            // rctx.text(seg.id, rctx.world_to_screen(p_text), "14px Arial", "center", z);
         }
     }
 
@@ -696,6 +704,21 @@ MultiTrack.prototype.draw = function(rctx)
             let seg = this.segments[seg_id];
             rctx.polyline(seg.rail_left, 1, "red", null, 5000);
             rctx.polyline(seg.rail_right, 2, "green", null, 5000);
+        }
+    }
+
+    if (DEBUG_DRAW_BLOCKS)
+    {
+        for (let seg_id in this.segments)
+        {
+            let block_id = this.blocks[seg_id];
+            let c = get_stable_random_color(0);
+            if (block_id !== undefined)
+            {
+                c = get_stable_random_color(block_id);
+            }
+            let seg = this.segments[seg_id];
+            rctx.polyline(seg.points, 30, c, null, -50000);
         }
     }
 }

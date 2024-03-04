@@ -58,6 +58,11 @@ AABB.prototype.random = function()
     return [x, y];
 }
 
+AABB.prototype.combine = function(other)
+{
+    return aabb_from_points([this.min, this.max, other.min, other.max]);
+}
+
 function aabb_from_points(pts)
 {
     let min = pts[0].slice();
