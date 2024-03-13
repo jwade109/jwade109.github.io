@@ -3,7 +3,7 @@
 const LINKAGE_OFFSET = 4;
 const S_LIMITS_BUFFER = 2;
 
-let DEBUG_DRAW_TRAIN_PROPERTIES = false;
+let DEBUG_DRAW_TRAIN_PROPERTIES = true;
 let DEBUG_DRAW_TRAIN_ARCLENGTH_LIMITS = false;
 let DEBUG_DRAW_TRAIN_HISTORY = false;
 let DEBUG_DRAW_CURRENT_PLANNED_ROUTES = false;
@@ -41,8 +41,13 @@ function Railcar(length, width, color, is_loco)
     this.is_loco = is_loco;
 }
 
-function Train(position, n_cars, width, height)
+let UNIQUE_TRAIN_ID = 0;
+
+function Train(position, n_cars)
 {
+    this.id = UNIQUE_TRAIN_ID;
+    ++UNIQUE_TRAIN_ID;
+
     this.cars = [];
     this.acc = rand(40, 65);
     this.vel = 0;
@@ -53,6 +58,8 @@ function Train(position, n_cars, width, height)
     this.tbd = [];
     this.history = [];
     this.particles = [];
+    this.state = {desc: "uninitialized", time: 0};
+    this.target_segment = null;
 
     let n_locos = Math.max(1, Math.ceil(n_cars / 12));
 
@@ -277,25 +284,25 @@ Train.prototype.draw = function(rctx, multitrack)
             let k = rctx.scalar();
 
             let [smax, smin] = this.s_limits();
-            let dy = 25;
+            let dy = 19;
             let text_y = 0;
             let tarc = track.arclength();
-            rctx.text("t = " + track.s_to_t(this.pos),
-                add2d(scr, [30 * k, text_y += dy]));
-            rctx.text("s = " + s.toFixed(2) + "/" + tarc.toFixed(),
-                add2d(scr, [30 * k, text_y += dy]));
-            rctx.text("   " + smin.toFixed(2) + ", " + smax.toFixed(2),
-                add2d(scr, [30 * k, text_y += dy]));
-            rctx.text("v = " + this.vel.toFixed(2),
-                add2d(scr, [30 * k, text_y += dy]));
-            rctx.text("path = " + this.total_route(),
-                add2d(scr, [30 * k, text_y += dy]));
-            rctx.text("occ = " + this.occupied_indices(track),
-                add2d(scr, [30 * k, text_y += dy]));
-            rctx.text("his = " + this.history,
-                add2d(scr, [30 * k, text_y += dy]));
-            rctx.text("tbd = " + this.tbd,
-                add2d(scr, [30 * k, text_y += dy]));
+
+            function write_text(str)
+            {
+                rctx.text(str, add2d(scr, [30 * k, text_y += dy]), "17px Arial");
+            }
+
+            write_text("id = " + this.id);
+            write_text("t = " + track.s_to_t(this.pos).toFixed(2));
+            write_text("s = " + s.toFixed(0) + "/" + tarc.toFixed());
+            write_text("v = " + this.vel.toFixed(1));
+            write_text(this.state.desc + " " + this.state.time.toFixed(1));
+            write_text("path = " + this.total_route());
+            write_text("occ = " + this.occupied_indices(track));
+            write_text("his = " + this.history);
+            write_text("tbd = " + this.tbd);
+            write_text("target = " + this.target_segment);
         }
 
         s -= c.length / 2 + LINKAGE_OFFSET / 2;
@@ -411,14 +418,47 @@ Train.prototype.step = function(dt, multitrack)
     let hard_stop_distance = Math.abs(this.vel * this.vel / (2 * this.acc));
 
     let target_vel = this.max_vel;
-    if (remaining < hard_stop_distance + 10)
+    if (remaining < hard_stop_distance + 30)
     {
         target_vel = 0;
     }
     if (remaining < 10)
     {
+        console.log("Very hard stop");
         this.vel = 0;
     }
+
+    if (this.tbd.length == 0 && this.vel == 0 &&
+        this.history.length > 0 &&
+        this.history[this.history.length - 1] == this.target_segment)
+    {
+        this.target_segment = null;
+    }
+
+    let new_state = "en route";
+    if (this.vel == 0 && target_vel == 0 && this.target_segment != null)
+    {
+        new_state = "blocked";
+    }
+    else if (this.target_segment == null)
+    {
+        new_state = "idle";
+    }
+    // else
+    // {
+    //     new_state = "en route";
+    // }
+
+    if (this.state.desc == new_state)
+    {
+        this.state.time += dt;
+    }
+    else
+    {
+        this.state.time = 0;
+    }
+
+    this.state.desc = new_state;
 
     if (this.vel < target_vel)
     {

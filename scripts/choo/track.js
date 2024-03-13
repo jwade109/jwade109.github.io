@@ -2,16 +2,14 @@
 
 const TRACK_SEGMENT_BLOCK_ARCLENGTH = 30;
 
-let DEBUG_DRAW_SEGMENT_IDS = false;
-let DEBUG_DRAW_BLOCK_IDS = true;
-let DEBUG_DRAW_TRACK_CONNECTIVITY = false;
+let DEBUG_DRAW_SEGMENT_IDS = true;
+let DEBUG_DRAW_TRACK_CONNECTIVITY = true;
 let DEBUG_DRAW_JUNCTIONS = true;
 let DEBUG_DRAW_RAIL_ORIENTATION_COLORS = false;
 let DEBUG_DRAW_CURVATURE = false;
-let DEBUG_DRAW_REAL_TRACKS = true;
+let DEBUG_DRAW_REAL_TRACKS = false;
 let DEBUG_DRAW_SPLINE_POINTS = false;
 let DEBUG_DRAW_SPINE = false;
-let DEBUG_DRAW_SEGMENT_BLOCK_LIMITS = false;
 let DEBUG_DRAW_BLOCKS = false;
 
 let UNIQUE_TRACK_SEGMENT_ID = 100;
@@ -210,27 +208,6 @@ TrackSegment.prototype.draw = function(rctx)
         rctx.polyline(this.rail_right, 1, "#333333", null,      10);
         // rctx.polyline(this.bed,        4, "#DDDDDD", "#DDDDDD", -3);
     }
-
-    if (DEBUG_DRAW_CURVATURE)
-    {
-        function draw_curvature(track, t, k)
-        {
-            let p0 = track.evaluate(t);
-            let t0 = track.normal(t);
-            let r0 = 1 / k;
-            p0 = add2d(p0, mult2d(t0, -r0));
-            rctx.point(p0, Math.abs(r0), null, "purple", 0.3);
-        }
-
-        if (Math.abs(this.k_0) > 1E-5)
-        {
-            draw_curvature(this, 0, this.k_0);
-        }
-        if (Math.abs(this.k_f) > 1E-5)
-        {
-            draw_curvature(this, 1, this.k_f);
-        }
-    }
 }
 
 TrackSegment.prototype.extend_clothoid = function(arclength, curvature, backwards)
@@ -247,7 +224,8 @@ TrackSegment.prototype.extend_clothoid = function(arclength, curvature, backward
 
     if (curvature == 0 && this.k_f == 0)
     {
-        let p_end = add2d(p, mult2d(u, arclength));
+        let sign = backwards ? -1 : 1;
+        let p_end = add2d(p, mult2d(u, sign * arclength));
         return linear_spline(p, p_end);
     }
 
@@ -601,9 +579,14 @@ MultiTrack.prototype.draw = function(rctx)
         seg.draw(rctx);
     }
 
-    function get_segment_label_position(seg)
+    function get_positive_seg_label_pos(seg)
     {
-        return seg.evaluate(0.8);
+        return seg.evaluate(0.7);
+    }
+
+    function get_negative_seg_label_pos(seg)
+    {
+        return seg.evaluate(0.3);
     }
 
     let r = 14;
@@ -616,9 +599,9 @@ MultiTrack.prototype.draw = function(rctx)
             let [dst_idx, ignore2] = split_signed_index(di);
             let src = this.segments[src_idx + 1];
             let dst = this.segments[dst_idx + 1];
-            let p1 = get_segment_label_position(src);
-            let p2 = get_segment_label_position(dst);
-            let d = distance(p1, p2) - r / rctx.scalar();
+            let p1 = get_positive_seg_label_pos(src);
+            let p2 = get_negative_seg_label_pos(dst);
+            let d = distance(p1, p2);
             let t = unit2d(sub2d(p2, p1));
             let u = rot2d(t, Math.PI / 2);
             p2 = add2d(p1, mult2d(t, d));
@@ -634,15 +617,18 @@ MultiTrack.prototype.draw = function(rctx)
         {
             let seg = this.segments[seg_id];
             let z = 17000;
-            let p_center = get_segment_label_position(seg);
+            let p_neg = get_negative_seg_label_pos(seg);
+            let p_pos = get_positive_seg_label_pos(seg);
             let off = mult2d([0, r], 0.3 / rctx.scalar());
-            let p_text = sub2d(p_center, off);
-            rctx.point(p_center, r / rctx.scalar(), "white", "black", 0.6, 2 / rctx.scalar(), z);
+            let p_text = sub2d(p_pos, off);
+            rctx.arrow(p_neg, p_pos, 2, "#333333", 16900);
+            rctx.point(p_neg, 0.6 * r / rctx.scalar(), "red", "black", 0.6, 2 / rctx.scalar(), z);
+            rctx.point(p_pos, r / rctx.scalar(), "white", "black", 0.6, 2 / rctx.scalar(), z);
             rctx.text(seg.id, rctx.world_to_screen(p_text), "14px Arial", "center", z);
         }
     }
 
-    if (DEBUG_DRAW_BLOCK_IDS)
+    if (DEBUG_DRAW_BLOCKS)
     {
         let blocks = {};
 
@@ -675,13 +661,6 @@ MultiTrack.prototype.draw = function(rctx)
                 }
             }
             aabb.draw(rctx);
-
-            // let z = 17000;
-            // let p_center = get_segment_label_position(seg);
-            // let off = mult2d([0, r], 0.3 / rctx.scalar());
-            // let p_text = sub2d(p_center, off);
-            // rctx.point(p_center, r / rctx.scalar(), "white", "black", 0.6, 2 / rctx.scalar(), z);
-            // rctx.text(seg.id, rctx.world_to_screen(p_text), "14px Arial", "center", z);
         }
     }
 

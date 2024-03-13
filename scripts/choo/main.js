@@ -349,7 +349,7 @@ function build_unidirectional_track()
 function WorldState()
 {
     this.atc = new AutomaticTrainControl(
-        make_trains(2, 12),
+        1,
         // build_procedural_track(),
         // build_multi_junction_issue_track(),
         build_unidirectional_track()
@@ -429,16 +429,6 @@ WorldState.prototype.draw = function()
     rctx.draw();
 }
 
-function make_trains(number_of_trains, length)
-{
-    let trains = [];
-    for (let i = 0; i < number_of_trains; ++i)
-    {
-        trains.push(new Train(0, randint(length/2, length)));
-    }
-    return trains;
-}
-
 function get_render_context(center_world, zoom_scale)
 {
     let du = [zoom_scale * document.body.clientWidth / 2,
@@ -463,7 +453,7 @@ function update(previous, now)
     if (!PAUSED)
     {
         STEPS = 0;
-        world_state.step(NOMINAL_DT);
+        world_state.step(dt);
     }
     else if (STEPS > 0)
     {

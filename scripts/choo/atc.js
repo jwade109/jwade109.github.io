@@ -22,6 +22,7 @@ function get_random_color()
 
 function get_stable_random_color(i)
 {
+    i = i % 20;
     if (GENERATED_COLORS[i] === undefined)
     {
         GENERATED_COLORS[i] = get_random_color();
@@ -29,9 +30,10 @@ function get_stable_random_color(i)
     return GENERATED_COLORS[i];
 }
 
-function AutomaticTrainControl(trains, multitrack)
+function AutomaticTrainControl(train_limit, multitrack)
 {
-    this.trains = trains;
+    this.trains = {};
+    this.train_limit = train_limit;
     this.multitrack = multitrack;
     this.reservations = {};
     this.target_segments = {};
@@ -39,9 +41,9 @@ function AutomaticTrainControl(trains, multitrack)
 
 AutomaticTrainControl.prototype.step = function(dt)
 {
-    for (let i = 0; i < this.trains.length; ++i)
+    for (let tid in this.trains)
     {
-        let t = this.trains[i];
+        let t = this.trains[tid];
         let rt = t.total_route();
         let blocks = [];
 
@@ -53,52 +55,81 @@ AutomaticTrainControl.prototype.step = function(dt)
         for (let [block_no, train_no] of Object.entries(this.reservations))
         {
             block_no = Number.parseInt(block_no); // I hate JS
-            if (train_no == i && !blocks.includes(block_no))
+            if (train_no == tid && !blocks.includes(block_no))
             {
                 delete this.reservations[block_no];
             }
         }
     }
 
-    for (let i = 0; i < this.trains.length; ++i)
+    let to_delete = [];
+
+    for (let tid in this.trains)
     {
-        let t = this.trains[i];
+        let t = this.trains[tid];
         t.step(dt, this.multitrack);
+        if (t.target_segment != null)
+        {
+            this.send_train(t.target_segment, tid);
+        }
 
-        this.send_train(this.target_segments[i], i);
-
-        if ((t.history.length == 0 && this.target_segments[i] === undefined) ||
-            (t.history.length > 0 &&
-             t.history[t.history.length - 1] == this.target_segments[i] &&
-             t.vel < 1))
+        if (t.state.desc == "uninitialized")
         {
             let rn = this.multitrack.random_node();
             if (rn != null)
             {
-                this.target_segments[i] = rn;
+                t.target_segment = rn;
             }
+        }
+        if (t.state.desc == "idle" && t.state.time > 2)
+        {
+            to_delete.push(tid);
+        }
+    }
+
+    for (let tid of to_delete)
+    {
+        this.delete_train(tid);
+    }
+
+    while (Object.entries(this.trains).length < this.train_limit)
+    {
+        this.spawn_train(this.multitrack.random_node());
+    }
+}
+
+AutomaticTrainControl.prototype.spawn_train = function(source)
+{
+    let segment = this.multitrack.segments[source];
+    let t = new Train(segment.arclength * 0.8, 28);
+    if (source != null)
+    {
+        t.tbd.push(source);
+    }
+    t.target_segment = this.multitrack.random_node();
+    this.trains[t.id] = t;
+}
+
+AutomaticTrainControl.prototype.delete_train = function(train_no)
+{
+    delete this.trains[train_no];
+    for (let [block_no, tid] of Object.entries(this.reservations))
+    {
+        if (train_no == tid)
+        {
+            delete this.reservations[block_no];
         }
     }
 }
 
 AutomaticTrainControl.prototype.set_target = function(train_no, segment_id)
 {
-    this.target_segments[train_no] = segment_id;
-}
-
-AutomaticTrainControl.prototype.get_train = function(train_no)
-{
-    if (train_no < 0 || train_no >= this.trains.length)
-    {
-        console.log("No train with id", train_no);
-        return null;
-    }
-    return this.trains[train_no];
+    this.trains[train_no].target_segment = segment_id;
 }
 
 AutomaticTrainControl.prototype.get_train_pos = function(train_no)
 {
-    let train = this.get_train(train_no);
+    let train = this.trains[train_no];
     if (train == null)
     {
         return null;
@@ -147,8 +178,7 @@ AutomaticTrainControl.prototype.route_between = function(src, dst, train_no, lim
 
 AutomaticTrainControl.prototype.send_train = function(dst, train_no)
 {
-    // console.log("Sending train", train_no, "to segment", dst);
-    let train = this.get_train(train_no);
+    let train = this.trains[train_no];
     if (train == null)
     {
         return;
@@ -161,7 +191,6 @@ AutomaticTrainControl.prototype.send_train = function(dst, train_no)
 
     function get_and_reserve_best_route(atc, src, nominal_dst, train_no)
     {
-        // console.log(src, nominal_dst);
         let dst = nominal_dst;
         let route = null;
 
@@ -230,17 +259,23 @@ AutomaticTrainControl.prototype.send_train = function(dst, train_no)
 AutomaticTrainControl.prototype.draw = function(rctx)
 {
     this.multitrack.draw(rctx);
-    for (let t of this.trains)
+    for (let tid in this.trains)
     {
+        let t = this.trains[tid];
         t.draw(rctx, this.multitrack);
     }
 
     if (DEBUG_DRAW_TRAIN_TARGET_SEGMENTS)
     {
-        for (let [train_no, segment_no] of Object.entries(this.target_segments))
+        for (let tid in this.trains)
         {
-            let c = get_stable_random_color(train_no);
-            let seg = this.multitrack.segments[segment_no];
+            let t = this.trains[tid];
+            if (t.target_segment == null)
+            {
+                continue;
+            }
+            let c = get_stable_random_color(tid);
+            let seg = this.multitrack.segments[t.target_segment];
             rctx.polyline(seg.points, 70, c, null, -1000001);
         }
     }
