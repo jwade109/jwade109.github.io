@@ -49,11 +49,11 @@ function Train(position, n_cars)
     ++UNIQUE_TRAIN_ID;
 
     this.cars = [];
-    this.acc = rand(40, 65);
+    this.acc = rand(120, 250);
     this.vel = 0;
-    this.max_vel = rand(100, 160);
+    this.max_vel = rand(300, 360);
     this.pos = position;
-    this.emits_smoke = Math.random() < 0.5;
+    this.emits_smoke = false; // Math.random() < 0.5;
     this.has_caboose = Math.random() < 0.15;
     this.tbd = [];
     this.history = [];
