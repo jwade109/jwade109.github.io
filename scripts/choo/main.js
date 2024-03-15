@@ -1,6 +1,6 @@
 "use strict";
 
-const NOMINAL_FRAMERATE = 30;
+const NOMINAL_FRAMERATE = 60;
 const NOMINAL_DT = 1 / NOMINAL_FRAMERATE;
 const MAX_CURVATURE = 6E-3;
 
@@ -346,20 +346,165 @@ function build_unidirectional_track()
     return new MultiTrack(tb.segments, tb.connections, blocks);
 }
 
+function build_turnaround_track()
+{
+    let tb = new TrackBuilder(linear_spline([-100, 350], [200, 350]));
+
+    let root = tb.signed_index;
+
+    function make_loop()
+    {
+        let loop_root = tb.signed_index;
+        let node_a = null;
+        let node_b = null;
+
+        for (let i = 0; i < 3; ++i)
+        {
+            tb.extend(100, -MAX_CURVATURE/2.1, true);
+        }
+
+        for (let i = 0; i < 4; ++i)
+        {
+            node_a = tb.extend(100, MAX_CURVATURE, true);
+        }
+
+        tb.cursor(loop_root);
+
+        for (let i = 0; i < 3; ++i)
+        {
+            tb.extend(100, MAX_CURVATURE/2.1, true);
+        }
+
+        for (let i = 0; i < 4; ++i)
+        {
+            node_b = tb.extend(100, -MAX_CURVATURE, true);
+        }
+
+        tb.cursor(node_a);
+        tb.connect(node_b, 0.3, true);
+
+        tb.cursor(-loop_root);
+    }
+
+    make_loop();
+
+    tb.cursor(-root);
+
+    make_loop();
+
+    tb.cursor(-root);
+
+    tb.extend(30, MAX_CURVATURE);
+    tb.extend(100, MAX_CURVATURE);
+    tb.extend(100, MAX_CURVATURE);
+    tb.extend(100, MAX_CURVATURE);
+    tb.extend(100, 0);
+    tb.extend(100, 0);
+    tb.extend(100, 0);
+    tb.extend(100, MAX_CURVATURE);
+    tb.extend(100, MAX_CURVATURE);
+    tb.extend(100, MAX_CURVATURE);
+    tb.extend(100, 0);
+    tb.extend(100, 0);
+    tb.extend(100, 0);
+    tb.extend(100, 0);
+    tb.extend(100, 0);
+    tb.connect(-106);
+
+    tb.cursor(root + 35);
+    tb.extend(100, -MAX_CURVATURE);
+    tb.extend(100, -MAX_CURVATURE);
+    tb.extend(100, -MAX_CURVATURE);
+    tb.extend(100, 0);
+    tb.extend(100, 0);
+
+    make_loop();
+
+    tb.extend(100, -MAX_CURVATURE);
+    tb.extend(100, -MAX_CURVATURE);
+    tb.extend(100, 0);
+    tb.extend(100, 0);
+    tb.extend(100, MAX_CURVATURE);
+    tb.extend(100, MAX_CURVATURE);
+    tb.extend(100, MAX_CURVATURE);
+    tb.extend(100, MAX_CURVATURE);
+    tb.extend(100, 0);
+    tb.extend(100, 0);
+
+    tb.connect(-145);
+
+    tb.cursor(-128);
+    tb.extend(100, 0);
+    tb.extend(100, 0);
+    tb.connect(-136);
+
+    let block_list =[
+        [101, 108, 109, 102, 100, 131, 132, 123, 116],
+        [127, 178],
+        [180, 135],
+        [105, 146],
+        [143, 144, 177],
+        [136, 137, 148, 147],
+        [149, 150, 167, 168],
+        [152, 159, 153, 160]
+    ];
+
+    let blocks = {};
+
+    for (let bl of block_list)
+    {
+        for (let b of bl)
+        {
+            blocks[b] = UNIQUE_BLOCK_ID;
+        }
+        UNIQUE_BLOCK_ID++;
+    }
+
+    console.log(blocks);
+
+    return new MultiTrack(tb.segments, tb.connections, blocks);
+}
+
 function WorldState()
 {
     this.atc = new AutomaticTrainControl(
         1,
         // build_procedural_track(),
         // build_multi_junction_issue_track(),
-        build_unidirectional_track()
+        // build_unidirectional_track(),
+        build_turnaround_track()
     );
 
-    this.zoom_scale = 1;
-    this.target_zoom_scale = 1;
+    this.zoom_scale = 0.3;
+    this.target_zoom_scale = 0.3;
     this.viewport_center = [0, 0];
     this.viewport_easing = [0, 0];
-    this.follow_train_index = 0;
+    this.follow_train = true;
+    this.trees = [];
+
+    let colors = [
+        "#40a55b",
+        "#328147",
+        "#245c33",
+        "#f47b20",
+        "#9c5708",
+        "#561818"
+    ]
+
+    for (let pt of generate_trees(this.atc.multitrack))
+    {
+        let c = colors[randint(0, colors.length)];
+
+        this.trees.push({
+            "pos": pt,
+            "radius": rand(4, 12),
+            "color": c,
+            "alpha": rand(0.4, 1)
+        });
+    }
+
+    this.overhead = generate_overhead_thingies(this.atc.multitrack);
+    console.log(this.overhead);
 }
 
 WorldState.prototype.step = function(dt)
@@ -367,8 +512,72 @@ WorldState.prototype.step = function(dt)
     this.atc.step(dt);
 }
 
+function generate_trees(multitrack)
+{
+    let points = [];
+
+    for (let segment_id in multitrack.segments)
+    {
+        for (let t of linspace(0, 1, 20))
+        {
+            let p = multitrack.segments[segment_id].evaluate(t);
+            points.push(p);
+        }
+    }
+
+    function distance_to(test_point)
+    {
+        let [best, dist] = nearest_point(points, test_point);
+        return dist;
+    }
+
+    let trees = [];
+
+    for (let i = 0; i < 10000; ++i)
+    {
+        let pt = [rand(-2000, 2000), rand(-1200, 1200)];
+        if (distance_to(pt) < 30)
+        {
+            continue;
+        }
+        trees.push(pt);
+    }
+
+    return trees;
+}
+
+function generate_overhead_thingies(multitrack)
+{
+    let things = [];
+    let n = randint(7, 16);
+
+    for (let sid in multitrack.segments)
+    {
+        if (rand(0, 1) > 0.03)
+        {
+            continue;
+        }
+        things.push({
+            "segment_id": sid,
+            "t": rand(0.1, 0.9),
+            "rate": rand(0.1, 4),
+            "offset": rand(1, 5)
+        });
+    }
+    return things;
+}
+
 WorldState.prototype.draw = function()
 {
+    if (this.follow_train)
+    {
+        let p = this.atc.get_train_pos(0);
+        if (p != null)
+        {
+            this.viewport_center = p.slice();
+        }
+    }
+
     this.zoom_scale += (this.target_zoom_scale - this.zoom_scale) * 0.5;
 
     let rctx_test = get_render_context([0, 0], this.zoom_scale);
@@ -385,9 +594,9 @@ WorldState.prototype.draw = function()
         mouse_state.dragged_bias = [0, 0];
     }
 
-    if (this.follow_train_index > 0 && this.follow_train_index <= this.atc.trains.length)
+    if (this.follow_train)
     {
-        let p = this.atc.get_train_pos(this.follow_train_index - 1);
+        let p = this.atc.get_train_pos(0);
         if (p != null)
         {
             this.viewport_center = p.slice();
@@ -397,10 +606,54 @@ WorldState.prototype.draw = function()
     let rctx = get_render_context(vpc, this.zoom_scale);
 
     // origin gridlines
-    rctx.polyline([[-2000, 0], [2000, 0]], 1, "lightgray", -1);
-    rctx.polyline([[0, -2000], [0, 2000]], 1, "lightgray", -1);
+    // rctx.polyline([[-2000, 0], [2000, 0]], 1, "lightgray", -1);
+    // rctx.polyline([[0, -2000], [0, 2000]], 1, "lightgray", -1);
 
     this.atc.draw(rctx);
+
+    for (let tree of this.trees)
+    {
+        rctx.point(tree.pos, tree.radius, tree.color, null, 1, 0, 0);
+    }
+
+    for (let overhead of this.overhead)
+    {
+        let color = "#303030";
+        let segment = this.atc.multitrack.segments[overhead.segment_id];
+        let p = segment.evaluate(overhead.t);
+        let t = segment.tangent(overhead.t);
+        let u = segment.normal(overhead.t);
+        let w = 14;
+        let h = 2;
+        let right = mult2d(u,  w);
+        let left  = mult2d(u, -w);
+        let fw    = mult2d(t,  h);
+        let back  = mult2d(t, -h);
+        let fr = add2d(p, add2d(right, fw));
+        let br = add2d(p, add2d(right, back));
+        let fl = add2d(p, add2d(left,  fw));
+        let bl = add2d(p, add2d(left,  back));
+        rctx.polyline([bl, br, fr, fl, bl, br], 2, color, null, 100);
+        rctx.polyline([fl, br], 1, color, null, 100);
+        rctx.polyline([fr, bl], 1, color, null, 100);
+
+        let left_light = add2d(p, mult2d(left,  0.7));
+        let right_light = add2d(p, mult2d(right, 0.7));
+
+        let time = new Date().getTime() / 1000;
+
+        let parameter = time * 3 + overhead.offset;
+
+        let red_opacity = Math.pow(Math.cos(parameter) / 2 + 0.5, 12);
+        let green_opacity = Math.pow(Math.sin(parameter) / 2 + 0.5, 12);
+
+        rctx.point(left_light,  2,  "red",   null, 0.8 * red_opacity, 0, 101);
+        rctx.point(left_light,  6,  "red",   null, 0.4 * red_opacity, 0, 101);
+        rctx.point(left_light,  12, "red",   null, 0.4 * red_opacity, 0, 101);
+        rctx.point(right_light, 2,  "green", null, 0.8 * green_opacity, 0, 101);
+        rctx.point(right_light, 6,  "green", null, 0.4 * green_opacity, 0, 101);
+        rctx.point(right_light, 12, "green", null, 0.2 * green_opacity, 0, 101);
+    }
 
     // if (mouse_state.last_mouse_pos != null)
     // {
@@ -415,16 +668,16 @@ WorldState.prototype.draw = function()
     // rctx.text("Left click to add a new segment", [40, text_y += dy]);
     rctx.text("Spacebar pauses the simulation", [40, text_y += dy]);
     rctx.text("Scroll wheel and UD arrow keys zoom in and out", [40, text_y += dy]);
-    rctx.text("LR arrow keys switch between trains", [40, text_y += dy]);
+    rctx.text("F to toggle train following", [40, text_y += dy]);
     rctx.text("Left click and drag to move around", [40, text_y += dy]);
     if (PAUSED)
     {
         rctx.text("PAUSED", [40, text_y += dy]);
     }
-    if (this.follow_train_index)
-    {
-        rctx.text("Following train " + this.follow_train_index, [40, text_y += dy]);
-    }
+    // if (this.follow_train_index)
+    // {
+    //     rctx.text("Following train " + this.follow_train_index, [40, text_y += dy]);
+    // }
 
     rctx.draw();
 }
@@ -453,7 +706,14 @@ function update(previous, now)
     if (!PAUSED)
     {
         STEPS = 0;
-        world_state.step(dt);
+        if (dt > NOMINAL_DT * 3)
+        {
+            world_state.step(NOMINAL_DT);
+        }
+        else
+        {
+            world_state.step(dt);
+        }
     }
     else if (STEPS > 0)
     {
@@ -504,31 +764,39 @@ document.addEventListener('keydown', function(event)
     {
         world_state.target_zoom_scale *= 1.7;
     }
-    if (event.code == "ArrowRight")
-    {
-        world_state.follow_train_index += 1;
-        world_state.follow_train_index %= (world_state.atc.trains.length + 1);
+    // if (event.code == "ArrowRight")
+    // {
+    //     world_state.follow_train += 1;
+    //     world_state.follow_train %= (Object.keys(world_state.atc.trains).length + 1);
 
-        if (world_state.follow_train_index > 0)
-        {
-            world_state.target_zoom_scale = 0.6;
-        }
-    }
-    if (event.code == "ArrowLeft")
-    {
-        if (world_state.follow_train_index > 0)
-        {
-            world_state.follow_train_index -= 1;
-        }
+    //     if (world_state.follow_train > 0)
+    //     {
+    //         world_state.target_zoom_scale = 0.6;
+    //     }
+    // }
+    // if (event.code == "ArrowLeft")
+    // {
+    //     if (world_state.follow_train > 0)
+    //     {
+    //         world_state.follow_train -= 1;
+    //     }
 
-        if (world_state.follow_train_index > 0)
-        {
-            world_state.target_zoom_scale = 0.6;
-        }
-    }
+    //     if (world_state.follow_train > 0)
+    //     {
+    //         world_state.target_zoom_scale = 0.6;
+    //     }
+    // }
     if (event.code == "KeyZ")
     {
 
+    }
+    if (event.code == "KeyF")
+    {
+        world_state.follow_train = !world_state.follow_train;
+        if (world_state.follow_train)
+        {
+            world_state.target_zoom_scale = 0.3;
+        }
     }
 });
 
@@ -541,7 +809,7 @@ document.addEventListener('mousedown', function(event)
 {
     // console.log(event);
     mouse_state.last_mouse_pos = [event.clientX, event.clientY];
-    world_state.follow_train_index = 0;
+    world_state.follow_train = false;
 
     if (event.button == 0)
     {

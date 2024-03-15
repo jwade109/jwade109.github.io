@@ -1,9 +1,14 @@
 
-function TrackBuilder()
+function TrackBuilder(root_segment=null)
 {
     this.segments = {};
     this.connections = [];
     this.signed_index = null;
+    if (root_segment)
+    {
+        this.segments[root_segment.id] = root_segment;
+        this.signed_index = root_segment.id;
+    }
 }
 
 function split_signed_index(signed_index)
@@ -20,7 +25,7 @@ TrackBuilder.prototype.add = function(segment)
     return this.signed_index;
 }
 
-TrackBuilder.prototype.extend = function(arclength, curvature)
+TrackBuilder.prototype.extend = function(arclength, curvature, bidirectional=false)
 {
     function connect(tb, src, dst)
     {
@@ -35,6 +40,10 @@ TrackBuilder.prototype.extend = function(arclength, curvature)
     let old = this.signed_index;
     this.signed_index = n.id;
     connect(this, old, this.signed_index);
+    if (bidirectional)
+    {
+        connect(this, -this.signed_index, -old);
+    }
     for (let [src, dst] of this.connections)
     {
         if (dst == -old)
@@ -51,7 +60,7 @@ TrackBuilder.prototype.extend = function(arclength, curvature)
     return this.signed_index;
 }
 
-TrackBuilder.prototype.connect = function(dst, strength_mult = 0.4)
+TrackBuilder.prototype.connect = function(dst, strength_mult=0.4, bidirectional=false)
 {
     let [cidx, csign] = split_signed_index(this.signed_index);
     let [idx, sign] = split_signed_index(dst);
@@ -114,6 +123,11 @@ TrackBuilder.prototype.connect = function(dst, strength_mult = 0.4)
     this.signed_index = path.id;
     this.connections.push([old, this.signed_index]);
     this.connections.push([this.signed_index, -dst]);
+    if (bidirectional)
+    {
+        this.connections.push([-this.signed_index, -old]);
+        this.connections.push([dst, -this.signed_index]);
+    }
     return this.signed_index;
 }
 

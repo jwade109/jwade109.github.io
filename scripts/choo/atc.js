@@ -1,6 +1,6 @@
 "use strict"
 
-let DEBUG_DRAW_ROUTE_RESERVATIONS = true;
+let DEBUG_DRAW_ROUTE_RESERVATIONS = false;
 let DEBUG_DRAW_TRAIN_TARGET_SEGMENTS = true;
 
 const ATC_RESERVATION_NEARBY_RADIUS = 40;
@@ -41,6 +41,11 @@ function AutomaticTrainControl(train_limit, multitrack)
 
 AutomaticTrainControl.prototype.step = function(dt)
 {
+    if (Object.keys(this.multitrack.segments).length == 0)
+    {
+        return;
+    }
+
     for (let tid in this.trains)
     {
         let t = this.trains[tid];
@@ -49,7 +54,7 @@ AutomaticTrainControl.prototype.step = function(dt)
 
         for (let segment_no of rt)
         {
-            push_set(blocks, this.multitrack.blocks[segment_no]);
+            push_set(blocks, this.multitrack.blocks[Math.abs(segment_no)]);
         }
 
         for (let [block_no, train_no] of Object.entries(this.reservations))
@@ -70,10 +75,11 @@ AutomaticTrainControl.prototype.step = function(dt)
         t.step(dt, this.multitrack);
         if (t.target_segment != null)
         {
-            this.send_train(t.target_segment, tid);
+            this.send_train(t.target_segment, Number.parseInt(tid));
         }
 
-        if (t.state.desc == "uninitialized")
+        if (t.state.desc == "uninitialized" ||
+            (t.state.desc == "idle" && t.state.time > 4))
         {
             let rn = this.multitrack.random_node();
             if (rn != null)
@@ -81,7 +87,7 @@ AutomaticTrainControl.prototype.step = function(dt)
                 t.target_segment = rn;
             }
         }
-        if (t.state.desc == "idle" && t.state.time > 2)
+        else if (t.state.desc == "no path" && t.state.time > 6)
         {
             to_delete.push(tid);
         }
@@ -94,14 +100,28 @@ AutomaticTrainControl.prototype.step = function(dt)
 
     while (Object.entries(this.trains).length < this.train_limit)
     {
-        this.spawn_train(this.multitrack.random_node());
+        let rn = this.multitrack.random_node()
+        if (rn != null)
+        {
+            this.spawn_train(rn);
+        }
+        else
+        {
+            break;
+        }
     }
 }
 
 AutomaticTrainControl.prototype.spawn_train = function(source)
 {
+    console.log("New train on segment " + source);
     let segment = this.multitrack.segments[source];
-    let t = new Train(segment.arclength * 0.8, 28);
+    if (segment === undefined)
+    {
+        console.log("No segment with id " + source);
+        return;
+    }
+    let t = new Train(segment.arclength * 0.8, 18);
     if (source != null)
     {
         t.tbd.push(source);
@@ -275,7 +295,11 @@ AutomaticTrainControl.prototype.draw = function(rctx)
                 continue;
             }
             let c = get_stable_random_color(tid);
-            let seg = this.multitrack.segments[t.target_segment];
+            let seg = this.multitrack.segments[Math.abs(t.target_segment)];
+            if (seg === undefined)
+            {
+                continue;
+            }
             rctx.polyline(seg.points, 70, c, null, -1000001);
         }
     }
