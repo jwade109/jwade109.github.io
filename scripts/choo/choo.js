@@ -37,14 +37,6 @@ SmokeParticle.prototype.draw = function(rctx)
     rctx.point(this.pos, r, "black", null, alpha, 0, 1000);
 }
 
-function Railcar(length, width, color, is_loco)
-{
-    this.length = length;
-    this.width = width;
-    this.color = color;
-    this.is_loco = is_loco;
-}
-
 let UNIQUE_TRAIN_ID = 0;
 
 function Train(position, n_cars)
@@ -114,13 +106,17 @@ function Train(position, n_cars)
         if (i < n_locos)
         {
             use_color = "lightblue";
-            if (this.emits_smoke)
-            {
-                use_color = "lightsalmon";
-            }
+            // if (this.emits_smoke)
+            // {
+            //     use_color = "lightsalmon";
+            // }
         }
-
-        let c = new Railcar(l, w, use_color, i < n_locos);
+    
+        let c = new Railcar(l, w, use_color);
+        if (i < n_locos)
+        {
+            c = new Locomotive(l, w, use_color);
+        }
 
         this.cars.push(c);
     }
@@ -322,7 +318,6 @@ Train.prototype.draw = function(rctx, multitrack)
 
             let tangent = unit2d(sub2d(front, back));
             let center = mult2d(add2d(front, back), 0.5);
-            let normal = rot2d(tangent, Math.PI / 2);
 
             s -= c.length / 2;
 
@@ -347,24 +342,7 @@ Train.prototype.draw = function(rctx, multitrack)
 
             s -= LINKAGE_SPACING;
 
-            function draw_rect(length, width, fill_style, line_style)
-            {
-                let l2 = mult2d(tangent, length / 2);
-                let w2 = mult2d(normal,  width  / 2);
-
-                let p1 = add2d(center, add2d(mult2d(l2,  1), mult2d(w2,  1)));
-                let p2 = add2d(center, add2d(mult2d(l2,  1), mult2d(w2, -1)));
-                let p3 = add2d(center, add2d(mult2d(l2, -1), mult2d(w2, -1)));
-                let p4 = add2d(center, add2d(mult2d(l2, -1), mult2d(w2,  1)));
-
-                rctx.polyline([p1, p2, p3, p4, p1], 1, line_style, fill_style, 100);
-            }
-
-            draw_rect(c.length, c.width, c.color, "black");
-            if (c.is_loco)
-            {
-                draw_rect(c.length * 0.7, c.width * 0.3, "black", null);
-            }
+            c.draw(rctx, center, tangent)
         }
     }
 
@@ -569,12 +547,12 @@ Train.prototype.step = function(dt, multitrack)
     train_v[0] += rand(-10, 10);
     train_v[1] += rand(-10, 10);
 
-    if (this.emits_smoke)
-    {
-        let s = new SmokeParticle(p, train_v, rand(4, 6));
-        if (this.vel > 40 || (this.vel > 20 && rand() < 0.2))
-        {
-            this.particles.push(s);
-        }
-    }
+    // if (this.emits_smoke)
+    // {
+    //     let s = new SmokeParticle(p, train_v, rand(4, 6));
+    //     if (this.vel > 40 || (this.vel > 20 && rand() < 0.2))
+    //     {
+    //         this.particles.push(s);
+    //     }
+    // }
 }
