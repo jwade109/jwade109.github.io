@@ -12,6 +12,7 @@ let DEBUG_DRAW_OCCUPIED_SEGMENTS = false;
 let DEBUG_DRAW_TRAIN_AS_SNAKE = false;
 let DEBUG_DRAW_REAL_TRAIN = true;
 let DEBUG_DRAW_CURRENT_TRACK = false;
+let DEBUG_DRAW_HARD_STOP_DISTANCE = false;
 
 function SmokeParticle(pos, vel, lifetime)
 {
@@ -32,9 +33,9 @@ SmokeParticle.prototype.step = function(dt)
 SmokeParticle.prototype.draw = function(rctx)
 {
     let r = 2.5 + this.growth_rate * (this.max_lifetime - this.lifetime);
-    let alpha = 0.9 * Math.pow(this.lifetime / this.max_lifetime, 4);
+    let alpha = 0.4 * Math.pow(this.lifetime / this.max_lifetime, 4);
 
-    rctx.point(this.pos, r, "black", null, alpha, 0, 1000);
+    rctx.point(this.pos, r, "lightgray", null, alpha, 0, 1000);
 }
 
 let UNIQUE_TRAIN_ID = 0;
@@ -45,11 +46,11 @@ function Train(position, n_cars)
     ++UNIQUE_TRAIN_ID;
 
     this.cars = [];
-    this.acc = rand(50, 70);
+    this.acc = rand(12, 22);
     this.vel = 0;
-    this.max_vel = rand(90, 130);
+    this.max_vel = rand(70, 90);
     this.pos = position;
-    this.emits_smoke = Math.random() < PROBABILITY_OF_SMOKE;
+    this.emits_smoke = true; // Math.random() < PROBABILITY_OF_SMOKE;
     this.has_caboose = Math.random() < 0.15;
     this.tbd = [];
     this.history = [];
@@ -61,19 +62,25 @@ function Train(position, n_cars)
 
     let color = "peru";
 
+    let is_tank = false;
+
     for (let i = 0; i < n_cars + n_locos; ++i)
     {
-        let l = rand(35, 44);
+        let l = rand(45, 51);
         let w = rand(9, 11);
         if (i < n_locos)
         {
-            l = 41;
-            w = 10;
+            l = 56;
+            w = 11;
         }
 
         if (rand(0, 1) < 0.5)
         {
 
+        }
+        if (rand() < 0.2)
+        {
+            is_tank = !is_tank;
         }
         else if (rand(0, 1) < 0.1)
         {
@@ -103,19 +110,18 @@ function Train(position, n_cars)
 
         let use_color = color;
 
+        let c = new HopperWagon(l, w, "grey", use_color);
         if (i < n_locos)
         {
-            use_color = "lightblue";
-            // if (this.emits_smoke)
-            // {
-            //     use_color = "lightsalmon";
-            // }
+            c = new Locomotive(l, w, "orange");
         }
-    
-        let c = new Railcar(l, w, use_color);
-        if (i < n_locos)
+        else if (is_tank)
         {
-            c = new Locomotive(l, w, use_color);
+            c = new TankWagon(l, w, "lightgray", "grey");
+        }
+        else if (rand() < 0.05)
+        {
+            c = new Locomotive(l, w, "orange")
         }
 
         this.cars.push(c);
@@ -309,8 +315,8 @@ Train.prototype.draw = function(rctx, multitrack)
 
             s -= c.length / 2
 
-            let front = track.evaluate(track.s_to_t(s + c.length * 0.4));
-            let back = track.evaluate(track.s_to_t(s - c.length * 0.4));
+            let front = track.evaluate(track.s_to_t(s + c.length * 0.45));
+            let back = track.evaluate(track.s_to_t(s - c.length * 0.45));
             if (front == null || back == null)
             {
                 continue;
@@ -342,7 +348,25 @@ Train.prototype.draw = function(rctx, multitrack)
 
             s -= LINKAGE_SPACING;
 
-            c.draw(rctx, center, tangent)
+            c.draw(rctx, center, tangent);
+
+            // TODO move this to step
+            if (c.emits_smoke)
+            {
+                let train_v = mult2d(unit2d(tangent), this.vel);
+                train_v[0] += rand(-10, 10);
+                train_v[1] += rand(-10, 10);
+
+                let begin = lerp2d(front, back, 0.4);
+                let end   = lerp2d(front, back, 0.7);
+                let p     = lerp2d(begin, end, rand());
+
+                let s = new SmokeParticle(p, train_v, rand(4, 6));
+                if (this.vel > 40 || (this.vel > 20 && rand() < 0.2))
+                {
+                    this.particles.push(s);
+                }
+            }
         }
     }
 
@@ -395,6 +419,15 @@ Train.prototype.draw = function(rctx, multitrack)
         }
     }
 
+    if (DEBUG_DRAW_HARD_STOP_DISTANCE)
+    {
+        let p = track.evaluate(track.s_to_t(this.pos + this.hard_stop_distance()));
+        if (p != null)
+        {
+            rctx.point(p, 3, "red", null, 1, 0, 12000);
+        }
+    }
+
     for (let part of this.particles)
     {
         part.draw(rctx);
@@ -426,6 +459,11 @@ Train.prototype.drop_history = function(multitrack)
     }
 }
 
+Train.prototype.hard_stop_distance = function()
+{
+    return Math.abs(this.vel * this.vel / (2 * this.acc));
+}
+
 Train.prototype.step = function(dt, multitrack)
 {
     this.drop_history(multitrack);
@@ -439,10 +477,8 @@ Train.prototype.step = function(dt, multitrack)
     let [smax, smin] = this.s_limits();
     let remaining = Math.max(0, track.arclength() - smax);
 
-    let hard_stop_distance = Math.abs(this.vel * this.vel / (2 * this.acc));
-
     let target_vel = this.max_vel;
-    if (remaining < hard_stop_distance + 30)
+    if (remaining < this.hard_stop_distance() + 20)
     {
         target_vel = 0;
     }
@@ -476,10 +512,6 @@ Train.prototype.step = function(dt, multitrack)
     {
         new_state = "idle";
     }
-    // else
-    // {
-    //     new_state = "en route";
-    // }
 
     if (this.state.desc == new_state)
     {
@@ -542,17 +574,4 @@ Train.prototype.step = function(dt, multitrack)
         console.log("got null with t =", t);
         return;
     }
-
-    let train_v = mult2d(u, this.vel);
-    train_v[0] += rand(-10, 10);
-    train_v[1] += rand(-10, 10);
-
-    // if (this.emits_smoke)
-    // {
-    //     let s = new SmokeParticle(p, train_v, rand(4, 6));
-    //     if (this.vel > 40 || (this.vel > 20 && rand() < 0.2))
-    //     {
-    //         this.particles.push(s);
-    //     }
-    // }
 }

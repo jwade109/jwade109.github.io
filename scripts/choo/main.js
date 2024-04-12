@@ -1,6 +1,6 @@
 "use strict";
 
-const NOMINAL_FRAMERATE = 3;
+const NOMINAL_FRAMERATE = 30;
 const NOMINAL_DT = 1 / NOMINAL_FRAMERATE;
 const MAX_CURVATURE = 6E-3;
 
@@ -482,23 +482,23 @@ function WorldState()
     this.follow_train = true;
     this.trees = [];
 
-    let colors = [
-        "#40a55b",
-        "#328147",
-        "#245c33",
-        "#f47b20",
-        "#9c5708",
-        "#561818"
-    ]
+    // let colors = [
+    //     "#40a55b",
+    //     "#328147",
+    //     "#245c33",
+    //     // "#f47b20",
+    //     // "#9c5708",
+    //     // "#561818"
+    // ]
 
     for (let pt of generate_trees(this.atc.multitrack))
     {
-        let c = colors[randint(0, colors.length)];
+        // let c = colors[randint(0, colors.length)];
 
         this.trees.push({
             "pos": pt,
             "radius": rand(4, 12),
-            "color": c,
+            "g": randint(40, 100),
             "alpha": rand(0.4, 1)
         });
     }
@@ -533,7 +533,7 @@ function generate_trees(multitrack)
 
     let trees = [];
 
-    for (let i = 0; i < 10000; ++i)
+    for (let i = 0; i < 6000; ++i)
     {
         let pt = [rand(-2000, 2000), rand(-1200, 1200)];
         if (distance_to(pt) < 30)
@@ -611,49 +611,55 @@ WorldState.prototype.draw = function()
 
     this.atc.draw(rctx);
 
-    // for (let tree of this.trees)
-    // {
-    //     rctx.point(tree.pos, tree.radius, tree.color, null, 1, 0, 0);
-    // }
+    for (let tree of this.trees)
+    {
+        let c = rgb(0, tree.g, 0);
+        rctx.point(tree.pos, tree.radius, c, null, 1, 0, 0);
+    }
+    for (let tree of this.trees)
+    {
+        let c = rgb(0, tree.g + 8, 0);
+        rctx.point(tree.pos, tree.radius * 0.7, c, null, 1, 0, 0);
+    }
 
-    // for (let overhead of this.overhead)
-    // {
-    //     let color = "#303030";
-    //     let segment = this.atc.multitrack.segments[overhead.segment_id];
-    //     let p = segment.evaluate(overhead.t);
-    //     let t = segment.tangent(overhead.t);
-    //     let u = segment.normal(overhead.t);
-    //     let w = 14;
-    //     let h = 2;
-    //     let right = mult2d(u,  w);
-    //     let left  = mult2d(u, -w);
-    //     let fw    = mult2d(t,  h);
-    //     let back  = mult2d(t, -h);
-    //     let fr = add2d(p, add2d(right, fw));
-    //     let br = add2d(p, add2d(right, back));
-    //     let fl = add2d(p, add2d(left,  fw));
-    //     let bl = add2d(p, add2d(left,  back));
-    //     rctx.polyline([bl, br, fr, fl, bl, br], 2, color, null, 100);
-    //     rctx.polyline([fl, br], 1, color, null, 100);
-    //     rctx.polyline([fr, bl], 1, color, null, 100);
+    for (let overhead of this.overhead)
+    {
+        let color = "#303030";
+        let segment = this.atc.multitrack.segments[overhead.segment_id];
+        let p = segment.evaluate(overhead.t);
+        let t = segment.tangent(overhead.t);
+        let u = segment.normal(overhead.t);
+        let w = 14;
+        let h = 2;
+        let right = mult2d(u,  w);
+        let left  = mult2d(u, -w);
+        let fw    = mult2d(t,  h);
+        let back  = mult2d(t, -h);
+        let fr = add2d(p, add2d(right, fw));
+        let br = add2d(p, add2d(right, back));
+        let fl = add2d(p, add2d(left,  fw));
+        let bl = add2d(p, add2d(left,  back));
+        rctx.polyline([bl, br, fr, fl, bl, br], 2, color, null, 100);
+        rctx.polyline([fl, br], 1, color, null, 100);
+        rctx.polyline([fr, bl], 1, color, null, 100);
 
-    //     let left_light = add2d(p, mult2d(left,  0.7));
-    //     let right_light = add2d(p, mult2d(right, 0.7));
+        let left_light = add2d(p, mult2d(left,  0.7));
+        let right_light = add2d(p, mult2d(right, 0.7));
 
-    //     let time = new Date().getTime() / 1000;
+        let time = new Date().getTime() / 1000;
 
-    //     let parameter = time * 3 + overhead.offset;
+        let parameter = time * 3 + overhead.offset;
 
-    //     let red_opacity = Math.pow(Math.cos(parameter) / 2 + 0.5, 12);
-    //     let green_opacity = Math.pow(Math.sin(parameter) / 2 + 0.5, 12);
+        let red_opacity = Math.pow(Math.cos(parameter) / 2 + 0.5, 12);
+        let green_opacity = Math.pow(Math.sin(parameter) / 2 + 0.5, 12);
 
-    //     rctx.point(left_light,  2,  "red",   null, 0.8 * red_opacity, 0, 101);
-    //     rctx.point(left_light,  6,  "red",   null, 0.4 * red_opacity, 0, 101);
-    //     rctx.point(left_light,  12, "red",   null, 0.4 * red_opacity, 0, 101);
-    //     rctx.point(right_light, 2,  "green", null, 0.8 * green_opacity, 0, 101);
-    //     rctx.point(right_light, 6,  "green", null, 0.4 * green_opacity, 0, 101);
-    //     rctx.point(right_light, 12, "green", null, 0.2 * green_opacity, 0, 101);
-    // }
+        rctx.point(left_light,  2,  "red",   null, 0.8 * red_opacity, 0, 101);
+        rctx.point(left_light,  6,  "red",   null, 0.4 * red_opacity, 0, 101);
+        rctx.point(left_light,  12, "red",   null, 0.4 * red_opacity, 0, 101);
+        rctx.point(right_light, 2,  "green", null, 0.8 * green_opacity, 0, 101);
+        rctx.point(right_light, 6,  "green", null, 0.4 * green_opacity, 0, 101);
+        rctx.point(right_light, 12, "green", null, 0.2 * green_opacity, 0, 101);
+    }
 
     // if (mouse_state.last_mouse_pos != null)
     // {

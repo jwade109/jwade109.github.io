@@ -1,7 +1,7 @@
 "use strict"
 
 let DEBUG_DRAW_ROUTE_RESERVATIONS = false;
-let DEBUG_DRAW_TRAIN_TARGET_SEGMENTS = true;
+let DEBUG_DRAW_TRAIN_TARGET_SEGMENTS = false;
 
 const ATC_RESERVATION_NEARBY_RADIUS = 40;
 
@@ -12,12 +12,26 @@ let GENERATED_COLORS = {
     3: "orange"
 };
 
+function rgb(r,g,b) {
+    r = r.toString(16);
+    g = g.toString(16);
+    b = b.toString(16);
+
+    if (r.length == 1)
+      r = "0" + r;
+    if (g.length == 1)
+      g = "0" + g;
+    if (b.length == 1)
+      b = "0" + b;
+
+    return "#" + r + g + b;
+  }
+
 function get_random_color()
 {
-    let r = randint(40, 255).toString(16);
-    let g = randint(40, 255).toString(16);
-    let b = randint(40, 255).toString(16);
-    return "#" + r + g + b;
+    return rgb(randint(40, 255).toString(16),
+               randint(40, 255).toString(16),
+               randint(40, 255).toString(16));
 }
 
 function get_stable_random_color(i)
