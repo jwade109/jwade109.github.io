@@ -44,20 +44,20 @@ Ball.prototype.draw = function(ctx)
         ctx.stroke();
     }
 
-    if (PAUSED)
-    {
-        ctx.globalAlpha = 0.5;
-        ctx.strokeStyle = "green";
-        ctx.lineWidth = 1;
+    // if (PAUSED)
+    // {
+    //     ctx.globalAlpha = 0.5;
+    //     ctx.strokeStyle = "green";
+    //     ctx.lineWidth = 1;
 
-        let v = add2d(this.pos, mult2d(this.vel, VELOCITY_RENDER_SCALE));
-        ctx.beginPath();
-        ctx.moveTo(this.pos[0], this.pos[1]);
-        ctx.lineTo(v[0], v[1]);
-        ctx.stroke();
+    //     let v = add2d(this.pos, mult2d(this.vel, VELOCITY_RENDER_SCALE));
+    //     ctx.beginPath();
+    //     ctx.moveTo(this.pos[0], this.pos[1]);
+    //     ctx.lineTo(v[0], v[1]);
+    //     ctx.stroke();
 
-        this.aabb().draw(ctx);
-    }
+    //     this.aabb().draw(ctx);
+    // }
 }
 
 Ball.prototype.collidesBall = function(ball)
