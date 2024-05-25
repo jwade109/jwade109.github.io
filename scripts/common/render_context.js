@@ -48,7 +48,9 @@ RenderContext.prototype.screen_to_world = function(v)
 RenderContext.prototype.point = function(u, radius=1,
     fill_color="black", stroke_color=null, alpha=1, linewidth=0, z_index=0)
 {
-    this.render_array.push(new Circle(u, radius, fill_color, stroke_color, alpha, linewidth, z_index));
+    let c = new Circle(u, radius, fill_color, stroke_color, alpha, linewidth, z_index)
+    this.render_array.push(c);
+    return c;
 }
 
 RenderContext.prototype.screen_point = function(u, radius)
