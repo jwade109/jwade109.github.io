@@ -5,6 +5,9 @@ const NOMINAL_DT = 1 / NOMINAL_FRAMERATE;
 
 let PAUSED = false;
 let STEPS = 0;
+let UPDATES_PER_RENDER_FRAME = 1;
+
+const HEX_RADIUS = 30;
 
 function MouseState()
 {
@@ -62,9 +65,11 @@ function WorldState()
     this.viewport_easing = [0, 0];
     this.grid_angle = rand(0, Math.PI * 2);
 
+    this.follow_index = 0;
+
     this.planes = [];
 
-    for (let i = 0; i < 100; ++i)
+    for (let i = 0; i < 40; ++i)
     {
         let p = new Plane();
         this.planes.push(p);
@@ -103,14 +108,10 @@ function rgb(r, g, b)
 
 WorldState.prototype.draw = function()
 {
-    // if (this.follow_train)
-    // {
-    //     let p = this.atc.get_train_pos(0);
-    //     if (p != null)
-    //     {
-    //         this.viewport_center = p.slice();
-    //     }
-    // }
+    if (this.follow_index > 0)
+    {
+        this.viewport_center = this.planes[this.follow_index - 1].pos.slice();
+    }
 
     this.zoom_scale += (this.target_zoom_scale - this.zoom_scale) * 0.5;
 
@@ -129,37 +130,6 @@ WorldState.prototype.draw = function()
     }
 
     let rctx = get_render_context(vpc, this.zoom_scale);
-
-    for (let i = -20; i <= 20; ++i)
-    {
-        for (let j = -20; j <= 20; ++j)
-        {
-            let radius = 20;
-            let c = get_hex_center(i, j, radius, this.grid_angle);
-            let h = new Hex(c, radius, this.grid_angle);
-
-            let occupancy_count = 0;
-            for (let p of this.planes)
-            {
-                occupancy_count += h.contains(p.pos);
-            }
-
-            let grey = Math.max(255 - occupancy_count * 20, 100);
-            let blue = grey;
-            if (mouse_state.last_mouse_pos != null)
-            {
-                let mp = rctx.screen_to_world(mouse_state.last_mouse_pos);
-                if (h.contains(mp))
-                {
-                    blue = 255;
-                    grey = Math.min(grey, 150);
-                }
-            }
-            let fill = rgb(grey, grey, blue);
-
-            h.draw(rctx, fill);
-        }
-    }
 
     for (let i = 0; i < this.planes.length; ++i)
     {
@@ -185,32 +155,68 @@ WorldState.prototype.draw = function()
     }
 
     // origin gridlines
-    rctx.polyline([[-2000, 0], [2000, 0]], 1, "lightgray", -1);
-    rctx.polyline([[0, -2000], [0, 2000]], 1, "lightgray", -1);
+    rctx.polyline([[-2000, 0], [2000, 0]], 1, "lightgray", -1000);
+    rctx.polyline([
+        rot2d([-2000, 0], 2/3 * Math.PI),
+        rot2d([2000, 0], 2/3 * Math.PI)], 1, "lightgray", -1000);
+    rctx.polyline([
+        rot2d([-2000, 0], 4/3 * Math.PI),
+        rot2d([2000, 0], 4/3 * Math.PI)], 1, "lightgray", -1000);
+
+    let hex_map = {};
+    let hex_count = {};
 
     for (let p of this.planes)
     {
         p.draw(rctx);
+
+        let [q, r] = get_hex_index(p.pos, HEX_RADIUS);
+        if (hex_map[[q, r]])
+        {
+            hex_count[[q, r]] += 1;
+        }
+        else
+        {
+            hex_count[[q, r]] = 1;
+            hex_map[[q, r]] = [q, r];
+        }
     }
 
-    if (mouse_state.last_mouse_pos != null)
+
+    for (let e of Object.entries(hex_map))
     {
-        let p = rctx.screen_to_world(mouse_state.last_mouse_pos);
-        rctx.point(p, 1.3, null, "#333333");
+        let [q, r] = hex_map[e[0]];
+        let count = hex_count[e[0]];
+
+        let grey = Math.max(255 - count * 20, 50);
+        let fill = rgb(grey, grey, grey);
+        let c = get_hex_center(q, r, HEX_RADIUS);
+        new Hex(c, HEX_RADIUS).draw(rctx, null, fill);
     }
 
     let text_y = 40;
     let dy = 30;
 
+    if (mouse_state.last_mouse_pos != null)
+    {
+        let p = rctx.screen_to_world(mouse_state.last_mouse_pos);
+        rctx.point(p, 1.3, null, "#333333");
+
+        let [q, r] = get_hex_index(p, HEX_RADIUS);
+        let c = get_hex_center(q, r, HEX_RADIUS);
+        new Hex(c, HEX_RADIUS).draw(rctx, "black", null);
+    }
+
     rctx.text("Click and drag to move around", [40, text_y += dy]);
-    // rctx.text("Left click to add a new segment", [40, text_y += dy]);
-    // rctx.text("Spacebar pauses the simulation", [40, text_y += dy]);
+    rctx.text("Spacebar pauses the simulation", [40, text_y += dy]);
     rctx.text("Scroll wheel and UD arrow keys zoom in and out", [40, text_y += dy]);
-    // rctx.text("F to toggle train following", [40, text_y += dy]);
-    // rctx.text("Left click and drag to move around", [40, text_y += dy]);
     if (PAUSED)
     {
         rctx.text("PAUSED", [40, text_y += dy]);
+    }
+    if (this.follow_index > 0)
+    {
+        rctx.text("Following plane " + this.follow_index, [40, text_y += dy]);
     }
 
     rctx.draw();
@@ -231,7 +237,10 @@ function update(previous, now)
         }
         else
         {
-            world_state.step(dt);
+            for (let i = 0; i < UPDATES_PER_RENDER_FRAME; ++i)
+            {
+                world_state.step(dt);
+            }
         }
     }
     else if (STEPS > 0)
@@ -311,10 +320,11 @@ document.addEventListener('keydown', function(event)
     }
     if (event.code == "KeyF")
     {
-        world_state.follow_train = !world_state.follow_train;
-        if (world_state.follow_train)
+        world_state.follow_index++;
+        world_state.follow_index %= (world_state.planes.length + 1);
+        if (world_state.follow_index > 0)
         {
-            world_state.target_zoom_scale = 0.3;
+            world_state.target_zoom_scale = 0.12;
         }
     }
 });

@@ -1,26 +1,45 @@
 "use strict"
 
-function get_hex_center(i, j, radius, angle)
+// hex formulation from https://www.redblobgames.com/grids/hexagons
+
+function get_hex_center(q, r, radius)
 {
-    let x = [radius * i * 2, 0];
-    let oblique = rot2d([radius * 2, 0], Math.PI / 3);
-    return rot2d(add2d(x, mult2d(oblique, j)), -angle);
+    let rt3 = Math.sqrt(3);
+    let x = radius * (rt3 * q  +  rt3 / 2 * r)
+    let y = radius * (1.5 * r);
+    return [x, y]
 }
 
-function Hex(pos, radius, angle)
+// credit to https://observablehq.com/@jrus/hexround
+function axial_round(x, y)
+{
+    const xgrid = Math.round(x), ygrid = Math.round(y);
+    x -= xgrid, y -= ygrid; // remainder
+    const dx = Math.round(x + 0.5*y) * (x*x >= y*y);
+    const dy = Math.round(y + 0.5*x) * (x*x < y*y);
+    return [xgrid + dx, ygrid + dy];
+}
+
+function get_hex_index(p, radius)
+{
+    let q = (Math.sqrt(3)/3 * p[0]  -  1./3 * p[1]) / radius;
+    let r = (                          2./3 * p[1]) / radius;
+    return axial_round(q, r);
+}
+
+function Hex(pos, radius)
 {
     this.pos = pos;
     this.radius = radius;
-    this.angle = angle;
 
     this.corners = [];
     this.normals = [];
 
     for (let i = 0; i < 6; ++i)
     {
-        let a = this.angle + Math.PI / 6 + Math.PI * 2 * i / 6;
+        let a = Math.PI / 6 + Math.PI * 2 * i / 6;
         let p = [Math.cos(a), Math.sin(a)];
-        p = add2d(this.pos, mult2d(p, this.radius / Math.sin(Math.PI / 3)));
+        p = add2d(this.pos, mult2d(p, this.radius));
         this.corners.push(p);
 
         a += Math.PI / 6;
@@ -32,6 +51,12 @@ function Hex(pos, radius, angle)
 
 Hex.prototype.contains = function(p)
 {
+    let d = distance(p, this.pos);
+    if (d > this.radius)
+    {
+        return false;
+    }
+
     for (let [base, udir] of this.normals)
     {
         let diff = sub2d(base, p);
@@ -45,9 +70,9 @@ Hex.prototype.contains = function(p)
     return true;
 }
 
-Hex.prototype.draw = function(rctx, fill)
+Hex.prototype.draw = function(rctx, outline, fill)
 {
     // rctx.point(this.pos, this.radius, null, "black", 1, 0, 100);
     rctx.polyline([...this.corners, this.corners[0]], 1, null, fill, -100);
-    rctx.polyline([...this.corners, this.corners[0]], 0.2, "black", null, 1);
+    rctx.polyline([...this.corners, this.corners[0]], 0.2, outline, null, 1);
 }
