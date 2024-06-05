@@ -451,6 +451,11 @@ function randint(min, max)
     return Math.floor(rand(min, max));
 }
 
+function randunit()
+{
+    return rot2d([1, 0], rand(0, Math.PI * 2));
+}
+
 function linspace(min, max, n)
 {
     n = Math.floor(n);

@@ -32,23 +32,16 @@ AABB.prototype.center = function()
     return mult2d(add2d(this.min, this.max), 0.5);
 }
 
-AABB.prototype.draw = function(rctx)
+AABB.prototype.draw = function(rctx, stroke_color="black", z_index=100)
 {
-    // rctx.ctx.save();
-    // rctx.ctx.globalAlpha = 0.1;
-    // rctx.ctx.strokeStyle = "black";
-    // rctx.ctx.lineWidth = 1;
-
-    rctx.polyline([
+    return rctx.polyline([
         [this.min[0], this.min[1]],
         [this.min[0], this.max[1]],
         [this.max[0], this.max[1]],
         [this.max[0], this.min[1]],
         [this.min[0], this.min[1]]
     ],
-    2, "black", null, 100);
-
-    // rctx.ctx.restore();
+    2, stroke_color, null, z_index);
 }
 
 AABB.prototype.random = function()

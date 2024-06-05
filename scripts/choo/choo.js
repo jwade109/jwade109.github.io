@@ -12,7 +12,7 @@ let DEBUG_DRAW_OCCUPIED_SEGMENTS = false;
 let DEBUG_DRAW_TRAIN_AS_SNAKE = false;
 let DEBUG_DRAW_REAL_TRAIN = true;
 let DEBUG_DRAW_CURRENT_TRACK = false;
-let DEBUG_DRAW_HARD_STOP_DISTANCE = false;
+let DEBUG_DRAW_HARD_STOP_DISTANCE = true;
 
 function SmokeParticle(pos, vel, lifetime)
 {

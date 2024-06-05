@@ -491,20 +491,30 @@ function WorldState()
     //     // "#561818"
     // ]
 
-    for (let pt of generate_trees(this.atc.multitrack))
+    // for (let pt of generate_trees(this.atc.multitrack))
     {
         // let c = colors[randint(0, colors.length)];
 
-        this.trees.push({
-            "pos": pt,
-            "radius": rand(4, 12),
-            "g": randint(40, 100),
-            "alpha": rand(0.4, 1)
-        });
+        // this.trees.push({
+        //     "pos": pt,
+        //     "radius": rand(4, 12),
+        //     "g": randint(40, 100),
+        //     "alpha": rand(0.4, 1)
+        // });
     }
 
-    this.overhead = generate_overhead_thingies(this.atc.multitrack);
-    console.log(this.overhead);
+    this.overhead = []; // generate_overhead_thingies(this.atc.multitrack);
+    // console.log(this.overhead);
+
+    this.horde = new Horde(200);
+
+    // this.people = [];
+
+    // for (let i = 0; i < 200; ++i)
+    // {
+    //     let p = new Person([rand(-100, 100), rand(-100, 100)]);
+    //     this.people.push(p);
+    // }
 }
 
 WorldState.prototype.step = function(dt)
@@ -660,6 +670,9 @@ WorldState.prototype.draw = function()
         rctx.point(right_light, 6,  "green", null, 0.4 * green_opacity, 0, 101);
         rctx.point(right_light, 12, "green", null, 0.2 * green_opacity, 0, 101);
     }
+
+    this.horde.step(NOMINAL_DT, this.atc.get_train_pos(0));
+    this.horde.render(rctx);
 
     // if (mouse_state.last_mouse_pos != null)
     // {

@@ -60,7 +60,7 @@ RenderContext.prototype.screen_point = function(u, radius)
 
 RenderContext.prototype.polyline = function(points, linewidth=1, stroke_color="black", fill_color=null, z_index=0)
 {
-    this.render_array.push(new Polyline(points, linewidth, stroke_color, fill_color, z_index));
+    return this.render_array.push(new Polyline(points, linewidth, stroke_color, fill_color, z_index));
 }
 
 RenderContext.prototype.arrow = function(base, tip, linewidth=1, color="black", z_index=0)
