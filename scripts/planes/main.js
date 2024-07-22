@@ -24,6 +24,7 @@ MouseState.prototype.dragging = function()
         return null;
     }
     let d = sub2d(this.last_mouse_pos, this.mouse_down_at);
+    world_state.follow_index = 0
     return [-d[0], d[1]];
 }
 
