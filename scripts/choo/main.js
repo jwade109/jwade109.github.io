@@ -1,6 +1,6 @@
 "use strict";
 
-const NOMINAL_FRAMERATE = 30;
+const NOMINAL_FRAMERATE = 60;
 const NOMINAL_DT = 1 / NOMINAL_FRAMERATE;
 const MAX_CURVATURE = 6E-3;
 
@@ -475,33 +475,12 @@ function WorldState()
         build_turnaround_track()
     );
 
+    this.grid = {};
     this.zoom_scale = 0.3;
     this.target_zoom_scale = 0.3;
     this.viewport_center = [0, 0];
     this.viewport_easing = [0, 0];
     this.follow_train = true;
-    this.trees = [];
-
-    // let colors = [
-    //     "#40a55b",
-    //     "#328147",
-    //     "#245c33",
-    //     // "#f47b20",
-    //     // "#9c5708",
-    //     // "#561818"
-    // ]
-
-    for (let pt of generate_trees(this.atc.multitrack))
-    {
-        // let c = colors[randint(0, colors.length)];
-
-        this.trees.push({
-            "pos": pt,
-            "radius": rand(4, 12),
-            "g": randint(40, 100),
-            "alpha": rand(0.4, 1)
-        });
-    }
 
     this.overhead = generate_overhead_thingies(this.atc.multitrack);
     console.log(this.overhead);
@@ -510,40 +489,6 @@ function WorldState()
 WorldState.prototype.step = function(dt)
 {
     this.atc.step(dt);
-}
-
-function generate_trees(multitrack)
-{
-    let points = [];
-
-    for (let segment_id in multitrack.segments)
-    {
-        for (let t of linspace(0, 1, 20))
-        {
-            let p = multitrack.segments[segment_id].evaluate(t);
-            points.push(p);
-        }
-    }
-
-    function distance_to(test_point)
-    {
-        let [best, dist] = nearest_point(points, test_point);
-        return dist;
-    }
-
-    let trees = [];
-
-    for (let i = 0; i < 6000; ++i)
-    {
-        let pt = [rand(-2000, 2000), rand(-1200, 1200)];
-        if (distance_to(pt) < 30)
-        {
-            continue;
-        }
-        trees.push(pt);
-    }
-
-    return trees;
 }
 
 function generate_overhead_thingies(multitrack)
@@ -611,17 +556,6 @@ WorldState.prototype.draw = function()
 
     this.atc.draw(rctx);
 
-    for (let tree of this.trees)
-    {
-        let c = rgb(0, tree.g, 0);
-        rctx.point(tree.pos, tree.radius, c, null, 1, 0, 0);
-    }
-    for (let tree of this.trees)
-    {
-        let c = rgb(0, tree.g + 8, 0);
-        rctx.point(tree.pos, tree.radius * 0.7, c, null, 1, 0, 0);
-    }
-
     for (let overhead of this.overhead)
     {
         let color = "#303030";
@@ -661,11 +595,24 @@ WorldState.prototype.draw = function()
         rctx.point(right_light, 12, "green", null, 0.2 * green_opacity, 0, 101);
     }
 
-    // if (mouse_state.last_mouse_pos != null)
-    // {
-    //     let p = rctx.screen_to_world(mouse_state.last_mouse_pos);
-    //     rctx.point(p, 3, "#333333");
-    // }
+    if (mouse_state.last_mouse_pos != null)
+    {
+        let p = rctx.screen_to_world(mouse_state.last_mouse_pos);
+        rctx.point(p, 3, "#333333");
+        let gi = to_grid_index(p, DEFAULT_GRID_SCALE);
+        let aabb = grid_aabb(gi, DEFAULT_GRID_SCALE);
+        aabb.draw(rctx);
+
+        if (!this.grid.hasOwnProperty(gi))
+        {
+            this.grid[gi] = new WorldChunk(gi, this.atc.multitrack);
+        }
+
+        for (let gi in this.grid)
+        {
+            this.grid[gi].draw(rctx);
+        }
+    }
 
     let text_y = 40;
     let dy = 30;

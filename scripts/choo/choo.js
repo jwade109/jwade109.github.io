@@ -1,7 +1,8 @@
 "use strict"
 
 const LINKAGE_SPACING = 4;
-const S_LIMITS_BUFFER = 2;
+const S_LIMITS_FRONT_BUFFER = 2;
+const S_LIMITS_REAR_BUFFER = 10;
 let PROBABILITY_OF_SMOKE = 1;
 
 let DEBUG_DRAW_TRAIN_PROPERTIES = false;
@@ -216,7 +217,8 @@ Train.prototype.segment_number = function(track)
 Train.prototype.s_limits = function()
 {
     // front, back
-    return [this.pos + S_LIMITS_BUFFER, this.pos - this.arclength() - S_LIMITS_BUFFER]
+    return [this.pos + S_LIMITS_FRONT_BUFFER,
+            this.pos - this.arclength() - S_LIMITS_REAR_BUFFER]
 }
 
 Train.prototype.arclength = function()
