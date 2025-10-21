@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" type="image/x-icon" href="resources/favicon.ico">
+    <title>Projects</title>
+</head>
+
+<body>
+    <div class="center" style="max-width: 1200px; text-align: center">
+
+        <div style="height: 120px"></div>
+        <img width="20%" style="margin: 0 auto; display: block" src="resources/icons.png"></img>
+        <p>
+        <h1>Projects</h1>
+
+        <hr>
+        </hr>
+
+        <h2>Orbits</h2>
+
+        <p>
+            "Orbits" (working title) is a game I'm developing in my free time.
+            The thesis of the game is that
+            orbital mechanics and orbital assembly are
+            fun, and collecting resources around the solar system to build spacecraft
+            would be very fun.
+        </p>
+        <p>
+            It is written entirely in Rust, and uses Bevy 0.17
+            for the game engine and render pipeline.
+        </p>
+        <p>
+            <a href="https://github.com/jwade109/orbits">The source code can be found here.</a>
+        </p>
+        <p>
+            It simulates flocks of spacecraft using two-dimensional Keplerian orbits with patched conics.
+            Players will start with a modest spacecraft, prospect and mine
+            resources from asteroids and planets, and construct infrastructure to
+            build larger vehicles to go farther into the solar system and beyond.
+        </p>
+
+        <hr>
+        </hr>
+
+        <img class="demo_image" src="orbits_art/rendezvous.PNG"></img>
+        <p class="demo">A rendezvous scenario between two spacecraft. Relative
+            positions and velocities are drawn above the outline of the ownship.
+        </p>
+
+        <img class="demo_image" src="orbits_art/launch_to_orbit.png"></img>
+        <p class="demo">A vehicle autonomously launching from the surface of Luna to Low Lunar Orbit.</p>
+
+        <video class="demo_image" controls>
+            <source src="orbits_art/plumes.mp4" type="video/mp4">
+        </video>
+        <p class="demo">
+            A collection of vehicles hovering over a planetary surface.
+            The vehicles are modelled as rigid bodies with masses and moments of
+            inertia based on their part composition.
+        </p>
+
+        <img class="demo_image" src="orbits_art/color.png"></img>
+        <p class="demo">A flock of spacecraft colored by their constellation.</p>
+
+        <video class="demo_image" controls>
+            <source src="orbits_art/editor.mp4" type="video/mp4">
+        </video>
+        <p class="demo">The vehicle editor. Thrusters are
+            functional and have different levels of thrust and specific impulse.
+            This ship is dotted with RCS thrusters for attitude control.
+        </p>
+
+        <video class="demo_image" controls>
+            <source src="orbits_art/tasking.mp4" type="video/mp4">
+        </video>
+        <p class="demo">
+            Tasking a constellation of satellites to insert into a different orbit.
+            The vehicles dynamically compute maneuvers to move from their current
+            orbit into the target orbit using a Hohmann transfer.
+        </p>
+
+        <img class="demo_image" src="orbits_art/occlusion.png"></img>
+        <p class="demo">A really messy-looking test of ray-casted planetary shadows.</p>
+
+        <img class="demo_image" src="orbits_art/burning.png"></img>
+        <p class="demo">A smaller vehicle burning retrograde around Luna.</p>
+
+        <img class="demo_image" src="orbits_art/formation.png"></img>
+        <p class="demo">Two vehicles flying next to each other.</p>
+
+        <div style="height: 40px"></div>
+
+        <div id="version"></div>
+        <div style="height: 20px"></div>
+        <script src="scripts/global.js"></script>
+
+</body>
+
+</html>
+
+<style>
+    * {
+        font-family: 'Source Code Pro', 'Courier New', Courier, monospace;
+    }
+
+    p {
+        font-size: 22px;
+        max-width: 700px;
+        text-align: center;
+        margin-left: auto;
+        margin-top: 30px;
+        margin-bottom: 30px;
+        margin-right: auto;
+    }
+
+    hr {
+        margin-top: 40px;
+        margin-bottom: 40px;
+    }
+
+    p.demo {
+        margin-bottom: 60px;
+    }
+
+    .demo_image {
+        margin: 0 auto;
+        display: block;
+        width: 80%;
+        box-shadow: -6px 6px 9px rgb(46, 46, 46);
+    }
+
+    h2 {
+        font-size: 60px;
+    }
+</style>
