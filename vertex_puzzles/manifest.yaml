@@ -1,25 +1,22 @@
 puzzles:
 
-  - short_name: doggo
-    title: Mr. Pupperlizzo
-
-  - short_name: empanada
-    title: Una Empanada
+  - short_name: rubik
+    title: "Rubik's Cube"
 
   - short_name: penny
     title: "Penny Loafer"
 
-  - short_name: potato
-    title: "Best Spuds"
+  - short_name: empanada
+    title: Una Empanada
+
+  - short_name: doggo
+    title: Mr. Pupperlizzo
 
   - short_name: rockfact
     title: "That's a Rock Fact!"
 
   - short_name: rose
-    title: "Maidhood, Honour, Truth and Every Thing"
+    title: "A Flowering Romance"
 
-  - short_name: rubik
-    title: "Rubik's Cube"
-
-  - short_name: zinnia
-    title: "Youth and Old Age"
+  - short_name: potato
+    title: "Best Spuds"
